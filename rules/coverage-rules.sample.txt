@@ -1,0 +1,27 @@
+# Conservative Scala-centric patterns; limit by your package!
+# <FQCN_glob>#<method_glob>(<descriptor_glob>) [FLAGS]
+# FLAGS: public|protected|private|synthetic|bridge
+
+com.example.model.*#copy(*)
+com.example.model.*#productArity()
+com.example.model.*#productElement(*)
+com.example.model.*#productPrefix()
+
+# Companion apply/unapply (restrict to model/package to avoid filtering real business factories)
+com.example.model.*$*#apply(*)
+com.example.model.*$*#unapply(*)
+
+# Default argument helpers
+com.example.*#*$default$*(*)
+
+# Scala setter
+com.example.dto.*#*_$eq(*)
+
+# Anonymous/lambda helpers
+com.example.service.*#$anonfun$*(*)
+
+# Compiler-generated flags
+com.example.*#*(*) synthetic
+
+# testing values
+za.co.absa.atum.server.api.common.service.BaseService#createMessage(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String; private
