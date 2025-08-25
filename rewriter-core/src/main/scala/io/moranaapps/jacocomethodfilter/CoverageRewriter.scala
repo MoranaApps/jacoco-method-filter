@@ -14,7 +14,7 @@ final case class CliConfig(
                           )
 
 object CoverageRewriter {
-  private val AnnotationDesc = "Lio/jmf/coverage/CoverageGenerated;"
+  private val AnnotationDesc = "Lio/moranaapps/jacocomethodfilter/CoverageGenerated;"
 
   def main(args: Array[String]): Unit = {
     val b = OParser.builder[CliConfig]
