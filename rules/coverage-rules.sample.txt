@@ -1,27 +1,117 @@
-# Conservative Scala-centric patterns; limit by your package!
-# <FQCN_glob>#<method_glob>(<descriptor_glob>) [FLAGS]
-# FLAGS: public|protected|private|synthetic|bridge
+# jacoco-method-filter – Default rules (Scala + Java)
+# Format:
+# <FQCN_glob>#<method_glob>(<descriptor_selector>) [FLAGS and PREDICATES...]
+#
+# Notes:
+# - Omit descriptor → assumed "(*)*" (any args, any return)
+# - "(*)" → normalized to "(*)*"
+# - Flags: public protected private synthetic bridge static abstract
+# - Predicates:
+#     name-contains:<s> | name-starts:<s> | name-ends:<s>
+#     ret:<glob>        # matches only return type (e.g., Lscala/collection/immutable/List;)
+#     id:<string>       # label shown in logs/reports
+# - Selectors support regex via "re:<regex>" in class/method/descriptor parts
+#
+# !!! Important:
+# Scope rules to your codebase by replacing YOUR.PACKAGE.ROOT below.
+# Start with CONSERVATIVE, verify via dry-run, then enable STANDARD bits.
+# AGGRESSIVE rules are opt-in and should be limited to DTO/auto-generated packages.
 
-com.example.model.*#copy(*)
-com.example.model.*#productArity()
-com.example.model.*#productElement(*)
-com.example.model.*#productPrefix()
+# ---------------------------------------------------------------------------
+# SECTION: CONSERVATIVE (safe starters; mostly compiler noise)
+# ---------------------------------------------------------------------------
 
-# Companion apply/unapply (restrict to model/package to avoid filtering real business factories)
-com.example.model.*$*#apply(*)
-com.example.model.*$*#unapply(*)
+# Scala 2.x/3: case class boilerplate (scope to model/domain only!)
+YOUR.PACKAGE.ROOT.model.*#copy(*)*                                  id:case-copy
+YOUR.PACKAGE.ROOT.model.*#productArity()                            id:case-prod-arity
+YOUR.PACKAGE.ROOT.model.*#productElement(*)*                        id:case-prod-elem
+YOUR.PACKAGE.ROOT.model.*#productPrefix()                           id:case-prod-prefix
 
-# Default argument helpers
-com.example.*#*$default$*(*)
+# Scala companions: apply/unapply (scope to model only to avoid hiding real factories)
+YOUR.PACKAGE.ROOT.model.*$*#apply(*)*                               id:comp-apply
+YOUR.PACKAGE.ROOT.model.*$*#unapply(*)*                             id:comp-unapply
 
-# Scala setter
-com.example.dto.*#*_$eq(*)
+# Scala default-arg helpers
+YOUR.PACKAGE.ROOT.*#*$default$*(* )*                                id:default-args
 
-# Anonymous/lambda helpers
-com.example.service.*#$anonfun$*(*)
+# Scala setters (val/var accessors) in DTO-ish packages
+YOUR.PACKAGE.ROOT.dto.*#*_$eq(*)*                                   id:scala-setter
 
-# Compiler-generated flags
-com.example.*#*(*) synthetic
+# Scala anonymous/lambda helpers (require synthetic/bridge for safety)
+YOUR.PACKAGE.ROOT.*#*(*)*  name-contains:$anonfun$  synthetic bridge id:scala-lambda
 
-# testing values
-za.co.absa.atum.server.api.common.service.BaseService#createMessage(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String; private
+# General compiler-generated (very safe: only synthetic)
+YOUR.PACKAGE.ROOT.*#*(*)*  synthetic                                 id:synthetic-generic
+
+# ---------------------------------------------------------------------------
+# SECTION: STANDARD (common extras; still usually safe when scoped)
+# ---------------------------------------------------------------------------
+
+# Scala product API in non-model code (enable if you see them polluting coverage)
+# YOUR.PACKAGE.ROOT.*#productIterator()                              id:prod-iter
+# YOUR.PACKAGE.ROOT.*#canEqual(*)*                                   id:prod-canequal
+
+# Scala 2 trait init stubs (sometimes appear as <$init$>)
+# YOUR.PACKAGE.ROOT.*#<$init$>(*)*                                   id:trait-init
+
+# Java: synthetic bridge methods from generics (safe)
+YOUR.PACKAGE.ROOT.*#*(*)*  bridge                                    id:java-bridge
+
+# Java 8+ lambdas named "lambda$..."
+YOUR.PACKAGE.ROOT.*#name-starts:lambda$  synthetic                   id:java-lambda
+
+# Java synthetic accessors (compiler-generated package-private access bridges)
+YOUR.PACKAGE.ROOT.*#name-starts:access$  synthetic                   id:java-accessor
+
+# Example of return-type predicate: any method returning Scala immutable List
+YOUR.PACKAGE.ROOT.*#*(*)*  ret:Lscala/collection/immutable/List;     id:any-returns-list
+
+# Example using regex selector (method name regex, descriptor glob):
+YOUR.PACKAGE.ROOT.service.*#re:^find|search.*\(.+                    (*)*  id:svc-search-regex
+
+# ---------------------------------------------------------------------------
+# SECTION: AGGRESSIVE (opt-in; narrow by package to avoid hiding real logic)
+# ---------------------------------------------------------------------------
+
+# Lombok-style getters/setters (restrict to DTO-only packages!)
+# YOUR.PACKAGE.ROOT.dto.*#name-starts:get  public                    id:lombok-getter
+# YOUR.PACKAGE.ROOT.dto.*#name-starts:is   public                    id:lombok-boolean
+# YOUR.PACKAGE.ROOT.dto.*#name-starts:set  public                    id:lombok-setter
+
+# Java records: component accessors (often fine to count, so leave commented)
+# YOUR.PACKAGE.ROOT.dto.*#*(*)*  name-ends:()                        id:record-components
+
+# Scala companion apply/unapply across wider scope (ONLY if you’re sure)
+# YOUR.PACKAGE.ROOT.*$*#apply(*)*                                    id:wide-apply
+# YOUR.PACKAGE.ROOT.*$*#unapply(*)*                                  id:wide-unapply
+
+# ---------------------------------------------------------------------------
+# SECTION: EXAMPLES / TEMPLATES (predicate usage)
+# ---------------------------------------------------------------------------
+
+# Exact method (descriptor pinned): contextSearch(String): List
+za.co.absa.loginsvc.rest.service.search.LdapUserRepository#contextSearch(Ljava/lang/String;)Lscala/collection/immutable/List;  id:context-search-exact
+
+# Looser: same method with any return, but constrain return via ret:
+za.co.absa.loginsvc.rest.service.search.LdapUserRepository#contextSearch(*)*  ret:Lscala/collection/immutable/List;  id:context-search-ret
+
+# Name helpers:
+YOUR.PACKAGE.ROOT.*#*(*)*  name-contains:$anonfun$                   id:name-contains-anonfun
+YOUR.PACKAGE.ROOT.*#*(*)*  name-starts:lambda$  synthetic            id:name-starts-lambda
+YOUR.PACKAGE.ROOT.*#*(*)*  name-ends:$default$1                      id:name-ends-default1
+
+# Regex in class selector; glob for method/descriptor:
+re:^YOUR\.PACKAGE\.ROOT\.internal\..*#*(*)*                          id:regex-class-internal
+
+# Regex in method selector; exact descriptor:
+YOUR.PACKAGE.ROOT.repo.*#re:^findBy.*\(Ljava/lang/String;I\)         Ljava/util/List;  id:regex-method-findBy
+
+# ---------------------------------------------------------------------------
+# SECTION: SAFETY NETS / DIAGNOSTICS (use temporarily)
+# ---------------------------------------------------------------------------
+
+# BROAD DIAGNOSTIC: see what would match for anonfun anywhere under your root
+# YOUR.PACKAGE.ROOT.*#*(*)*  name-contains:$anonfun$                 id:diag-anonfun
+
+# BROAD DIAGNOSTIC: list all synthetic methods (dry-run only; do not keep enabled)
+# YOUR.PACKAGE.ROOT.*#*(*)*  synthetic                                id:diag-synthetic
