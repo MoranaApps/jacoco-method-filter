@@ -22,19 +22,14 @@ private object Selectors {
     sb.append("$")
     Pattern.compile(sb.toString)
   }
-
-  /** Parse either a "re:<regex>" selector or a glob selector into Pattern. */
-  def parseSelector(sel: String): Pattern =
-    if (sel.startsWith("re:")) Pattern.compile(sel.stripPrefix("re:"))
-    else globToRegex(sel)
 }
 
 // --- Rule model -------------------------------------------------------------
 
 final case class MethodRule(
-                             cls: Pattern,                 // class selector (glob or re:)
-                             method: Pattern,              // method selector (glob or re:)
-                             desc: Pattern,                // full descriptor selector "(args)ret" (glob or re:)
+                             cls: Pattern,                 // class selector (glob)
+                             method: Pattern,              // method selector (glob)
+                             desc: Pattern,                // full descriptor selector "(args)ret" (glob)
                              flags: Set[String],           // public|protected|private|synthetic|bridge (space-separated)
                              // Predicates:
                              retGlob: Option[Pattern],     // ret:<glob> matches only the return type
@@ -71,17 +66,21 @@ object Rules {
       if (firstWs < 0) (line, "")
       else (line.substring(0, firstWs), line.substring(firstWs).trim)
 
-    // Main must have class#method(desc...)
-    require(main.contains("#") && main.contains("("),
-      s"Invalid rule (expected <FQCN>#<method>(<desc>)): $line")
-
     val Array(clsSel, rest) = main.split("#", 2)
-    val idx = rest.indexOf('(')
-    require(idx >= 0, s"Missing '(' in descriptor: $line")
+    require(rest.nonEmpty, s"Missing method name after '#': $line")
 
-    val methodSel = rest.substring(0, idx)
-    val descSel0  = rest.substring(idx) // includes '(' and whatever follows
-    val descSel   = normalizeDesc(descSel0)
+    val idx = rest.indexOf('(')
+
+    val (methodSel, descSel0) =
+      if (idx >= 0) {
+        // has explicit descriptor
+        (rest.substring(0, idx), rest.substring(idx)) // includes '('
+      } else {
+        // no descriptor provided -> treat as wildcard
+        (rest, "(*)")
+      }
+
+    val descSel = normalizeDesc(descSel0)
 
     // Parse flags + predicates (space- or comma-separated)
     var flags        = Set.empty[String]
@@ -102,12 +101,24 @@ object Rules {
       case _ => () // ignore unknown tokens for forward-compat
     }
 
+    // Reject regex selectors explicitly to keep DSL simple
+    def ensureNoRegex(token: String, what: String): Unit = {
+      require(
+        !token.startsWith("re:"),
+        s"Regex selectors are not supported for $what. Use glob syntax instead. Got: $token"
+      )
+    }
+
+    ensureNoRegex(clsSel,    "class")
+    ensureNoRegex(methodSel, "method")
+    ensureNoRegex(descSel,   "descriptor")
+
     Some(MethodRule(
-      cls          = Selectors.parseSelector(clsSel),
-      method       = Selectors.parseSelector(methodSel),
-      desc         = Selectors.parseSelector(descSel),
+      cls          = Selectors.globToRegex(clsSel),
+      method       = Selectors.globToRegex(methodSel),
+      desc         = Selectors.globToRegex(descSel),
       flags        = flags,
-      retGlob      = retGlob,
+      retGlob      = retGlob,     // note: still a glob
       id           = id,
       nameContains = nameContains,
       nameStarts   = nameStarts,
@@ -117,16 +128,19 @@ object Rules {
 
   def matches(
                r: MethodRule,
-               fqcnDots: String,   // e.g., "za.co.absa.Foo$Bar"
+               fqcn: String, // e.g., "za.co.absa.Foo$Bar"
                methodName: String, // e.g., "copy", "$anonfun$...", "contextSearch"
-               desc: String,       // full JVM method descriptor: "(args...)ret"
+               desc: String, // full JVM method descriptor: "(args...)ret"
                access: Int,
              ): Boolean = {
-    val fqcnSlashes = fqcnDots.replace('.', '/')
+    require(!fqcn.contains('/'),
+      s"Pass FQCN in dot form (e.g., com.example.Foo). Got: $fqcn")
+
+    val fqcnSlashes = fqcn.replace('.', '/')
 
     // Class match: allow both dot and slash forms
     val clsOk =
-      r.cls.matcher(fqcnDots).matches() ||
+      r.cls.matcher(fqcn).matches() ||
         r.cls.matcher(fqcnSlashes).matches()
 
     // Method name match + helpers

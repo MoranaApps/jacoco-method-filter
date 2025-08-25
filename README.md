@@ -54,31 +54,82 @@ sbt +compile
 
 ## Rules file format
 
-One rule per line:
+A rules file defines **method-filtering rules**, one per line.
+Each rule tells the rewriter _which methods should be annotated as `*Generated` and therefore ignored by JaCoCo._
+
+### General Syntax
 
 ```
-<FQCN_glob>#<method_glob>(<descriptor_glob>) [FLAGS]
+<FQCN_glob>#<method_glob>(<descriptor_glob>) [FLAGS and PREDICATES...]
 ```
 
-- `FQCN_glob`: fully qualified class name glob (dots or slashes, `$` allowed).
-- `method_glob`: method name glob (e.g., `copy`, `apply`, `$anonfun$*`).
-- `descriptor_glob`: JVM method descriptor glob (use `(*)` if you don’t care).
-- `FLAGS`: optional space- or comma-separated flags from:
-    - `public | protected | private | synthetic | bridge`
+- `FQCN_glob` – fully qualified class name, **glob in dot form (`.`)**. `$` allowed for inner classes.
+  - Examples:
+    - `*.model.*`, `com.example.*`, `*`
+- `method_glob` – method name glob
+  - Examples:
+    - `copy`
+    - `$anonfun$*`
+    - `get*`
+    - `*_$eq`
+- `descriptor_glob` – JVM method descriptor in `(args)ret`.
+    - you may omit it entirely.
+      - `x.A#m2` ⇒ treated as `x.A#m2(*)*` (wildcard args & return).
+    - If provided, short/empty forms normalize as:
+      - `""`, `"()"`, `"(*)"` ⇒ all become `"(*)*"` (match any args & return).
+      - Examples:
+        - `(I)I` → takes int, returns int
+        - `(Ljava/lang/String;)V` → takes String, returns void
+        - `()` or `(*)` or omitted → any args, any return
+- `FLAGS` _(optional)_ – space or comma separated access modifiers.
+  - Supported: `public | protected | private | synthetic | bridge | static | abstract`.
+- **Predicates** (optional) – fine-grained constraints:
+  - `ret:<glob>` → match return type only (e.g. `ret:V`, `ret:I`, `ret:Lcom/example/*;`).
+  - `id:<string>` → identifier for logs/reports.
+  - `name-contains:<s>` → method name must contain `<s>`.
+  - `name-starts:<s>` → method name must start with `<s>`.
+  - `name-ends:<s>` → method name must end with `<s>`.
 
-**Example (Scala-focused):**
+### Examples
+
+```text
+# Simple wildcards
+*#*(*)
+*.dto.*#*(*)
+
+# Scala case class helpers
+*.model.*#copy(*)
+*.model.*#productArity()
+*.model.*#productElement(*)
+*.model.*#productPrefix()
+
+# Companion objects and defaults
+*.model.*$*#apply(*)
+*.model.*$*#unapply(*)
+*#*$default$*(*)
+
+# Anonymous/synthetic methods
+*#$anonfun$*
+*#*(*):synthetic            # any synthetic
+*#*(*):bridge               # any bridge
+
+# Setters / fluent APIs
+*.dto.*#*_$eq(*)
+*.builder.*#with*(*)
+*.client.*#with*(*) ret:Lcom/api/client/*
+
+# Return-type constraints
+*.jobs.*#*(*):ret:V
+*.math.*#*(*):ret:I
+*.model.*#*(*):ret:Lcom/example/model/*
 ```
-com.example.model.*#copy(*)
-com.example.model.*#productArity()
-com.example.model.*#productElement(*)
-com.example.model.*#productPrefix()
-com.example.model.*$*#apply(*)
-com.example.model.*$*#unapply(*)
-com.example.*#*$default$*(*)
-com.example.dto.*#*_$eq(*)
-com.example.service.*#$anonfun$*
-com.example.*#*(*):synthetic
-```
+
+#### Notes
+
+- Regex selectors (`re:`) are not supported — **globs only**.
+- **Always use dot-form (**`com.example.Foo`**) for class names**.
+  - Rules written with either dot or slash still match, but all inputs to the matcher must be dot-form.
+- Comments (`# …`) and blank lines are ignored.
 
 ---
 
