@@ -7,13 +7,14 @@ Since **JaCoCo ≥ 0.8.2** ignores classes and methods annotated with an annotat
 - [Why this exists](#why-this-exists)
 - [Goals](#goals)
 - [Non-goals](#non-goals)
-- [Installation & build](#installation--build)
+- [How to Build](#how-to-build)
 - [Rules file format](#rules-file-format)
-- [Usage — CLI (sbt project)](#usage---cli-sbt-project)
-- [Usage — Maven (recipe)](#usage---maven-recipe)
-- [CI — GitHub Actions (minimal)](#ci---github-actions-minimal)
+- [Usage — sbt plugin](#usage--sbt-plugin)
+- [Usage — Maven (local & public)](#usage--maven-local--public)
+- [Installation](#installation)
+  - [Local Development](#local-development)
+  - [Release to Public](#release-to-public)
 - [Safety & troubleshooting](#safety--troubleshooting)
-- [Roadmap](#roadmap)
 - [License](#license)
 
 ---
@@ -42,7 +43,7 @@ Typical needs include removing **compiler noise** from Scala/Java coverage (e.g.
 
 ---
 
-## Installation & build
+## How to Build
 
 Requirements: JDK 17+ and sbt.
 
@@ -196,32 +197,197 @@ sbt coverageFiltered
 
 ---
 
-## Usage — Maven (recipe)
+## Usage — Maven (local & public)
 
-If you prefer Maven, you can call the CLI via `exec-maven-plugin` **after tests** and then run `jacococli` for the report. (A thin Maven plugin can be added later.)
+### Local snapshot usage
+
+Follow the [Installation — Local Development](#installation-local-development) instructions to add local resolvers.
+Then activate the profile to produce **filtered coverage**:
+
+```bash
+mvn -Pcoverage-filtered clean verify
+```
+
+### Public release usage
+
+Once published to Maven Central, no extra resolvers are needed:
+
+```xml
+<dependencies>
+    <dependency>
+        <groupId>MoranaApps</groupId>
+        <artifactId>jacoco-method-filter-core_2.13</artifactId>
+        <version>1.0.0</version>
+    </dependency>
+</dependencies>
+```
+
+And in your `pom.xml` add the `coverage-filtered` profile:
+
+```xml
+<profiles>
+  <profile>
+    <id>coverage-filtered</id>
+    <build>
+      <plugins>
+        <!-- JaCoCo agent -->
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>0.8.12</version>
+          <executions>
+            <execution>
+              <goals><goal>prepare-agent</goal></goals>
+            </execution>
+          </executions>
+        </plugin>
+
+        <!-- Run rewriter -->
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>3.5.0</version>
+          <executions>
+            <execution>
+              <id>rewrite-classes</id>
+              <phase>test</phase>
+              <goals><goal>java</goal></goals>
+              <configuration>
+                <mainClass>io.moranaapps.jacocomethodfilter.CoverageRewriter</mainClass>
+                <arguments>
+                  <argument>--in</argument><argument>${project.build.outputDirectory}</argument>
+                  <argument>--out</argument><argument>${project.build.directory}/classes-filtered</argument>
+                  <argument>--rules</argument><argument>${project.basedir}/rules/coverage-rules.txt</argument>
+                </arguments>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+
+        <!-- Generate report via jacococli -->
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>3.5.0</version>
+          <executions>
+            <execution>
+              <id>jacoco-report-filtered</id>
+              <phase>verify</phase>
+              <goals><goal>exec</goal></goals>
+              <configuration>
+                <executable>java</executable>
+                <arguments>
+                  <argument>-jar</argument>
+                  <argument>${project.build.directory}/tools/jacococli.jar</argument>
+                  <argument>report</argument>
+                  <argument>${project.build.directory}/jacoco.exec</argument>
+                  <argument>--classfiles</argument>
+                  <argument>${project.build.directory}/classes-filtered</argument>
+                  <argument>--sourcefiles</argument>
+                  <argument>${project.basedir}/src/main/java</argument>
+                  <argument>--sourcefiles</argument>
+                  <argument>${project.basedir}/src/main/scala</argument>
+                  <argument>--html</argument>
+                  <argument>${project.build.directory}/jacoco-html</argument>
+                  <argument>--xml</argument>
+                  <argument>${project.build.directory}/jacoco.xml</argument>
+                </arguments>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </build>
+  </profile>
+</profiles>
+```
+
+Run:
+
+```bash
+mvn -Pcoverage-filtered clean verify
+```
+
+Outputs:
+
+- Filtered classes → `target/classes-filtered`
+- HTML report → `target/jacoco-html/index.html`
+- XML report → `target/jacoco.xml`
 
 ---
 
-## CI — GitHub Actions (minimal)
+## Installation
 
-```yaml
-name: coverage-filtered
-on: [push, pull_request]
-jobs:
-  run:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: 21 }
-      - uses: coursier/cache-action@v6
-      - run: sbt "+compile"
-      # In your real project:
-      # - run: sbt "test"
-      # - run: java -jar jacoco-method-filter.jar --in ... --out ... --rules ...
-      # - run: java -jar jacococli.jar report ...
+### Local Development
+
+If you want to try the plugin and core library locally before release, publish them to your local Ivy/Maven repositories:
+
+```bash
+# from jacoco-method-filter repo root
+sbt "project rewriterCore" +publishLocal   # publishes jacoco-method-filter-core for all Scala versions
+sbt "project sbtPlugin"    publishLocal    # publishes jacoco-method-filter-sbt for sbt 1.x (Scala 2.12)
 ```
 
+Artifacts will appear in:
+
+- ~/.ivy2/local/MoranaApps/...
+- ~/.m2/repository/MoranaApps/...
+
+#### sbt (local snapshot)
+
+```scala
+// project/plugins.sbt
+resolvers += Resolver.ivyLocal
+addSbtPlugin("MoranaApps" % "jacoco-method-filter-sbt" % "0.1.0-SNAPSHOT")
+
+// build.sbt
+enablePlugins(morana.coverage.JacocoFilterPlugin)
+libraryDependencies += "MoranaApps" %% "jacoco-method-filter-core" % "0.1.0-SNAPSHOT"
+```
+
+#### Maven (local snapshot)
+
+```xml
+<repositories>
+  <repository>
+    <id>local-ivy</id>
+    <url>file://${user.home}/.ivy2/local</url>
+  </repository>
+  <repository>
+    <id>local-maven</id>
+    <url>file://${user.home}/.m2/repository</url>
+  </repository>
+</repositories>
+
+<dependencies>
+  <dependency>
+    <groupId>MoranaApps</groupId>
+    <artifactId>jacoco-method-filter-core_2.13</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </dependency>
+</dependencies>
+```
+
+### Release to Public
+
+To make the library and plugin usable without `resolvers += Resolver.ivyLocal`:
+
+1. **Set up Sonatype OSSRH** (or your organization’s Nexus/Artifactory).
+  - Configure `~/.sbt/sonatype.sbt` with credentials.
+  - Add `publishTo := sonatypePublishToBundle.value` in `build.sbt`.
+2. **Metadata**
+  - Add `licenses`, `scmInfo`, and `developers` to `build.sbt`.
+  - Use semantic versioning (e.g. `1.0.0`).
+3. **Release**
+```bash
+sbt +clean +test
+sbt +publishSigned           # publish core
+sbt "project sbtPlugin" publishSigned
+sbt sonatypeBundleRelease    # close & release staging repo
+```
+4. After release, artifacts are available on Maven Central:
+- `MoranaApps:jacoco-method-filter-core_2.13:1.0.0`
+- `MoranaApps:jacoco-method-filter-sbt:sbtVersion=1.0;scalaVersion=2.12:1.0.0`
 ---
 
 ## Safety & troubleshooting
