@@ -133,24 +133,66 @@ Each rule tells the rewriter _which methods should be annotated as `*Generated` 
 
 ---
 
-## Usage — CLI (sbt project)
+## Usage — sbt plugin
 
-1) Build your project and run tests to produce `jacoco.exec` and compiled classes.
+- Add the plugin to your build:
 
-2) Run the rewriter:
-
-```bash
-# after you have compiled classes
-./scripts/dev-run.sh rules/coverage-rules.sample.txt   target/scala-2.13/classes   target/scala-2.13/classes-filtered   "--dry-run"  # remove this flag to actually annotate
+```scala
+// project/plugins.sbt
+addSbtPlugin("com.github.sbt" % "sbt-jacoco" % "3.5.0")
+addSbtPlugin("MoranaApps" % "jacoco-method-filter-sbt" % "0.1.0-SNAPSHOT")
 ```
 
-3) Generate JaCoCo report via `jacococli` using **filtered classes**:
+- In your project build:
 
-```bash
-java -jar jacococli.jar report target/jacoco.exec   --classfiles target/scala-2.13/classes-filtered   --sourcefiles src/main/scala   --html target/jacoco-html   --xml  target/jacoco.xml
+```scala
+enablePlugins(morana.coverage.JacocoFilterPlugin)
+
+// make the tool available at runtime for the plugin to run
+libraryDependencies += "MoranaApps" %% "jacoco-method-filter-core" % "0.1.0-SNAPSHOT"
+
+// (optional) overrides
+coverageRewriteRules     := baseDirectory.value / "rules" / "coverage-rules.txt"
+coverageRewriteOutputDir := target.value / s"scala-${scalaBinaryVersion.value}" / "classes-filtered"
+jacocoExec               := target.value / "jacoco.exec"
+jacocoCliJar             := baseDirectory.value / "tools" / "jacococli.jar"
 ```
 
-> Tip: Download `jacococli.jar` from Maven Central (artifact `org.jacoco:org.jacoco.cli`).
+### Workflow
+
+1. Run tests → `sbt-jacoco` produces `target/jacoco.exec` and unfiltered classes.
+2. Rewrite classes according to your rules (adds `@Generated`):
+
+```scala
+sbt coverageRewrite
+```
+
+3. Generate filtered JaCoCo report:
+
+```scala
+sbt coverageReportFiltered
+```
+
+4. Or run the full pipeline in one step:
+
+```scala
+sbt coverageFiltered
+```
+
+#### Output
+- Filtered classes: `target/scala-*/classes-filtered`
+- HTML report: `target/jacoco-html/`
+- XML report: `target/jacoco.xml`
+
+> **Notes**
+> 
+> - Rules file defaults to rules/coverage-rules.txt (relative to project root).
+> - You can run in dry mode with:
+>```scala
+>coverageRewriteDryRun := true
+>```
+> - FQCN inputs should be dot-form (com.example.Foo). Rules may use dot or slash globs.
+
 
 ---
 
