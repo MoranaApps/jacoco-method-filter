@@ -7,13 +7,9 @@ Since **JaCoCo ≥ 0.8.2** ignores classes and methods annotated with an annotat
 - [Why this exists](#why-this-exists)
 - [Goals](#goals)
 - [Non-goals](#non-goals)
-- [How to Build](#how-to-build)
 - [Rules file format](#rules-file-format)
 - [Usage — sbt plugin](#usage--sbt-plugin)
 - [Usage — Maven (local & public)](#usage--maven-local--public)
-- [Installation](#installation)
-  - [Local Development](#local-development)
-  - [Release to Public](#release-to-public)
 - [Safety & troubleshooting](#safety--troubleshooting)
 - [License](#license)
 
