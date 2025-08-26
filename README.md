@@ -43,16 +43,6 @@ Typical needs include removing **compiler noise** from Scala/Java coverage (e.g.
 
 ---
 
-## How to Build
-
-Requirements: JDK 17+ and sbt.
-
-```bash
-sbt +compile
-```
-
----
-
 ## Rules file format
 
 A rules file defines **method-filtering rules**, one per line.
@@ -201,7 +191,7 @@ sbt coverageFiltered
 
 ### Local snapshot usage
 
-Follow the [Installation — Local Development](#installation-local-development) instructions to add local resolvers.
+Follow the [Installation — Local Development](./DEVELOPER.md#local-development) instructions to add local resolvers.
 Then activate the profile to produce **filtered coverage**:
 
 ```bash
@@ -314,80 +304,6 @@ Outputs:
 - HTML report → `target/jacoco-html/index.html`
 - XML report → `target/jacoco.xml`
 
----
-
-## Installation
-
-### Local Development
-
-If you want to try the plugin and core library locally before release, publish them to your local Ivy/Maven repositories:
-
-```bash
-# from jacoco-method-filter repo root
-sbt "project rewriterCore" +publishLocal   # publishes jacoco-method-filter-core for all Scala versions
-sbt "project sbtPlugin"    publishLocal    # publishes jacoco-method-filter-sbt for sbt 1.x (Scala 2.12)
-```
-
-Artifacts will appear in:
-
-- ~/.ivy2/local/MoranaApps/...
-- ~/.m2/repository/MoranaApps/...
-
-#### sbt (local snapshot)
-
-```scala
-// project/plugins.sbt
-resolvers += Resolver.ivyLocal
-addSbtPlugin("MoranaApps" % "jacoco-method-filter-sbt" % "0.1.0-SNAPSHOT")
-
-// build.sbt
-enablePlugins(morana.coverage.JacocoFilterPlugin)
-libraryDependencies += "MoranaApps" %% "jacoco-method-filter-core" % "0.1.0-SNAPSHOT"
-```
-
-#### Maven (local snapshot)
-
-```xml
-<repositories>
-  <repository>
-    <id>local-ivy</id>
-    <url>file://${user.home}/.ivy2/local</url>
-  </repository>
-  <repository>
-    <id>local-maven</id>
-    <url>file://${user.home}/.m2/repository</url>
-  </repository>
-</repositories>
-
-<dependencies>
-  <dependency>
-    <groupId>MoranaApps</groupId>
-    <artifactId>jacoco-method-filter-core_2.13</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
-  </dependency>
-</dependencies>
-```
-
-### Release to Public
-
-To make the library and plugin usable without `resolvers += Resolver.ivyLocal`:
-
-1. **Set up Sonatype OSSRH** (or your organization’s Nexus/Artifactory).
-  - Configure `~/.sbt/sonatype.sbt` with credentials.
-  - Add `publishTo := sonatypePublishToBundle.value` in `build.sbt`.
-2. **Metadata**
-  - Add `licenses`, `scmInfo`, and `developers` to `build.sbt`.
-  - Use semantic versioning (e.g. `1.0.0`).
-3. **Release**
-```bash
-sbt +clean +test
-sbt +publishSigned           # publish core
-sbt "project sbtPlugin" publishSigned
-sbt sonatypeBundleRelease    # close & release staging repo
-```
-4. After release, artifacts are available on Maven Central:
-- `MoranaApps:jacoco-method-filter-core_2.13:1.0.0`
-- `MoranaApps:jacoco-method-filter-sbt:sbtVersion=1.0;scalaVersion=2.12:1.0.0`
 ---
 
 ## Safety & troubleshooting
