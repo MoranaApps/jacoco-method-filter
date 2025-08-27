@@ -1,8 +1,7 @@
-import scala.collection.immutable.Seq
-
 ThisBuild / scalaVersion := "2.13.14"
-ThisBuild / organization := "MoranaApps"
-ThisBuild / version      := "0.1.0-SNAPSHOT"
+ThisBuild / organization := "io.github.moranaapps"
+ThisBuild / publishMavenStyle := true
+ThisBuild / version      := "0.1.0"
 
 // --- core tool (2.13)
 lazy val rewriterCore = (project in file("rewriter-core"))
@@ -33,3 +32,26 @@ lazy val root = (project in file("."))
     name := "jacoco-method-filter",
     publish / skip := true
   )
+
+// CPP target config
+ThisBuild / publishTo := {
+  val snapshots = "https://central.sonatype.com/repository/maven-snapshots/"
+  if (isSnapshot.value) Some("central-snapshots" at snapshots) else localStaging.value
+}
+
+// Required metadata
+ThisBuild / homepage := Some(url("https://github.com/MoranaApps/jacoco-method-filter"))
+ThisBuild / licenses := Seq("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0"))
+ThisBuild / scmInfo := Some(
+  ScmInfo(
+    url("https://github.com/MoranaApps/jacoco-method-filter"),
+    "scm:git:git@github.com:MoranaApps/jacoco-method-filter.git"
+  )
+)
+ThisBuild / developers := List(
+  Developer("moranaapps", "MoranaApps", "dev@moranaapps.org", url("https://github.com/MoranaApps"))
+)
+ThisBuild / Compile / doc / scalacOptions ++= Seq("-no-link-warnings")
+
+// sbt plugin must use the modern style
+ThisBuild / sbtPluginPublishLegacyMavenStyle := false
