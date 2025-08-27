@@ -50,7 +50,7 @@ jobs:
       - name: Show sbt & Java
         run: |
           java -version
-          sbt --version
+          sbt sbtVersion
 
       - name: Test (core + plugin)
         run: |
