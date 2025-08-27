@@ -7,7 +7,6 @@ Since **JaCoCo ≥ 0.8.2** ignores classes and methods annotated with an annotat
 - [How to Build](#how-to-build)
 - [Installation](#installation)
   - [Local Development](#local-development)
-  - [Release to Public](#release-to-public)
 
 ---
 
@@ -72,24 +71,3 @@ libraryDependencies += "MoranaApps" %% "jacoco-method-filter-core" % "0.1.0-SNAP
   </dependency>
 </dependencies>
 ```
-
-### Release to Public
-
-To make the library and plugin usable without `resolvers += Resolver.ivyLocal`:
-
-1. **Set up Sonatype OSSRH** (or your organization’s Nexus/Artifactory).
-  - Configure `~/.sbt/sonatype.sbt` with credentials.
-  - Add `publishTo := sonatypePublishToBundle.value` in `build.sbt`.
-2. **Metadata**
-  - Add `licenses`, `scmInfo`, and `developers` to `build.sbt`.
-  - Use semantic versioning (e.g. `1.0.0`).
-3. **Release**
-```bash
-sbt +clean +test
-sbt +publishSigned           # publish core
-sbt "project sbtPlugin" publishSigned
-sbt sonatypeBundleRelease    # close & release staging repo
-```
-4. After release, artifacts are available on Maven Central:
-- `MoranaApps:jacoco-method-filter-core_2.13:1.0.0`
-- `MoranaApps:jacoco-method-filter-sbt:sbtVersion=1.0;scalaVersion=2.12:1.0.0`
