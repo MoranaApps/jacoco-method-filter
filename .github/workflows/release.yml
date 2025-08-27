@@ -1,0 +1,94 @@
+name: Publish / Release (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      doRelease:
+        description: "After publishing, call sonaRelease (finalize on Central)?"
+        type: choice
+        options: [ "yes", "no" ]
+        default: "yes"
+      scala213:
+        description: "Build for Scala 2.13 (core)"
+        type: boolean
+        default: true
+      runScripted:
+        description: "Run sbt-plugin scripted test"
+        type: boolean
+        default: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: sbt
+
+      - name: Import GPG private key
+        run: |
+          echo "${PGP_SECRET}" | gpg --batch --import
+          gpg --list-secret-keys --keyid-format LONG
+        env:
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+
+      - name: Show sbt & Java
+        run: |
+          java -version
+          sbt --version
+
+      - name: Test (core + plugin)
+        run: |
+          # +clean +test will cross-build if you add crossScalaVersions later
+          sbt +clean +test
+
+      - name: Optional scripted test (sbt plugin)
+        if: ${{ inputs.runScripted == 'true' }}
+        run: |
+          # Requires you to have a scripted test like sbt-plugin/src/sbt-test/jmf/basic
+          sbt "project sbtPlugin" "scripted jmf/basic" -Dplugin.version=$(grep -E 'ThisBuild / version\s*:=' build.sbt | sed -E "s/.*:=\"([^\"]+)\".*/\1/")
+
+      - name: Publish signed artifacts (core + plugin)
+        run: |
+          sbt +publishSigned
+          sbt "project sbtPlugin" publishSigned
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          PGP_PASSPHRASE:    ${{ secrets.PGP_PASSPHRASE }}
+
+      - name: Upload staged bundle (debug artifact)
+        run: |
+          STAGE_DIR=$(find . -type d -path "*/target/sona-staging" | head -n1)
+          if [ -n "$STAGE_DIR" ]; then
+            echo "Found staging dir: $STAGE_DIR"
+            (cd "$STAGE_DIR"/.. && zip -r staging_bundle.zip sona-staging)
+            mkdir -p artifacts && mv "$STAGE_DIR"/../staging_bundle.zip artifacts/
+          else
+            echo "No staging dir found" && exit 1
+          fi
+        shell: bash
+
+      - name: Upload artifact (staged bundle)
+        uses: actions/upload-artifact@v4
+        with:
+          name: sona-staging-bundle
+          path: artifacts/staging_bundle.zip
+          if-no-files-found: error
+
+      - name: Release to Central (sonaRelease)
+        if: ${{ inputs.doRelease == 'yes' }}
+        run: |
+          sbt sonaRelease
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
