@@ -34,6 +34,12 @@ jobs:
           java-version: 17
           cache: sbt
 
+      - name: Install sbt (sbt-extras)
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/dwijnand/sbt-extras/master/sbt -o sbt
+          chmod +x sbt
+          sudo mv sbt /usr/local/bin/
+
       - name: Import GPG private key
         run: |
           echo "${PGP_SECRET}" | gpg --batch --import
