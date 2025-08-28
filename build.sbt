@@ -1,7 +1,7 @@
 ThisBuild / scalaVersion := "2.13.14"
 ThisBuild / organization := "io.github.moranaapps"
 ThisBuild / publishMavenStyle := true
-ThisBuild / version      := "0.1.1"
+ThisBuild / version      := "0.1.2"
 
 ThisBuild / sbtPluginPublishLegacyMavenStyle := false
 
@@ -24,12 +24,14 @@ lazy val sbtPlugin = (project in file("sbt-plugin"))
   .settings(
     name := "jacoco-method-filter-sbt",
     organization := "io.github.moranaapps",
+
     // plugin must be on 2.12 for sbt 1.x
     scalaVersion := "2.12.19",
-    // 👇 this forces modern Maven file names (no _2.12_1.0 suffix in the file name)
+
     publishMavenStyle := true,
     sbtPluginPublishLegacyMavenStyle := false,
     moduleName := name.value,
+
     libraryDependencies += "org.jacoco" % "org.jacoco.cli" % "0.8.12" classifier "nodeps"
   )
 
