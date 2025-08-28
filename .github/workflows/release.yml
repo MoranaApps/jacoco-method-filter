@@ -138,10 +138,21 @@ jobs:
           path: artifacts/staging_bundle.zip
           if-no-files-found: error
 
-      - name: Release to Central (sonaRelease)
+      - name: Release to Central (sonatypeBundleRelease)
         if: ${{ inputs.doRelease == 'yes' }}
         run: |
-          sbt sonaRelease
+          set -euo pipefail
+          # Skip release for snapshots
+          IS_SNAPSHOT=$(
+            sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
+              "show ThisBuild / isSnapshot" | sed -n 's/^\[info\] //p' | tail -n1
+          )
+          echo "isSnapshot=$IS_SNAPSHOT"
+          if [ "$IS_SNAPSHOT" = "true" ]; then
+            echo "Snapshot build — nothing to release."
+            exit 0
+          fi
+          sbt sonatypeBundleRelease
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
