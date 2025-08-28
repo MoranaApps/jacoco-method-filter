@@ -1,7 +1,9 @@
 ThisBuild / scalaVersion := "2.13.14"
 ThisBuild / organization := "io.github.moranaapps"
 ThisBuild / publishMavenStyle := true
-ThisBuild / version      := "0.1.0"
+ThisBuild / version      := "0.1.1"
+
+ThisBuild / sbtPluginPublishLegacyMavenStyle := false
 
 // --- core tool (2.13)
 lazy val rewriterCore = (project in file("rewriter-core"))
@@ -21,7 +23,13 @@ lazy val sbtPlugin = (project in file("sbt-plugin"))
   .enablePlugins(SbtPlugin)
   .settings(
     name := "jacoco-method-filter-sbt",
+    organization := "io.github.moranaapps",
+    // plugin must be on 2.12 for sbt 1.x
     scalaVersion := "2.12.19",
+    // 👇 this forces modern Maven file names (no _2.12_1.0 suffix in the file name)
+    publishMavenStyle := true,
+    sbtPluginPublishLegacyMavenStyle := false,
+    moduleName := name.value,
     libraryDependencies += "org.jacoco" % "org.jacoco.cli" % "0.8.12" classifier "nodeps"
   )
 
@@ -52,6 +60,3 @@ ThisBuild / developers := List(
   Developer("moranaapps", "MoranaApps", "dev@moranaapps.org", url("https://github.com/MoranaApps"))
 )
 ThisBuild / Compile / doc / scalacOptions ++= Seq("-no-link-warnings")
-
-// sbt plugin must use the modern style
-ThisBuild / sbtPluginPublishLegacyMavenStyle := false
