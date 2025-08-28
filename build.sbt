@@ -3,6 +3,7 @@ ThisBuild / organization := "io.github.moranaapps"
 ThisBuild / publishMavenStyle := true
 ThisBuild / version      := "0.1.0"
 
+
 // --- core tool (2.13)
 lazy val rewriterCore = (project in file("rewriter-core"))
   .settings(
