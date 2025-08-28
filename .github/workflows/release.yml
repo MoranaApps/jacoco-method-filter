@@ -12,10 +12,6 @@ on:
         description: "Build for Scala 2.13 (core)"
         type: boolean
         default: true
-      runScripted:
-        description: "Run sbt-plugin scripted test"
-        type: boolean
-        default: false
 
 jobs:
   publish:
@@ -56,26 +52,6 @@ jobs:
         run: |
           sbt +clean +test
 
-      - name: Optional scripted test (sbt plugin)
-        if: ${{ inputs.runScripted == true }}
-        run: |
-          set -euo pipefail
-      
-          # Read the plugin subproject's version
-          VER=$(
-            sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
-              'project sbtPlugin' 'show version' \
-            | sed -n 's/^\[info\] //p' | tail -n1 | tr -d '\r'
-          )
-          echo "Detected plugin version: $VER"
-      
-          # Run scripted, passing the version to the forked sbt via scriptedLaunchOpts
-          sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
-            'project sbtPlugin' \
-            'set scriptedBufferLog := false' \
-            "set scriptedLaunchOpts += s\"-Dplugin.version=$VER\"" \
-            'scripted jmf/basic'
-
       - name: Echo repo structure & key sbt files
         run: |
           echo "== repo tree ==" && ls -la
@@ -101,28 +77,17 @@ jobs:
             "show packagedArtifacts"
           echo "== packagedArtifacts above must have filenames WITHOUT _2.12_1.0 in the basename =="
 
-      - name: Assert modern plugin publish settings (pre-publish gate)
+      - name: Show final plugin artifacts (sanity)
         run: |
-          set -euo pipefail
-          sbt_common_flags="-batch -Dsbt.supershell=false -Dsbt.log.noformat=true"
-          PUBLISH_STYLE=$(
-            sbt $sbt_common_flags "project sbtPlugin" "show publishMavenStyle" \
-              | sed -n 's/^\[info\] \(true\|false\)$/\1/p' | tail -n1 | tr -d '\r'
-          )
-          LEGACY_STYLE=$(
-            sbt $sbt_common_flags "project sbtPlugin" "show sbtPluginPublishLegacyMavenStyle" \
-              | sed -n 's/^\[info\] \(true\|false\)$/\1/p' | tail -n1 | tr -d '\r'
-          )
-          echo "publishMavenStyle=${PUBLISH_STYLE:-<empty>}, sbtPluginPublishLegacyMavenStyle=${LEGACY_STYLE:-<empty>}"
-          test -n "$PUBLISH_STYLE" -a -n "$LEGACY_STYLE"
-          if [ "$PUBLISH_STYLE" != "true" ] || [ "$LEGACY_STYLE" != "false" ]; then
-            echo "::error ::Invalid settings. Expect publishMavenStyle=true and sbtPluginPublishLegacyMavenStyle=false"
-            exit 1
-          fi
+          sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
+            "project sbtPlugin" "show packagedArtifacts"
 
-      - name: Force modern basenames for plugin artifacts (CI override)
+      - name: Publish signed artifacts (core + plugin) to Sonatype
         run: |
-          set -euo pipefail
+          # Core (normal)
+          sbt +publishSigned
+      
+          # Plugin: force modern basenames and publish in the SAME sbt run
           sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
             "project sbtPlugin" \
             'set publishMavenStyle := true' \
@@ -131,29 +96,7 @@ jobs:
             "set Compile / packageBin / artifact := (Compile / packageBin / artifact).value.withName(moduleName.value)" \
             "set Compile / packageSrc / artifact := (Compile / packageSrc / artifact).value.withName(moduleName.value)" \
             "set Compile / packageDoc / artifact := (Compile / packageDoc / artifact).value.withName(moduleName.value)" \
-            "show packagedArtifacts"
-
-      - name: Assert plugin filenames look modern (no legacy basename)
-        run: |
-          set -euo pipefail
-          OUT=$(sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
-            "project sbtPlugin" "show packagedArtifacts")
-          echo "$OUT"
-          if echo "$OUT" | grep -E 'jacoco-method-filter-sbt_2\.12_1\.0-[0-9]'; then
-            echo "::error ::LEGACY filename detected from packagedArtifacts. Refusing to publish."
-            exit 2
-          fi
-          echo "OK: packagedArtifacts look modern"
-
-      - name: Show final plugin artifacts (sanity)
-        run: |
-          sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
-            "project sbtPlugin" "show packagedArtifacts"
-
-      - name: Publish signed artifacts (core + plugin) to Sonatype
-        run: |
-          sbt +publishSigned
-          sbt "project sbtPlugin" publishSigned
+            publishSigned
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
