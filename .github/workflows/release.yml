@@ -103,27 +103,29 @@ jobs:
       - name: Assert modern plugin publish settings (pre-publish gate)
         run: |
           set -euo pipefail
-          OUT=$(
-            sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
-              "project sbtPlugin" \
-              "show publishMavenStyle" \
-              "show sbtPluginPublishLegacyMavenStyle"
+      
+          sbt_common_flags="-batch -Dsbt.supershell=false -Dsbt.log.noformat=true"
+      
+          PUBLISH_STYLE=$(
+            sbt $sbt_common_flags "project sbtPlugin" "show publishMavenStyle" \
+            | grep -E '^\[info\] (true|false)$' \
+            | awk '{print $2}' \
+            | tail -n1 \
+            | tr -d '\r'
           )
-          echo "$OUT"
       
-          # Extract just "true"/"false" from the [info] lines
-          PUBLISH_STYLE=$(printf "%s\n" "$OUT" \
-            | sed -n 's/^\[info\][[:space:]]*publishMavenStyle[[:space:]]*=[[:space:]]*\(true\|false\).*$/\1/p' \
-            | tail -n1 | tr -d '\r')
-      
-          LEGACY_STYLE=$(printf "%s\n" "$OUT" \
-            | sed -n 's/^\[info\][[:space:]]*sbtPluginPublishLegacyMavenStyle[[:space:]]*=[[:space:]]*\(true\|false\).*$/\1/p' \
-            | tail -n1 | tr -d '\r')
+          LEGACY_STYLE$(
+            sbt $sbt_common_flags "project sbtPlugin" "show sbtPluginPublishLegacyMavenStyle" \
+            | grep -E '^\[info\] (true|false)$' \
+            | awk '{print $2}' \
+            | tail -n1 \
+            | tr -d '\r'
+          )
       
           echo "publishMavenStyle=$PUBLISH_STYLE, sbtPluginPublishLegacyMavenStyle=$LEGACY_STYLE"
       
           if [ -z "$PUBLISH_STYLE" ] || [ -z "$LEGACY_STYLE" ]; then
-            echo "::error ::Could not parse sbt outputs for settings"
+            echo "::error ::Could not parse sbt outputs for settings (sbt 1.11 prints bare values)."
             exit 1
           fi
       
