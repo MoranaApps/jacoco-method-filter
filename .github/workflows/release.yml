@@ -54,23 +54,18 @@ jobs:
 
       - name: Test (core + plugin)
         run: |
-          # +clean +test will cross-build if you add crossScalaVersions later
           sbt +clean +test
 
       - name: Optional scripted test (sbt plugin)
         if: ${{ inputs.runScripted == true }}
         run: |
           set -euo pipefail
-      
-          # Get the plugin project’s version (safest to ask the sbtPlugin project directly)
           VER=$(
             sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
               "project sbtPlugin" "show version" \
             | sed -n 's/^\[info\] //p' | tail -n1 | tr -d '\r'
           )
           echo "Detected plugin version: $VER"
-      
-          # Pass the property to the *forked* sbt that scripted launches
           sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
             "project sbtPlugin" \
             "set scriptedBufferLog := false" \
@@ -79,14 +74,10 @@ jobs:
 
       - name: Echo repo structure & key sbt files
         run: |
-          echo "== repo tree =="
-          ls -la
-          echo "== root project/build.properties =="
-          test -f project/build.properties && cat project/build.properties || echo "(missing)"
-          echo "== sbt-plugin/project/build.properties =="
-          test -f sbt-plugin/project/build.properties && cat sbt-plugin/project/build.properties || echo "(missing)"
-          echo "== top of build.sbt =="
-          head -n 200 build.sbt
+          echo "== repo tree ==" && ls -la
+          echo "== root project/build.properties ==" && (test -f project/build.properties && cat project/build.properties || echo "(missing)")
+          echo "== sbt-plugin/project/build.properties ==" && (test -f sbt-plugin/project/build.properties && cat sbt-plugin/project/build.properties || echo "(missing)")
+          echo "== top of build.sbt ==" && head -n 200 build.sbt
 
       - name: Show effective plugin settings (pre-publish)
         run: |
@@ -104,88 +95,48 @@ jobs:
             "inspect tree publishMavenStyle" \
             "inspect tree sbtPluginPublishLegacyMavenStyle" \
             "show packagedArtifacts"
-          echo "== If packagedArtifacts show filenames with _2.12_1.0 in the NAME, it's legacy =="
+          echo "== packagedArtifacts above must have filenames WITHOUT _2.12_1.0 in the basename =="
 
       - name: Assert modern plugin publish settings (pre-publish gate)
         run: |
           set -euo pipefail
-      
           sbt_common_flags="-batch -Dsbt.supershell=false -Dsbt.log.noformat=true"
-      
-          # sbt 1.11 prints just "[info] true" or "[info] false" for `show` outputs.
           PUBLISH_STYLE=$(
             sbt $sbt_common_flags "project sbtPlugin" "show publishMavenStyle" \
-              | sed -n 's/^\[info\] \(true\|false\)$/\1/p' \
-              | tail -n1 \
-              | tr -d '\r'
+              | sed -n 's/^\[info\] \(true\|false\)$/\1/p' | tail -n1 | tr -d '\r'
           )
-      
           LEGACY_STYLE=$(
             sbt $sbt_common_flags "project sbtPlugin" "show sbtPluginPublishLegacyMavenStyle" \
-              | sed -n 's/^\[info\] \(true\|false\)$/\1/p' \
-              | tail -n1 \
-              | tr -d '\r'
+              | sed -n 's/^\[info\] \(true\|false\)$/\1/p' | tail -n1 | tr -d '\r'
           )
-      
           echo "publishMavenStyle=${PUBLISH_STYLE:-<empty>}, sbtPluginPublishLegacyMavenStyle=${LEGACY_STYLE:-<empty>}"
-      
-          if [ -z "${PUBLISH_STYLE}" ] || [ -z "${LEGACY_STYLE}" ]; then
-            echo "::error ::Could not parse sbt outputs for settings (sbt 1.11 prints bare values)."
-            exit 1
-          fi
-      
-          if [ "${PUBLISH_STYLE}" != "true" ] || [ "${LEGACY_STYLE}" != "false" ]; then
+          test -n "$PUBLISH_STYLE" -a -n "$LEGACY_STYLE"
+          if [ "$PUBLISH_STYLE" != "true" ] || [ "$LEGACY_STYLE" != "false" ]; then
             echo "::error ::Invalid settings. Expect publishMavenStyle=true and sbtPluginPublishLegacyMavenStyle=false"
             exit 1
           fi
-      
-      - name: Detect legacy plugin filename style
-        id: detect_legacy
+
+      - name: Assert plugin filenames look modern (no legacy basename)
         run: |
           set -euo pipefail
           OUT=$(sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
             "project sbtPlugin" "show packagedArtifacts")
           echo "$OUT"
           if echo "$OUT" | grep -E 'jacoco-method-filter-sbt_2\.12_1\.0-[0-9]'; then
-            echo "USE_IVY=true"  >> "$GITHUB_ENV"
-            echo "use_ivy=true"  >> "$GITHUB_OUTPUT"
-            echo "Legacy filename detected → will publish plugin to Ivy repo."
-          else
-            echo "USE_IVY=false" >> "$GITHUB_ENV"
-            echo "use_ivy=false" >> "$GITHUB_OUTPUT"
-            echo "Modern filenames detected → will publish plugin to Sonatype."
+            echo "::error ::LEGACY filename detected from packagedArtifacts. Refusing to publish."
+            exit 2
           fi
-      
-      - name: Publish core to Sonatype (Maven Central)
+          echo "OK: packagedArtifacts look modern"
+
+      - name: Publish signed artifacts (core + plugin) to Sonatype
         run: |
           sbt +publishSigned
-        env:
-          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-          PGP_PASSPHRASE:    ${{ secrets.PGP_PASSPHRASE }}
-      
-      - name: Publish plugin to Sonatype (modern filenames)
-        if: ${{ env.USE_IVY != 'true' }}
-        run: |
           sbt "project sbtPlugin" publishSigned
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           PGP_PASSPHRASE:    ${{ secrets.PGP_PASSPHRASE }}
-      
-      - name: Publish plugin to SBT plugin Ivy repo (fallback)
-        if: ${{ env.USE_IVY == 'true' }}
-        run: |
-          set -euo pipefail
-          sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
-            "project sbtPlugin" \
-            'set publishMavenStyle := false' \
-            'set publishTo := Some("sbt-plugin-releases-publish" at "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases")' \
-            'set Compile / packageDoc / publishArtifact := false' \
-            'set Compile / doc / sources := Seq.empty' \
-            'set Global / excludeLintKeys += (Compile / doc / scalacOptions)' \
-            publishSigned
-    
+
       - name: List staged bundle contents (post-publish sanity)
         run: |
           set -eux
@@ -195,67 +146,31 @@ jobs:
             echo "::error ::No staging dir found (publisher didn’t run?)"
             exit 1
           fi
-          echo "== tree staged =="
           (cd "$STAGE_DIR"/.. && find sona-staging -maxdepth 3 -type f | sort)
-          
-          echo "== check filenames for legacy suffix in the BASENAME =="
-          # legacy looks like: jacoco-method-filter-sbt_2.12_1.0-<ver>.pom
-          if (cd "$STAGE_DIR"/.. && find sona-staging -type f -name "jacoco-method-filter-sbt_2.12_1.0-*.pom" | grep .); then
-            echo "::error ::LEGACY filename detected in staged bundle."
-            exit 2
-          else
-            echo "OK: no legacy filenames detected."
-          fi
-          
+
       - name: Upload staged bundle (debug artifact)
-        if: ${{ env.USE_IVY != 'true' }}
-        run: |
-          STAGE_DIR=$(find . -type d -path "*/target/sona-staging" | head -n1)
-          if [ -n "$STAGE_DIR" ]; then
-            echo "Found staging dir: $STAGE_DIR"
-            (cd "$STAGE_DIR"/.. && zip -r staging_bundle.zip sona-staging)
-            mkdir -p artifacts && mv "$STAGE_DIR"/../staging_bundle.zip artifacts/
-          else
-            echo "No staging dir found" && exit 1
-          fi
-        shell: bash
-      
-      - name: Upload artifact (staged bundle)
-        if: ${{ env.USE_IVY != 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: sona-staging-bundle
           path: artifacts/staging_bundle.zip
-          if-no-files-found: error
-      
+          if-no-files-found: warn
+        run: |
+          STAGE_DIR=$(find . -type d -path "*/target/sona-staging" | head -n1)
+          if [ -n "$STAGE_DIR" ]; then
+            (cd "$STAGE_DIR"/.. && zip -r staging_bundle.zip sona-staging)
+            mkdir -p artifacts && mv "$STAGE_DIR"/../staging_bundle.zip artifacts/
+          else
+            echo "No staging dir found"; exit 1
+          fi
+        shell: bash
+
       - name: Release to Central (sonaRelease)
-        if: ${{ inputs.doRelease == 'yes' && env.USE_IVY != 'true' }}
+        if: ${{ inputs.doRelease == 'yes' }}
         run: |
           sbt sonaRelease
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-
-      - name: List staged bundle contents (post-publish sanity)
-        run: |
-          set -eux
-          STAGE_DIR=$(find . -type d -path "*/target/sona-staging" | head -n1)
-          echo "STAGE_DIR=$STAGE_DIR"
-          if [ -z "$STAGE_DIR" ]; then
-            echo "::error ::No staging dir found (publisher didn’t run?)"
-            exit 1
-          fi
-          echo "== tree staged =="
-          (cd "$STAGE_DIR"/.. && find sona-staging -maxdepth 3 -type f | sort)
-
-          echo "== check filenames for legacy suffix in the BASENAME =="
-          # legacy looks like: jacoco-method-filter-sbt_2.12_1.0-<ver>.pom
-          if (cd "$STAGE_DIR"/.. && find sona-staging -type f -name "jacoco-method-filter-sbt_2.12_1.0-*.pom" | grep .); then
-            echo "::error ::LEGACY filename detected in staged bundle."
-            exit 2
-          else
-            echo "OK: no legacy filenames detected."
-          fi
 
       - name: Show last publish tasks (useful if something failed silently)
         if: always()
@@ -264,4 +179,4 @@ jobs:
             "project sbtPlugin" \
             "last publishSigned" \
             "last makePom" \
-            "last packagedArtifacts"          
+            "last packagedArtifacts"
