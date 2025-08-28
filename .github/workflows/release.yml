@@ -1,18 +1,21 @@
 name: Publish / Release (manual)
 
-
 on:
   workflow_dispatch:
     inputs:
       doRelease:
         description: "After publishing, call sonaRelease (finalize on Central)?"
         type: choice
-        options: ["yes", "no"]
+        options: [ "yes", "no" ]
         default: "yes"
       scala213:
         description: "Build for Scala 2.13 (core)"
         type: boolean
         default: true
+      runScripted:
+        description: "Run sbt-plugin scripted test"
+        type: boolean
+        default: false
 
 jobs:
   publish:
@@ -47,90 +50,39 @@ jobs:
       - name: Show sbt & Java
         run: |
           java -version
-          sbt sbtVersion
+          sbt --version
 
       - name: Test (core + plugin)
         run: |
+          # +clean +test will cross-build if you add crossScalaVersions later
           sbt +clean +test
 
-      - name: Echo repo structure & key sbt files
+      - name: Optional scripted test (sbt plugin)
+        if: ${{ inputs.runScripted == 'true' }}
         run: |
-          echo "== repo tree ==" && ls -la
-          echo "== root project/build.properties ==" && (test -f project/build.properties && cat project/build.properties || echo "(missing)")
-          echo "== sbt-plugin/project/build.properties ==" && (test -f sbt-plugin/project/build.properties && cat sbt-plugin/project/build.properties || echo "(missing)")
-          echo "== top of build.sbt ==" && head -n 200 build.sbt
+          # Requires you to have a scripted test like sbt-plugin/src/sbt-test/jmf/basic
+          sbt "project sbtPlugin" "scripted jmf/basic" -Dplugin.version=$(grep -E 'ThisBuild / version\s*:=' build.sbt | sed -E "s/.*:=\"([^\"]+)\".*/\1/")
 
-      - name: Show effective plugin settings (pre-publish)
+      - name: Publish signed artifacts (core + plugin)
         run: |
-          set -eux
-          sbt -v \
-            "project sbtPlugin" \
-            "show name" \
-            "show organization" \
-            "show version" \
-            "show scalaVersion" \
-            "show scalaBinaryVersion" \
-            "show sbtBinaryVersion" \
-            "show publishMavenStyle" \
-            "show sbtPluginPublishLegacyMavenStyle" \
-            "inspect tree publishMavenStyle" \
-            "inspect tree sbtPluginPublishLegacyMavenStyle" \
-            "show packagedArtifacts"
-          echo "== packagedArtifacts above must have filenames WITHOUT _2.12_1.0 in the basename =="
-
-      - name: Show final plugin artifacts (sanity)
-        run: |
-          sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
-            "project sbtPlugin" "show packagedArtifacts"
-
-      - name: Publish signed artifacts (core + plugin) to Sonatype
-        run: |
-          # Core (normal)
           sbt +publishSigned
-      
-          # Plugin: force modern basenames and publish in the SAME sbt run
-          sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
-            "project sbtPlugin" \
-            'set publishMavenStyle := true' \
-            'set sbtPluginPublishLegacyMavenStyle := false' \
-            "set makePom / artifact := (makePom / artifact).value.withName(moduleName.value)" \
-            "set Compile / packageBin / artifact := (Compile / packageBin / artifact).value.withName(moduleName.value)" \
-            "set Compile / packageSrc / artifact := (Compile / packageSrc / artifact).value.withName(moduleName.value)" \
-            "set Compile / packageDoc / artifact := (Compile / packageDoc / artifact).value.withName(moduleName.value)" \
-            publishSigned
+          sbt "project sbtPlugin" publishSigned
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           PGP_PASSPHRASE:    ${{ secrets.PGP_PASSPHRASE }}
 
-      - name: List staged bundle contents (post-publish sanity)
+      - name: Upload staged bundle (debug artifact)
         run: |
-          set -euo pipefail
-          # Try both modern (sonatype-staging) and your old (sona-staging) names
-          STAGE_DIR=$(
-            { find . -type d -path "*/target/sonatype-staging" -o -path "*/target/sona-staging"; } | head -n1
-          )
-          echo "STAGE_DIR=${STAGE_DIR:-<none>}"
-          if [ -z "${STAGE_DIR}" ]; then
-            echo "No local bundle dir found — likely using direct upload (snapshots) or plugin changed mode. Skipping."
-            exit 0
+          STAGE_DIR=$(find . -type d -path "*/target/sona-staging" | head -n1)
+          if [ -n "$STAGE_DIR" ]; then
+            echo "Found staging dir: $STAGE_DIR"
+            (cd "$STAGE_DIR"/.. && zip -r staging_bundle.zip sona-staging)
+            mkdir -p artifacts && mv "$STAGE_DIR"/../staging_bundle.zip artifacts/
+          else
+            echo "No staging dir found" && exit 1
           fi
-          echo "== tree staged =="
-          (cd "$STAGE_DIR"/.. && find "$(basename "$STAGE_DIR")" -maxdepth 3 -type f | sort)
-
-      - name: Zip staged bundle for upload
-        run: |
-          set -euo pipefail
-          STAGE_DIR=$(
-            { find . -type d -path "*/target/sonatype-staging" -o -path "*/target/sona-staging"; } | head -n1
-          )
-          echo "STAGE_DIR=${STAGE_DIR:-<none>}"
-          if [ -z "${STAGE_DIR}" ]; then
-            echo "No local bundle dir found — nothing to upload. Skipping."
-            exit 0
-          fi
-          (cd "$STAGE_DIR"/.. && zip -r staging_bundle.zip "$(basename "$STAGE_DIR")")
-          mkdir -p artifacts && mv "$STAGE_DIR"/../staging_bundle.zip artifacts/
+        shell: bash
 
       - name: Upload artifact (staged bundle)
         uses: actions/upload-artifact@v4
@@ -139,73 +91,10 @@ jobs:
           path: artifacts/staging_bundle.zip
           if-no-files-found: error
 
-      - name: Show sonatype settings
-        run: |
-          sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
-            'show ThisBuild / sonatypeCredentialHost' \
-            'show ThisBuild / sonatypeRepository' \
-            'show ThisBuild / sonatypeProfileName'
-
-      - name: Publish signed artifacts (core + plugin) to Sonatype (s01)
-        run: |
-          sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
-            "set ThisBuild / sonatypeCredentialHost := \"s01.oss.sonatype.org\"" \
-            "set ThisBuild / sonatypeRepository     := \"https://s01.oss.sonatype.org/service/local\"" \
-            "+publishSigned" \
-            "project sbtPlugin" \
-            'set publishMavenStyle := true' \
-            'set sbtPluginPublishLegacyMavenStyle := false' \
-            "set makePom / artifact              := (makePom / artifact).value.withName(moduleName.value)" \
-            "set Compile / packageBin / artifact := (Compile / packageBin / artifact).value.withName(moduleName.value)" \
-            "set Compile / packageSrc / artifact := (Compile / packageSrc / artifact).value.withName(moduleName.value)" \
-            "set Compile / packageDoc / artifact := (Compile / packageDoc / artifact).value.withName(moduleName.value)" \
-            publishSigned
-        env:
-          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-          PGP_PASSPHRASE:    ${{ secrets.PGP_PASSPHRASE }}
-      
       - name: Release to Central (sonaRelease)
         if: ${{ inputs.doRelease == 'yes' }}
         run: |
-          sbt sonatypeBundleRelease
+          sbt sonaRelease
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-
-      - name: Verify on Maven Central (plugin & core)
-        run: |
-          set -euo pipefail
-          VER=$(
-            sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
-              "show ThisBuild / version" | sed -n 's/^\[info\] //p' | tail -n1
-          )
-          echo "version=$VER"
-      
-          base="https://repo1.maven.org/maven2/io/github/moranaapps"
-          core="$base/jacoco-method-filter-core_2.13/$VER/jacoco-method-filter-core_2.13-$VER.pom"
-          plug="$base/jacoco-method-filter-sbt_2.12_1.0/$VER/jacoco-method-filter-sbt-$VER.pom"
-      
-          echo "Core  : $core"
-          echo "Plugin: $plug"
-      
-          echo "== HEAD core =="
-          curl -sSfI "$core" | head -n1
-          echo "== HEAD plugin =="
-          curl -sSfI "$plug" | head -n1
-
-      - name: Show Sonatype settings actually in use
-        run: |
-          sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
-            'show ThisBuild / sonatypeCredentialHost' \
-            'show ThisBuild / sonatypeRepository' \
-            'show ThisBuild / sonatypeProfileName'
-
-      - name: Show last publish tasks (useful if something failed silently)
-        if: always()
-        run: |
-          sbt -Dsbt.log.noformat=true \
-            "project sbtPlugin" \
-            "last publishSigned" \
-            "last makePom" \
-            "last packagedArtifacts"

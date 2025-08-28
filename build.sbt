@@ -1,13 +1,12 @@
-import xerial.sbt.Sonatype.autoImport.*
+import scala.collection.immutable.Seq
 
 ThisBuild / scalaVersion := "2.13.14"
 ThisBuild / organization := "io.github.moranaapps"
 ThisBuild / publishMavenStyle := true
 ThisBuild / version      := "0.1.3"
-ThisBuild / versionScheme := Some("early-semver")
 
+// sbt plugin must use the modern style
 ThisBuild / sbtPluginPublishLegacyMavenStyle := false
-
 
 // --- core tool (2.13)
 lazy val rewriterCore = (project in file("rewriter-core"))
@@ -27,15 +26,7 @@ lazy val sbtPlugin = (project in file("sbt-plugin"))
   .enablePlugins(SbtPlugin)
   .settings(
     name := "jacoco-method-filter-sbt",
-    organization := "io.github.moranaapps",
-
-    // plugin must be on 2.12 for sbt 1.x
     scalaVersion := "2.12.19",
-
-    publishMavenStyle := true,
-    sbtPluginPublishLegacyMavenStyle := false,
-    moduleName := name.value,
-
     libraryDependencies += "org.jacoco" % "org.jacoco.cli" % "0.8.12" classifier "nodeps"
   )
 
@@ -48,10 +39,9 @@ lazy val root = (project in file("."))
   )
 
 // CPP target config
-// For releases (bundle) and snapshots:
 ThisBuild / publishTo := {
-  if (isSnapshot.value) sonatypePublishTo.value
-  else                  sonatypePublishToBundle.value
+  val snapshots = "https://central.sonatype.com/repository/maven-snapshots/"
+  if (isSnapshot.value) Some("central-snapshots" at snapshots) else localStaging.value
 }
 
 // Required metadata
