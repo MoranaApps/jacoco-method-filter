@@ -147,13 +147,10 @@ jobs:
 
       - name: Publish signed artifacts (core + plugin) to Sonatype (s01)
         run: |
-          # Core (normal)
-          sbt +publishSigned
-      
-          # Plugin: force modern basenames AND use s01 host in the SAME sbt run
           sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
             "set ThisBuild / sonatypeCredentialHost := \"s01.oss.sonatype.org\"" \
             "set ThisBuild / sonatypeRepository     := \"https://s01.oss.sonatype.org/service/local\"" \
+            "+publishSigned" \
             "project sbtPlugin" \
             'set publishMavenStyle := true' \
             'set sbtPluginPublishLegacyMavenStyle := false' \
@@ -166,6 +163,56 @@ jobs:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           PGP_PASSPHRASE:    ${{ secrets.PGP_PASSPHRASE }}
+      
+      - name: Release to Central (sonatypeBundleRelease)
+        if: ${{ inputs.doRelease == 'yes' }}
+        run: |
+          set -euo pipefail
+          IS_SNAPSHOT=$(
+            sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
+              "show ThisBuild / isSnapshot" | sed -n 's/^\[info\] //p' | tail -n1
+          )
+          echo "isSnapshot=$IS_SNAPSHOT"
+          if [ "$IS_SNAPSHOT" = "true" ]; then
+            echo "Snapshot build — nothing to release."
+            exit 0
+          fi
+      
+          sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
+            "set ThisBuild / sonatypeCredentialHost := \"s01.oss.sonatype.org\"" \
+            "set ThisBuild / sonatypeRepository     := \"https://s01.oss.sonatype.org/service/local\"" \
+            sonatypeBundleRelease
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+
+      - name: Verify on Maven Central (plugin & core)
+        run: |
+          set -euo pipefail
+          VER=$(
+            sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
+              "show ThisBuild / version" | sed -n 's/^\[info\] //p' | tail -n1
+          )
+          echo "version=$VER"
+      
+          base="https://repo1.maven.org/maven2/io/github/moranaapps"
+          core="$base/jacoco-method-filter-core_2.13/$VER/jacoco-method-filter-core_2.13-$VER.pom"
+          plug="$base/jacoco-method-filter-sbt_2.12_1.0/$VER/jacoco-method-filter-sbt-$VER.pom"
+      
+          echo "Core  : $core"
+          echo "Plugin: $plug"
+      
+          echo "== HEAD core =="
+          curl -sSfI "$core" | head -n1
+          echo "== HEAD plugin =="
+          curl -sSfI "$plug" | head -n1
+
+      - name: Show Sonatype settings actually in use
+        run: |
+          sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
+            'show ThisBuild / sonatypeCredentialHost' \
+            'show ThisBuild / sonatypeRepository' \
+            'show ThisBuild / sonatypeProfileName'
 
       - name: Show last publish tasks (useful if something failed silently)
         if: always()
