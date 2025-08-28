@@ -60,8 +60,16 @@ jobs:
       - name: Optional scripted test (sbt plugin)
         if: ${{ inputs.runScripted == true }}
         run: |
-          # Requires you to have a scripted test like sbt-plugin/src/sbt-test/jmf/basic
-          sbt "project sbtPlugin" "scripted jmf/basic" -Dplugin.version=$(grep -E 'ThisBuild / version\s*:=' build.sbt | sed -E "s/.*:=\"([^\"]+)\".*/\1/")
+          set -euo pipefail
+          # Ask sbt for the version (plain), last token of the info line
+          VER=$(sbt -Dsbt.supershell=false -Dsbt.log.noformat=true "show ThisBuild / version" \
+                | awk '/^\[info\]/ {print $2}' | tail -n1)
+          echo "Detected plugin version: $VER"
+      
+          # Pass system prop BEFORE commands
+          sbt -Dsbt.supershell=false -Dplugin.version="$VER" \
+              "project sbtPlugin" \
+              "scripted jmf/basic"
 
       - name: Echo repo structure & key sbt files
         run: |
