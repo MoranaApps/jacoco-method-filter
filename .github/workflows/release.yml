@@ -138,24 +138,34 @@ jobs:
           path: artifacts/staging_bundle.zip
           if-no-files-found: error
 
-      - name: Release to Central (sonatypeBundleRelease)
-        if: ${{ inputs.doRelease == 'yes' }}
+      - name: Show sonatype settings
         run: |
-          set -euo pipefail
-          # Skip release for snapshots
-          IS_SNAPSHOT=$(
-            sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
-              "show ThisBuild / isSnapshot" | sed -n 's/^\[info\] //p' | tail -n1
-          )
-          echo "isSnapshot=$IS_SNAPSHOT"
-          if [ "$IS_SNAPSHOT" = "true" ]; then
-            echo "Snapshot build — nothing to release."
-            exit 0
-          fi
-          sbt sonatypeBundleRelease
+          sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
+            'show ThisBuild / sonatypeCredentialHost' \
+            'show ThisBuild / sonatypeRepository' \
+            'show ThisBuild / sonatypeProfileName'
+
+      - name: Publish signed artifacts (core + plugin) to Sonatype (s01)
+        run: |
+          # Core (normal)
+          sbt +publishSigned
+      
+          # Plugin: force modern basenames AND use s01 host in the SAME sbt run
+          sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
+            "set ThisBuild / sonatypeCredentialHost := \"s01.oss.sonatype.org\"" \
+            "set ThisBuild / sonatypeRepository     := \"https://s01.oss.sonatype.org/service/local\"" \
+            "project sbtPlugin" \
+            'set publishMavenStyle := true' \
+            'set sbtPluginPublishLegacyMavenStyle := false' \
+            "set makePom / artifact              := (makePom / artifact).value.withName(moduleName.value)" \
+            "set Compile / packageBin / artifact := (Compile / packageBin / artifact).value.withName(moduleName.value)" \
+            "set Compile / packageSrc / artifact := (Compile / packageSrc / artifact).value.withName(moduleName.value)" \
+            "set Compile / packageDoc / artifact := (Compile / packageDoc / artifact).value.withName(moduleName.value)" \
+            publishSigned
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          PGP_PASSPHRASE:    ${{ secrets.PGP_PASSPHRASE }}
 
       - name: Show last publish tasks (useful if something failed silently)
         if: always()
