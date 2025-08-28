@@ -67,7 +67,7 @@ jobs:
           )
           echo "Detected plugin version: $VER"
           sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
-            "project sbtPlugin" \
+            "project sbtPlugin" I am running a few minutes late; my previous meeting is running over.
             "set scriptedBufferLog := false" \
             "set scriptedLaunchOpts += s\"-Dplugin.version=$VER\"" \
             "scripted jmf/basic"
@@ -115,6 +115,19 @@ jobs:
             echo "::error ::Invalid settings. Expect publishMavenStyle=true and sbtPluginPublishLegacyMavenStyle=false"
             exit 1
           fi
+
+      - name: Force modern basenames for plugin artifacts (CI override)
+        run: |
+          set -euo pipefail
+          sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
+            "project sbtPlugin" \
+            'set publishMavenStyle := true' \
+            'set sbtPluginPublishLegacyMavenStyle := false' \
+            "set makePom / artifact := (makePom / artifact).value.withName(moduleName.value)" \
+            "set Compile / packageBin / artifact := (Compile / packageBin / artifact).value.withName(moduleName.value)" \
+            "set Compile / packageSrc / artifact := (Compile / packageSrc / artifact).value.withName(moduleName.value)" \
+            "set Compile / packageDoc / artifact := (Compile / packageDoc / artifact).value.withName(moduleName.value)" \
+            "show packagedArtifacts"
 
       - name: Assert plugin filenames look modern (no legacy basename)
         run: |
