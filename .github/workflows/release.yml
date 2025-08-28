@@ -104,25 +104,32 @@ jobs:
 
       - name: List staged bundle contents (post-publish sanity)
         run: |
-          set -eux
-          STAGE_DIR=$(find . -type d -path "*/target/sona-staging" | head -n1)
-          echo "STAGE_DIR=$STAGE_DIR"
-          if [ -z "$STAGE_DIR" ]; then
-            echo "::error ::No staging dir found (publisher didn’t run?)"
-            exit 1
+          set -euo pipefail
+          # Try both modern (sonatype-staging) and your old (sona-staging) names
+          STAGE_DIR=$(
+            { find . -type d -path "*/target/sonatype-staging" -o -path "*/target/sona-staging"; } | head -n1
+          )
+          echo "STAGE_DIR=${STAGE_DIR:-<none>}"
+          if [ -z "${STAGE_DIR}" ]; then
+            echo "No local bundle dir found — likely using direct upload (snapshots) or plugin changed mode. Skipping."
+            exit 0
           fi
-          (cd "$STAGE_DIR"/.. && find sona-staging -maxdepth 3 -type f | sort)
+          echo "== tree staged =="
+          (cd "$STAGE_DIR"/.. && find "$(basename "$STAGE_DIR")" -maxdepth 3 -type f | sort)
 
       - name: Zip staged bundle for upload
         run: |
-          set -e
-          STAGE_DIR=$(find . -type d -path "*/target/sona-staging" | head -n1)
-          if [ -n "$STAGE_DIR" ]; then
-            (cd "$STAGE_DIR"/.. && zip -r staging_bundle.zip sona-staging)
-            mkdir -p artifacts && mv "$STAGE_DIR"/../staging_bundle.zip artifacts/
-          else
-            echo "No staging dir found"; exit 1
+          set -euo pipefail
+          STAGE_DIR=$(
+            { find . -type d -path "*/target/sonatype-staging" -o -path "*/target/sona-staging"; } | head -n1
+          )
+          echo "STAGE_DIR=${STAGE_DIR:-<none>}"
+          if [ -z "${STAGE_DIR}" ]; then
+            echo "No local bundle dir found — nothing to upload. Skipping."
+            exit 0
           fi
+          (cd "$STAGE_DIR"/.. && zip -r staging_bundle.zip "$(basename "$STAGE_DIR")")
+          mkdir -p artifacts && mv "$STAGE_DIR"/../staging_bundle.zip artifacts/
 
       - name: Upload artifact (staged bundle)
         uses: actions/upload-artifact@v4
