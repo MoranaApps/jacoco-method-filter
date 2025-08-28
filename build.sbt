@@ -1,7 +1,10 @@
+import xerial.sbt.Sonatype.autoImport.*
+
 ThisBuild / scalaVersion := "2.13.14"
 ThisBuild / organization := "io.github.moranaapps"
 ThisBuild / publishMavenStyle := true
 ThisBuild / version      := "0.1.3"
+ThisBuild / versionScheme := Some("early-semver")
 
 ThisBuild / sbtPluginPublishLegacyMavenStyle := false
 
@@ -44,9 +47,10 @@ lazy val root = (project in file("."))
   )
 
 // CPP target config
+// For releases (bundle) and snapshots:
 ThisBuild / publishTo := {
-  val snapshots = "https://central.sonatype.com/repository/maven-snapshots/"
-  if (isSnapshot.value) Some("central-snapshots" at snapshots) else localStaging.value
+  if (isSnapshot.value) sonatypePublishTo.value
+  else                  sonatypePublishToBundle.value
 }
 
 // Required metadata
