@@ -6,7 +6,7 @@ on:
       doRelease:
         description: "After publishing, call sonaRelease (finalize on Central)?"
         type: choice
-        options: [ "yes", "no" ]
+        options: ["yes", "no"]
         default: "yes"
       scala213:
         description: "Build for Scala 2.13 (core)"
@@ -148,13 +148,9 @@ jobs:
           fi
           (cd "$STAGE_DIR"/.. && find sona-staging -maxdepth 3 -type f | sort)
 
-      - name: Upload staged bundle (debug artifact)
-        uses: actions/upload-artifact@v4
-        with:
-          name: sona-staging-bundle
-          path: artifacts/staging_bundle.zip
-          if-no-files-found: warn
+      - name: Zip staged bundle for upload
         run: |
+          set -e
           STAGE_DIR=$(find . -type d -path "*/target/sona-staging" | head -n1)
           if [ -n "$STAGE_DIR" ]; then
             (cd "$STAGE_DIR"/.. && zip -r staging_bundle.zip sona-staging)
@@ -162,7 +158,13 @@ jobs:
           else
             echo "No staging dir found"; exit 1
           fi
-        shell: bash
+
+      - name: Upload artifact (staged bundle)
+        uses: actions/upload-artifact@v4
+        with:
+          name: sona-staging-bundle
+          path: artifacts/staging_bundle.zip
+          if-no-files-found: error
 
       - name: Release to Central (sonaRelease)
         if: ${{ inputs.doRelease == 'yes' }}
