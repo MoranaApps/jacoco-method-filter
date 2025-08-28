@@ -106,13 +106,27 @@ jobs:
           OUT=$(
             sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
               "project sbtPlugin" \
-              'eval println("PUBLISH_STYLE="+publishMavenStyle.value)' \
-              'eval println("LEGACY_STYLE="+sbtPluginPublishLegacyMavenStyle.value)'
+              "show publishMavenStyle" \
+              "show sbtPluginPublishLegacyMavenStyle"
           )
           echo "$OUT"
-          PUBLISH_STYLE=$(printf "%s\n" "$OUT" | sed -n 's/^PUBLISH_STYLE=//p' | tail -n1 | tr -d "\r")
-          LEGACY_STYLE=$(printf "%s\n" "$OUT" | sed -n 's/^LEGACY_STYLE=//p' | tail -n1 | tr -d "\r")
+      
+          # Extract just "true"/"false" from the [info] lines
+          PUBLISH_STYLE=$(printf "%s\n" "$OUT" \
+            | sed -n 's/^\[info\][[:space:]]*publishMavenStyle[[:space:]]*=[[:space:]]*\(true\|false\).*$/\1/p' \
+            | tail -n1 | tr -d '\r')
+      
+          LEGACY_STYLE=$(printf "%s\n" "$OUT" \
+            | sed -n 's/^\[info\][[:space:]]*sbtPluginPublishLegacyMavenStyle[[:space:]]*=[[:space:]]*\(true\|false\).*$/\1/p' \
+            | tail -n1 | tr -d '\r')
+      
           echo "publishMavenStyle=$PUBLISH_STYLE, sbtPluginPublishLegacyMavenStyle=$LEGACY_STYLE"
+      
+          if [ -z "$PUBLISH_STYLE" ] || [ -z "$LEGACY_STYLE" ]; then
+            echo "::error ::Could not parse sbt outputs for settings"
+            exit 1
+          fi
+      
           if [ "$PUBLISH_STYLE" != "true" ] || [ "$LEGACY_STYLE" != "false" ]; then
             echo "::error ::Invalid settings. Expect publishMavenStyle=true and sbtPluginPublishLegacyMavenStyle=false"
             exit 1
