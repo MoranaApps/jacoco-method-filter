@@ -61,15 +61,21 @@ jobs:
         if: ${{ inputs.runScripted == true }}
         run: |
           set -euo pipefail
-          # Ask sbt for the version (plain), last token of the info line
-          VER=$(sbt -Dsbt.supershell=false -Dsbt.log.noformat=true "show ThisBuild / version" \
-                | awk '/^\[info\]/ {print $2}' | tail -n1)
+      
+          # Get the plugin project’s version (safest to ask the sbtPlugin project directly)
+          VER=$(
+            sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
+              "project sbtPlugin" "show version" \
+            | sed -n 's/^\[info\] //p' | tail -n1 | tr -d '\r'
+          )
           echo "Detected plugin version: $VER"
       
-          # Pass system prop BEFORE commands
-          sbt -Dsbt.supershell=false -Dplugin.version="$VER" I am running a few minutes late; my previous meeting is running over.
-              "project sbtPlugin" \
-              "scripted jmf/basic"
+          # Pass the property to the *forked* sbt that scripted launches
+          sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
+            "project sbtPlugin" \
+            "set scriptedBufferLog := false" \
+            "set scriptedLaunchOpts += s\"-Dplugin.version=$VER\"" \
+            "scripted jmf/basic"
 
       - name: Echo repo structure & key sbt files
         run: |
