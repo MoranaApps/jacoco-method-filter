@@ -67,7 +67,7 @@ jobs:
           echo "Detected plugin version: $VER"
       
           # Pass system prop BEFORE commands
-          sbt -Dsbt.supershell=false -Dplugin.version="$VER" \
+          sbt -Dsbt.supershell=false -Dplugin.version="$VER" I am running a few minutes late; my previous meeting is running over.
               "project sbtPlugin" \
               "scripted jmf/basic"
 
@@ -133,28 +133,51 @@ jobs:
             exit 1
           fi
       
-      - name: Assert filenames from packagedArtifacts look modern
+      - name: Detect legacy plugin filename style
+        id: detect_legacy
         run: |
           set -euo pipefail
           OUT=$(sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
             "project sbtPlugin" "show packagedArtifacts")
           echo "$OUT"
-          # Fail if any basename contains the cross suffix
           if echo "$OUT" | grep -E 'jacoco-method-filter-sbt_2\.12_1\.0-[0-9]'; then
-            echo "::error ::LEGACY filename detected from packagedArtifacts"
-            exit 2
+            echo "USE_IVY=true"  >> "$GITHUB_ENV"
+            echo "use_ivy=true"  >> "$GITHUB_OUTPUT"
+            echo "Legacy filename detected → will publish plugin to Ivy repo."
+          else
+            echo "USE_IVY=false" >> "$GITHUB_ENV"
+            echo "use_ivy=false" >> "$GITHUB_OUTPUT"
+            echo "Modern filenames detected → will publish plugin to Sonatype."
           fi
-          echo "OK: packagedArtifacts look modern"
       
-      - name: Publish signed artifacts (core + plugin)
+      - name: Publish core to Sonatype (Maven Central)
         run: |
           sbt +publishSigned
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          PGP_PASSPHRASE:    ${{ secrets.PGP_PASSPHRASE }}
+      
+      - name: Publish plugin to Sonatype (modern filenames)
+        if: ${{ env.USE_IVY != 'true' }}
+        run: |
           sbt "project sbtPlugin" publishSigned
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           PGP_PASSPHRASE:    ${{ secrets.PGP_PASSPHRASE }}
-
+      
+      - name: Publish plugin to SBT plugin Ivy repo (fallback)
+        if: ${{ env.USE_IVY == 'true' }}
+        run: |
+          sbt -Dsbt.supershell=false -Dsbt.log.noformat=true \
+            "project sbtPlugin" \
+            'set publishMavenStyle := false' \
+            'set publishTo := Some("sbt-plugin-releases" at "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases")' \
+            publishSigned
+        env:
+          PGP_PASSPHRASE:    ${{ secrets.PGP_PASSPHRASE }}
+    
       - name: List staged bundle contents (post-publish sanity)
         run: |
           set -eux
@@ -177,6 +200,7 @@ jobs:
           fi
           
       - name: Upload staged bundle (debug artifact)
+        if: ${{ env.USE_IVY != 'true' }}
         run: |
           STAGE_DIR=$(find . -type d -path "*/target/sona-staging" | head -n1)
           if [ -n "$STAGE_DIR" ]; then
@@ -187,16 +211,17 @@ jobs:
             echo "No staging dir found" && exit 1
           fi
         shell: bash
-
+      
       - name: Upload artifact (staged bundle)
+        if: ${{ env.USE_IVY != 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: sona-staging-bundle
           path: artifacts/staging_bundle.zip
           if-no-files-found: error
-
+      
       - name: Release to Central (sonaRelease)
-        if: ${{ inputs.doRelease == 'yes' }}
+        if: ${{ inputs.doRelease == 'yes' && env.USE_IVY != 'true' }}
         run: |
           sbt sonaRelease
         env:
