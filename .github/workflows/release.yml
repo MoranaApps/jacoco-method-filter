@@ -162,7 +162,7 @@ jobs:
           if-no-files-found: error
 
       - name: Release to Central (sonaRelease)
-        if: ${{ inputs.doRelease == yes }}
+        if: ${{ inputs.doRelease == 'yes' }}
         run: |
           sbt sonaRelease
         env:
