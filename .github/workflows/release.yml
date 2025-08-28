@@ -106,30 +106,29 @@ jobs:
       
           sbt_common_flags="-batch -Dsbt.supershell=false -Dsbt.log.noformat=true"
       
+          # sbt 1.11 prints just "[info] true" or "[info] false" for `show` outputs.
           PUBLISH_STYLE=$(
             sbt $sbt_common_flags "project sbtPlugin" "show publishMavenStyle" \
-            | grep -E '^\[info\] (true|false)$' \
-            | awk '{print $2}' \
-            | tail -n1 \
-            | tr -d '\r'
+              | sed -n 's/^\[info\] \(true\|false\)$/\1/p' \
+              | tail -n1 \
+              | tr -d '\r'
           )
       
-          LEGACY_STYLE$(
+          LEGACY_STYLE=$(
             sbt $sbt_common_flags "project sbtPlugin" "show sbtPluginPublishLegacyMavenStyle" \
-            | grep -E '^\[info\] (true|false)$' \
-            | awk '{print $2}' \
-            | tail -n1 \
-            | tr -d '\r'
+              | sed -n 's/^\[info\] \(true\|false\)$/\1/p' \
+              | tail -n1 \
+              | tr -d '\r'
           )
       
-          echo "publishMavenStyle=$PUBLISH_STYLE, sbtPluginPublishLegacyMavenStyle=$LEGACY_STYLE"
+          echo "publishMavenStyle=${PUBLISH_STYLE:-<empty>}, sbtPluginPublishLegacyMavenStyle=${LEGACY_STYLE:-<empty>}"
       
-          if [ -z "$PUBLISH_STYLE" ] || [ -z "$LEGACY_STYLE" ]; then
+          if [ -z "${PUBLISH_STYLE}" ] || [ -z "${LEGACY_STYLE}" ]; then
             echo "::error ::Could not parse sbt outputs for settings (sbt 1.11 prints bare values)."
             exit 1
           fi
       
-          if [ "$PUBLISH_STYLE" != "true" ] || [ "$LEGACY_STYLE" != "false" ]; then
+          if [ "${PUBLISH_STYLE}" != "true" ] || [ "${LEGACY_STYLE}" != "false" ]; then
             echo "::error ::Invalid settings. Expect publishMavenStyle=true and sbtPluginPublishLegacyMavenStyle=false"
             exit 1
           fi
