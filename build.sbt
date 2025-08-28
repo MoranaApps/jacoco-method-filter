@@ -1,7 +1,7 @@
 ThisBuild / scalaVersion := "2.13.14"
 ThisBuild / organization := "io.github.moranaapps"
 ThisBuild / publishMavenStyle := true
-ThisBuild / version      := "0.1.2"
+ThisBuild / version      := "0.1.3"
 
 ThisBuild / sbtPluginPublishLegacyMavenStyle := false
 
