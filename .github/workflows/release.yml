@@ -58,11 +58,60 @@ jobs:
           sbt +clean +test
 
       - name: Optional scripted test (sbt plugin)
-        if: ${{ inputs.runScripted == 'true' }}
+        if: ${{ inputs.runScripted == true }}
         run: |
           # Requires you to have a scripted test like sbt-plugin/src/sbt-test/jmf/basic
           sbt "project sbtPlugin" "scripted jmf/basic" -Dplugin.version=$(grep -E 'ThisBuild / version\s*:=' build.sbt | sed -E "s/.*:=\"([^\"]+)\".*/\1/")
 
+      - name: Echo repo structure & key sbt files
+        run: |
+          echo "== repo tree =="
+          ls -la
+          echo "== root project/build.properties =="
+          test -f project/build.properties && cat project/build.properties || echo "(missing)"
+          echo "== sbt-plugin/project/build.properties =="
+          test -f sbt-plugin/project/build.properties && cat sbt-plugin/project/build.properties || echo "(missing)"
+          echo "== top of build.sbt =="
+          head -n 200 build.sbt
+
+      - name: Show effective plugin settings (pre-publish)
+        run: |
+          set -eux
+          sbt -v \
+            "project sbtPlugin" \
+            "show name" \
+            "show organization" \
+            "show version" \
+            "show scalaVersion" \
+            "show scalaBinaryVersion" \
+            "show sbtBinaryVersion" \
+            "show publishMavenStyle" \
+            "show sbtPluginPublishLegacyMavenStyle" \
+            "inspect tree publishMavenStyle" \
+            "inspect tree sbtPluginPublishLegacyMavenStyle" \
+            "show packagedArtifacts"
+          echo "== If packagedArtifacts show filenames with _2.12_1.0 in the NAME, it's legacy =="
+
+      - name: Assert modern plugin publish settings (pre-publish gate)
+        run: |
+          set -e
+          PUBLISH_STYLE=$(sbt "project sbtPlugin" "show publishMavenStyle" | tail -n1 | awk '{print $2}')
+          LEGACY_STYLE=$(sbt "project sbtPlugin" "show sbtPluginPublishLegacyMavenStyle" | tail -n1 | awk '{print $2}')
+          echo "publishMavenStyle=$PUBLISH_STYLE, sbtPluginPublishLegacyMavenStyle=$LEGACY_STYLE"
+          if [ "$PUBLISH_STYLE" != "true" ] || [ "$LEGACY_STYLE" != "false" ]; then
+            echo "::error ::Invalid settings. Expect publishMavenStyle=true and sbtPluginPublishLegacyMavenStyle=false"
+            exit 1
+          fi
+      
+      - name: Assert filenames from packagedArtifacts look modern
+        run: |
+          set -eux
+          OUT=$(sbt -Dsbt.log.noformat=true "project sbtPlugin" "show packagedArtifacts")
+          echo "$OUT"
+          echo "$OUT" | grep -E "jacoco-method-filter-sbt_2\.12_1\.0-[0-9].*\.pom" && \
+            { echo "::error ::LEGACY filename detected from packagedArtifacts"; exit 2; } || \
+            echo "OK: packagedArtifacts look modern"
+      
       - name: Publish signed artifacts (core + plugin)
         run: |
           sbt +publishSigned
@@ -72,6 +121,27 @@ jobs:
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           PGP_PASSPHRASE:    ${{ secrets.PGP_PASSPHRASE }}
 
+      - name: List staged bundle contents (post-publish sanity)
+        run: |
+          set -eux
+          STAGE_DIR=$(find . -type d -path "*/target/sona-staging" | head -n1)
+          echo "STAGE_DIR=$STAGE_DIR"
+          if [ -z "$STAGE_DIR" ]; then
+            echo "::error ::No staging dir found (publisher didn’t run?)"
+            exit 1
+          fi
+          echo "== tree staged =="
+          (cd "$STAGE_DIR"/.. && find sona-staging -maxdepth 3 -type f | sort)
+          
+          echo "== check filenames for legacy suffix in the BASENAME =="
+          # legacy looks like: jacoco-method-filter-sbt_2.12_1.0-<ver>.pom
+          if (cd "$STAGE_DIR"/.. && find sona-staging -type f -name "jacoco-method-filter-sbt_2.12_1.0-*.pom" | grep .); then
+            echo "::error ::LEGACY filename detected in staged bundle."
+            exit 2
+          else
+            echo "OK: no legacy filenames detected."
+          fi
+          
       - name: Upload staged bundle (debug artifact)
         run: |
           STAGE_DIR=$(find . -type d -path "*/target/sona-staging" | head -n1)
@@ -92,9 +162,39 @@ jobs:
           if-no-files-found: error
 
       - name: Release to Central (sonaRelease)
-        if: ${{ inputs.doRelease == 'yes' }}
+        if: ${{ inputs.doRelease == yes }}
         run: |
           sbt sonaRelease
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+
+      - name: List staged bundle contents (post-publish sanity)
+        run: |
+          set -eux
+          STAGE_DIR=$(find . -type d -path "*/target/sona-staging" | head -n1)
+          echo "STAGE_DIR=$STAGE_DIR"
+          if [ -z "$STAGE_DIR" ]; then
+            echo "::error ::No staging dir found (publisher didn’t run?)"
+            exit 1
+          fi
+          echo "== tree staged =="
+          (cd "$STAGE_DIR"/.. && find sona-staging -maxdepth 3 -type f | sort)
+
+          echo "== check filenames for legacy suffix in the BASENAME =="
+          # legacy looks like: jacoco-method-filter-sbt_2.12_1.0-<ver>.pom
+          if (cd "$STAGE_DIR"/.. && find sona-staging -type f -name "jacoco-method-filter-sbt_2.12_1.0-*.pom" | grep .); then
+            echo "::error ::LEGACY filename detected in staged bundle."
+            exit 2
+          else
+            echo "OK: no legacy filenames detected."
+          fi
+
+      - name: Show last publish tasks (useful if something failed silently)
+        if: always()
+        run: |
+          sbt -Dsbt.log.noformat=true \
+            "project sbtPlugin" \
+            "last publishSigned" \
+            "last makePom" \
+            "last packagedArtifacts"          
