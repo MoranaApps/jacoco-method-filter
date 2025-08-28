@@ -141,6 +141,11 @@ jobs:
           fi
           echo "OK: packagedArtifacts look modern"
 
+      - name: Show final plugin artifacts (sanity)
+        run: |
+          sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
+            "project sbtPlugin" "show packagedArtifacts"
+
       - name: Publish signed artifacts (core + plugin) to Sonatype
         run: |
           sbt +publishSigned
