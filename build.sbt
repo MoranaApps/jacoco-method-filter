@@ -8,6 +8,7 @@ ThisBuild / versionScheme := Some("early-semver")
 
 ThisBuild / sbtPluginPublishLegacyMavenStyle := false
 
+
 // --- core tool (2.13)
 lazy val rewriterCore = (project in file("rewriter-core"))
   .settings(
