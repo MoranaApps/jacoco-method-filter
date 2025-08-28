@@ -176,13 +176,15 @@ jobs:
       - name: Publish plugin to SBT plugin Ivy repo (fallback)
         if: ${{ env.USE_IVY == 'true' }}
         run: |
-          sbt -Dsbt.supershell=false -Dsbt.log.noformat=true \
+          set -euo pipefail
+          sbt -batch -Dsbt.supershell=false -Dsbt.log.noformat=true \
             "project sbtPlugin" \
             'set publishMavenStyle := false' \
-            'set publishTo := Some("sbt-plugin-releases" at "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases")' \
+            'set publishTo := Some("sbt-plugin-releases-publish" at "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases")' \
+            'set Compile / packageDoc / publishArtifact := false' \
+            'set Compile / doc / sources := Seq.empty' \
+            'set Global / excludeLintKeys += (Compile / doc / scalacOptions)' \
             publishSigned
-        env:
-          PGP_PASSPHRASE:    ${{ secrets.PGP_PASSPHRASE }}
     
       - name: List staged bundle contents (post-publish sanity)
         run: |
