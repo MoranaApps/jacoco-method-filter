@@ -25,35 +25,10 @@ lazy val rewriterCore = (project in file("rewriter-core"))
     Compile / mainClass := Some("io.moranaapps.jacocomethodfilter.CoverageRewriter")
   )
 
-// --- sbt plugin (2.12 / sbt 1.x)
-lazy val sbtPlugin = (project in file("sbt-plugin"))
-  .enablePlugins(SbtPlugin)
-  .settings(
-    name := "jacoco-method-filter-sbt",
-    scalaVersion := "2.12.19",
-    sbtPluginPublishLegacyMavenStyle := false, // explicit at project level
-    libraryDependencies += "org.jacoco" % "org.jacoco.cli" % "0.8.12" classifier "nodeps"
-  )
-
 // --- aggregator only
 lazy val root = (project in file("."))
-  .aggregate(rewriterCore, sbtPlugin)
+  .aggregate(rewriterCore)
   .settings(
     name := "jacoco-method-filter",
     publish / skip := true
   )
-
-// CPP target config
-// Required metadata
-ThisBuild / homepage := Some(url("https://github.com/MoranaApps/jacoco-method-filter"))
-ThisBuild / licenses := Seq("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0"))
-ThisBuild / scmInfo := Some(
-  ScmInfo(
-    url("https://github.com/MoranaApps/jacoco-method-filter"),
-    "scm:git:git@github.com:MoranaApps/jacoco-method-filter.git"
-  )
-)
-ThisBuild / developers := List(
-  Developer("moranaapps", "MoranaApps", "miroslavpojer@seznam.cz", url("https://github.com/MoranaApps"))
-)
-ThisBuild / Compile / doc / scalacOptions ++= Seq("-no-link-warnings")
