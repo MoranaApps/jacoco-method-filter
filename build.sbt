@@ -1,42 +1,50 @@
 import xerial.sbt.Sonatype._
 
+// ---- global ---------------------------------------------------------------
 ThisBuild / organization := "io.github.moranaapps"
 ThisBuild / scalaVersion := "2.13.14"
 ThisBuild / version      := "0.1.4"
+ThisBuild / versionScheme := Some("early-semver")
 
-ThisBuild / publishMavenStyle := true
-ThisBuild / versionScheme     := Some("early-semver")
-
-// Central Portal bundle + host
+// Central (bundle flow)
 ThisBuild / sonatypeCredentialHost := sonatypeCentralHost
 ThisBuild / publishTo              := sonatypePublishToBundle.value
 
-// Central dislikes legacy checksums; keep only .asc signatures
+// Central dislikes legacy *.md5/*.sha1 sidecars
 ThisBuild / publish / checksums := Nil
 
-// Optional: make sure docs/sources are published
-ThisBuild / Compile / packageDoc / publishArtifact := true
-ThisBuild / Compile / packageSrc / publishArtifact := true
+// Project metadata (keep these — you already had them)
+ThisBuild / homepage := Some(url("https://github.com/MoranaApps/jacoco-method-filter"))
+ThisBuild / licenses := Seq("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0"))
+ThisBuild / scmInfo  := Some(
+  ScmInfo(
+    url("https://github.com/MoranaApps/jacoco-method-filter"),
+    "scm:git:git@github.com:MoranaApps/jacoco-method-filter.git"
+  )
+)
+ThisBuild / developers := List(
+  Developer("moranaapps", "MoranaApps", "miroslavpojer@seznam.cz", url("https://github.com/MoranaApps"))
+)
 
-// ---- MODULES ----
+// ---- modules --------------------------------------------------------------
 
-// core library (this is the only thing we publish now)
+// CORE LIB (publish this)
 lazy val rewriterCore = (project in file("rewriter-core"))
   .settings(
     name := "jacoco-method-filter-core",
     publish / skip := false,
-    libraryDependencies ++= Seq(
-      "org.ow2.asm" % "asm"         % "9.6",
-      "org.ow2.asm" % "asm-commons" % "9.6",
-      "com.github.scopt" %% "scopt" % "4.1.0",
-      "org.scalatest" %% "scalatest" % "3.2.19" % Test
-    ),
+    // this should point at your existing CLI entrypoint that’s already in the repo
     Compile / mainClass := Some("io.moranaapps.jacocomethodfilter.CoverageRewriter"),
-    // quiet scaladoc link warnings
+    libraryDependencies ++= Seq(
+      "org.ow2.asm"       %  "asm"          % "9.6",
+      "org.ow2.asm"       %  "asm-commons"  % "9.6",
+      "com.github.scopt"  %% "scopt"        % "4.1.0",
+      "org.scalatest"     %% "scalatest"    % "3.2.19" % Test
+    ),
     Compile / doc / scalacOptions ++= Seq("-no-link-warnings")
   )
 
-// aggregator (don’t publish)
+// AGGREGATOR (don’t publish)
 lazy val root = (project in file("."))
   .aggregate(rewriterCore)
   .settings(
