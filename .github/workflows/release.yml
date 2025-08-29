@@ -4,18 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       doRelease:
-        description: "After publishing, call sonaRelease (finalize on Central)?"
+        description: "After publishing, call sonatypeCentralRelease?"
         type: choice
         options: [ "yes", "no" ]
         default: "yes"
-      scala213:
-        description: "Build for Scala 2.13 (core)"
-        type: boolean
-        default: true
-      runScripted:
-        description: "Run sbt-plugin scripted test"
-        type: boolean
-        default: false
 
 jobs:
   publish:
@@ -52,19 +44,14 @@ jobs:
           java -version
           sbt sbtVersion
 
-      - name: Test (core + plugin)
-        run: sbt +clean +test
+      - name: Clean previous local bundle
+        run: rm -rf **/target/sonatype-staging || true
 
-      - name: Optional scripted test (sbt plugin)
-        if: ${{ inputs.runScripted == 'true' }}
-        run: |
-          # Requires you to have a scripted test like sbt-plugin/src/sbt-test/jmf/basic
-          sbt "project sbtPlugin" "scripted jmf/basic" -Dplugin.version=$(grep -E 'ThisBuild / version\s*:=' build.sbt | sed -E "s/.*:=\"([^\"]+)\".*/\1/")
+      - name: Test (core)
+        run: sbt "project rewriterCore" clean test
 
-      - name: Publish signed artifacts (core + plugin)
-        run: |
-          sbt +publishSigned
-          sbt "project sbtPlugin" publishSigned
+      - name: Publish signed (core)
+        run: sbt "project rewriterCore" publishSigned
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
@@ -73,35 +60,31 @@ jobs:
       - name: Upload staged bundle (debug artifact)
         run: |
           set -euo pipefail
-      
           echo "Scanning for sonatype-staging folders..."
-          # Look anywhere in the repo (no -maxdepth!)
           mapfile -t ROOTS < <(find . -type d -name sonatype-staging | sort)
-      
+
           if [ "${#ROOTS[@]}" -eq 0 ]; then
             echo "No staging dir found"
             echo "Debug: show target dirs nearby:"
             find . -maxdepth 5 -type d -name target -print | sort || true
             exit 1
           fi
-      
+
           mkdir -p artifacts
-      
+
           for ROOT in "${ROOTS[@]}"; do
-            # ROOT is like: ./target/sonatype-staging  or  ./module/target/sonatype-staging
-            TARGET_DIR="$(dirname "$ROOT")"                       # .../target
-            MODULE_DIR="$(dirname "$TARGET_DIR")"                 # repo root or ./module
+            TARGET_DIR="$(dirname "$ROOT")"         # .../target
+            MODULE_DIR="$(dirname "$TARGET_DIR")"   # module dir
             MOD_NAME="$(basename "$MODULE_DIR")"
-            # If the bundle is at repo root, MOD_NAME will be "." -> rename to 'root'
-            if [ "$MOD_NAME" = "." ] || [ -z "$MOD_NAME" ]; then MOD_NAME="root"; fi
-      
+            [ "$MOD_NAME" = "." ] && MOD_NAME="root"
+
             ZIP="artifacts/${MOD_NAME}-sonatype-staging.zip"
             echo "Zipping $ROOT -> $ZIP"
             (cd "$TARGET_DIR" && zip -r "$GITHUB_WORKSPACE/$ZIP" sonatype-staging)
             echo "Created $ZIP"
           done
         shell: bash
-      
+
       - name: Upload artifact (staged bundles)
         uses: actions/upload-artifact@v4
         with:
