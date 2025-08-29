@@ -27,6 +27,7 @@ lazy val sbtPlugin = (project in file("sbt-plugin"))
   .settings(
     name := "jacoco-method-filter-sbt",
     scalaVersion := "2.12.19",
+    sbtPluginPublishLegacyMavenStyle := false, // explicit at project level
     libraryDependencies += "org.jacoco" % "org.jacoco.cli" % "0.8.12" classifier "nodeps"
   )
 
@@ -37,6 +38,11 @@ lazy val root = (project in file("."))
     name := "jacoco-method-filter",
     publish / skip := true
   )
+
+import xerial.sbt.Sonatype._
+ThisBuild / sonatypeCredentialHost := sonatypeCentralHost
+ThisBuild / publishTo              := sonatypePublishToBundle.value
+
 
 // CPP target config
 ThisBuild / publishTo := {
@@ -54,6 +60,6 @@ ThisBuild / scmInfo := Some(
   )
 )
 ThisBuild / developers := List(
-  Developer("moranaapps", "MoranaApps", "dev@moranaapps.org", url("https://github.com/MoranaApps"))
+  Developer("moranaapps", "MoranaApps", "miroslavpojer@seznam.cz", url("https://github.com/MoranaApps"))
 )
 ThisBuild / Compile / doc / scalacOptions ++= Seq("-no-link-warnings")
