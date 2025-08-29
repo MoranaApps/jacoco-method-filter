@@ -6,7 +6,12 @@ ThisBuild / publishMavenStyle := true
 ThisBuild / version      := "0.1.3"
 
 // sbt plugin must use the modern style
+import xerial.sbt.Sonatype.*
+ThisBuild / sonatypeCredentialHost := sonatypeCentralHost
+ThisBuild / publishTo              := sonatypePublishToBundle.value
 ThisBuild / sbtPluginPublishLegacyMavenStyle := false
+ThisBuild / publish / checksums := Nil
+ThisBuild / sonatypeBundleDirectory := target.value / "sonatype-staging"
 
 // --- core tool (2.13)
 lazy val rewriterCore = (project in file("rewriter-core"))
@@ -39,19 +44,7 @@ lazy val root = (project in file("."))
     publish / skip := true
   )
 
-ThisBuild / publish / checksums := Nil
-
-import xerial.sbt.Sonatype.*
-ThisBuild / sonatypeCredentialHost := sonatypeCentralHost
-ThisBuild / publishTo              := sonatypePublishToBundle.value
-
-
 // CPP target config
-ThisBuild / publishTo := {
-  val snapshots = "https://central.sonatype.com/repository/maven-snapshots/"
-  if (isSnapshot.value) Some("central-snapshots" at snapshots) else localStaging.value
-}
-
 // Required metadata
 ThisBuild / homepage := Some(url("https://github.com/MoranaApps/jacoco-method-filter"))
 ThisBuild / licenses := Seq("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0"))
