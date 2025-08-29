@@ -53,9 +53,7 @@ jobs:
           sbt --version
 
       - name: Test (core + plugin)
-        run: |
-          # +clean +test will cross-build if you add crossScalaVersions later
-          sbt +clean +test
+        run: sbt +clean +test
 
       - name: Optional scripted test (sbt plugin)
         if: ${{ inputs.runScripted == 'true' }}
@@ -74,11 +72,11 @@ jobs:
 
       - name: Upload staged bundle (debug artifact)
         run: |
-          STAGE_DIR=$(find . -type d -path "*/target/sona-staging" | head -n1)
+          STAGE_DIR=$(find . -type d -path "*/target/sonatype-staging/*" | head -n1)
           if [ -n "$STAGE_DIR" ]; then
             echo "Found staging dir: $STAGE_DIR"
-            (cd "$STAGE_DIR"/.. && zip -r staging_bundle.zip sona-staging)
-            mkdir -p artifacts && mv "$STAGE_DIR"/../staging_bundle.zip artifacts/
+            (cd "$(dirname "$STAGE_DIR")" && zip -r staging_bundle.zip "sonatype-staging")
+            mkdir -p artifacts && mv "$(dirname "$STAGE_DIR")/staging_bundle.zip" artifacts/
           else
             echo "No staging dir found" && exit 1
           fi
@@ -91,10 +89,9 @@ jobs:
           path: artifacts/staging_bundle.zip
           if-no-files-found: error
 
-      - name: Release to Central (sonaRelease)
+      - name: Release to Central (sonatypeCentralRelease)
         if: ${{ inputs.doRelease == 'yes' }}
-        run: |
-          sbt sonaRelease
+        run: sbt sonatypeCentralRelease
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
