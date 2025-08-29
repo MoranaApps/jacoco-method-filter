@@ -2,7 +2,6 @@ package io.moranaapps.jacocomethodfilter
 
 import org.objectweb.asm._
 import java.nio.file.{Files, Path, Paths}
-import scala.util.Using
 import scala.jdk.StreamConverters._
 import scopt.OParser
 
