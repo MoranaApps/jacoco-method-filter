@@ -1,16 +1,17 @@
 import xerial.sbt.Sonatype._
 
 // ---- global ---------------------------------------------------------------
-ThisBuild / organization := "io.github.moranaapps"
-ThisBuild / scalaVersion := "2.13.14"
-ThisBuild / version      := "0.1.4"
-ThisBuild / versionScheme := Some("early-semver")
+ThisBuild / organization   := "io.github.moranaapps"
+ThisBuild / scalaVersion   := "2.13.14"             // default
+ThisBuild / crossScalaVersions := Seq("2.12.19", "2.13.14")
+ThisBuild / version        := "0.1.5"
+ThisBuild / versionScheme  := Some("early-semver")
 
 // Central (bundle flow)
 ThisBuild / sonatypeCredentialHost := sonatypeCentralHost
 ThisBuild / publishTo              := sonatypePublishToBundle.value
 
-// Project metadata (keep these — you already had them)
+// Project metadata
 ThisBuild / homepage := Some(url("https://github.com/MoranaApps/jacoco-method-filter"))
 ThisBuild / licenses := Seq("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0"))
 ThisBuild / scmInfo  := Some(
@@ -30,14 +31,19 @@ lazy val rewriterCore = (project in file("rewriter-core"))
   .settings(
     name := "jacoco-method-filter-core",
     publish / skip := false,
-    // this should point at your existing CLI entrypoint that’s already in the repo
+
+    // CLI entrypoint you already have
     Compile / mainClass := Some("io.moranaapps.jacocomethodfilter.CoverageRewriter"),
+
     libraryDependencies ++= Seq(
-      "org.ow2.asm"       %  "asm"          % "9.6",
-      "org.ow2.asm"       %  "asm-commons"  % "9.6",
-      "com.github.scopt"  %% "scopt"        % "4.1.0",
-      "org.scalatest"     %% "scalatest"    % "3.2.19" % Test
+      "org.ow2.asm"            %  "asm"                      % "9.6",
+      "org.ow2.asm"            %  "asm-commons"              % "9.6",
+      "com.github.scopt"       %% "scopt"                    % "4.1.0",
+      // brings 2.13 APIs/collections shims to 2.12
+      "org.scala-lang.modules" %% "scala-collection-compat"  % "2.12.0",
+      "org.scalatest"          %% "scalatest"                % "3.2.19" % Test
     ),
+
     Compile / doc / scalacOptions ++= Seq("-no-link-warnings")
   )
 
