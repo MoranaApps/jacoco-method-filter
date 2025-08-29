@@ -72,10 +72,10 @@ jobs:
 
       - name: Upload staged bundle (debug artifact)
         run: |
-          STAGE_DIR=$(find . -type d -path "*/target/sona-staging/*" -maxdepth 1 | head -n1)
+          STAGE_DIR=$(find . -type d -path "*/target/sonatype-staging/*" -maxdepth 1 | head -n1)
           if [ -n "$STAGE_DIR" ]; then
             echo "Found staging dir: $STAGE_DIR"
-            (cd "$(dirname "$STAGE_DIR")" && zip -r staging_bundle.zip "sona-staging")
+            (cd "$(dirname "$STAGE_DIR")" && zip -r staging_bundle.zip "sonatype-staging")
             mkdir -p artifacts && mv "$(dirname "$STAGE_DIR")/staging_bundle.zip" artifacts/
           else
             echo "No staging dir found" && exit 1
