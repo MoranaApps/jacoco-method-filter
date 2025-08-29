@@ -19,6 +19,8 @@ object JacocoFilteredSettings extends AutoPlugin {
     val jmfDryRun           = settingKey[Boolean]("If true, log matches but don't modify bytecode")
     val jmfScalaVersion     = settingKey[String]("Scala version required by the rewriter core (2.13.x)")
     val jmfCoreVersion      = settingKey[String]("jacoco-method-filter-core version")
+    val jmfSourceDirNames   = settingKey[Seq[String]]("Names under src/main to include as source roots for JaCoCo (manual list).")
+    val jmfExtraSourceDirs  = settingKey[Seq[File]]("Extra source directories (absolute or relative to module) to include.")
   }
   import autoImport._
 
@@ -46,6 +48,9 @@ object JacocoFilteredSettings extends AutoPlugin {
         jmfOutDir         := target.value / "jacoco-filtered",
         jmfCliMain        := "io.moranaapps.jacocomethodfilter.CoverageRewriter",
         jmfDryRun         := false,
+
+        jmfSourceDirNames  := Seq("scala", "java", "kotlin"),
+        jmfExtraSourceDirs := Seq(baseDirectory.value / "src" / "generated" / "scala"),
 
         // find jacoco.exec produced by sbt-jacoco
         jacocoExecFile := {
@@ -87,10 +92,24 @@ object JacocoFilteredSettings extends AutoPlugin {
           val log         = streams.value.log
           val exec        = jacocoExecFile.value
           val classesDir  = jmfRewrite.value
-          val srcDirs     = (Compile / unmanagedSourceDirectories).value
           val htmlOut     = jmfOutDir.value / "html"
           val xmlOut      = jmfOutDir.value / "jacoco.filtered.xml"
           IO.delete(htmlOut); IO.createDirectory(htmlOut)
+
+          // ---- Choose source roots manually (with defaults) ----
+          def hasAnySources(d: File): Boolean =
+            d.exists && (
+              (d ** GlobFilter("*.scala")).get.nonEmpty ||
+                (d ** GlobFilter("*.java")).get.nonEmpty  ||
+                (d ** GlobFilter("*.kt")).get.nonEmpty
+              )
+
+          val srcMain       = baseDirectory.value / "src" / "main"
+          val wanted        = jmfSourceDirNames.value.map(srcMain / _)
+          val extra         = jmfExtraSourceDirs.value
+          val candidateDirs = (wanted ++ extra).distinct
+          val filteredSrcs  = candidateDirs.filter(hasAnySources)
+          // ------------------------------------------------------
 
           val cliJar = (Jmf / update).value
             .matching(
@@ -105,7 +124,7 @@ object JacocoFilteredSettings extends AutoPlugin {
             "java", "-jar", cliJar.getAbsolutePath,
             "report", exec.getAbsolutePath,
             "--classfiles", classesDir.getAbsolutePath
-          ) ++ srcDirs.flatMap(d => Seq("--sourcefiles", d.getAbsolutePath)) ++ Seq(
+          ) ++ filteredSrcs.flatMap(d => Seq("--sourcefiles", d.getAbsolutePath)) ++ Seq(
             "--html", htmlOut.getAbsolutePath,
             "--xml",  xmlOut.getAbsolutePath
           )
