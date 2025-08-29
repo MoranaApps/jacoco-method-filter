@@ -62,22 +62,17 @@ jobs:
           set -euo pipefail
           echo "Scanning for sonatype-staging folders..."
           mapfile -t ROOTS < <(find . -type d -name sonatype-staging | sort)
-
           if [ "${#ROOTS[@]}" -eq 0 ]; then
             echo "No staging dir found"
-            echo "Debug: show target dirs nearby:"
             find . -maxdepth 5 -type d -name target -print | sort || true
             exit 1
           fi
-
           mkdir -p artifacts
-
           for ROOT in "${ROOTS[@]}"; do
-            TARGET_DIR="$(dirname "$ROOT")"         # .../target
-            MODULE_DIR="$(dirname "$TARGET_DIR")"   # module dir
+            TARGET_DIR="$(dirname "$ROOT")"
+            MODULE_DIR="$(dirname "$TARGET_DIR")"
             MOD_NAME="$(basename "$MODULE_DIR")"
             [ "$MOD_NAME" = "." ] && MOD_NAME="root"
-
             ZIP="artifacts/${MOD_NAME}-sonatype-staging.zip"
             echo "Zipping $ROOT -> $ZIP"
             (cd "$TARGET_DIR" && zip -r "$GITHUB_WORKSPACE/$ZIP" sonatype-staging)
