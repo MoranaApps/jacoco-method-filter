@@ -72,21 +72,41 @@ jobs:
 
       - name: Upload staged bundle (debug artifact)
         run: |
-          STAGE_DIR=$(find . -type d -path "*/target/sonatype-staging/*" -maxdepth 1 | head -n1)
-          if [ -n "$STAGE_DIR" ]; then
-            echo "Found staging dir: $STAGE_DIR"
-            (cd "$(dirname "$STAGE_DIR")" && zip -r staging_bundle.zip "sonatype-staging")
-            mkdir -p artifacts && mv "$(dirname "$STAGE_DIR")/staging_bundle.zip" artifacts/
-          else
-            echo "No staging dir found" && exit 1
+          set -euo pipefail
+      
+          echo "Scanning for sonatype-staging folders..."
+          # Look anywhere in the repo (no -maxdepth!)
+          mapfile -t ROOTS < <(find . -type d -name sonatype-staging | sort)
+      
+          if [ "${#ROOTS[@]}" -eq 0 ]; then
+            echo "No staging dir found"
+            echo "Debug: show target dirs nearby:"
+            find . -maxdepth 5 -type d -name target -print | sort || true
+            exit 1
           fi
+      
+          mkdir -p artifacts
+      
+          for ROOT in "${ROOTS[@]}"; do
+            # ROOT is like: ./target/sonatype-staging  or  ./module/target/sonatype-staging
+            TARGET_DIR="$(dirname "$ROOT")"                       # .../target
+            MODULE_DIR="$(dirname "$TARGET_DIR")"                 # repo root or ./module
+            MOD_NAME="$(basename "$MODULE_DIR")"
+            # If the bundle is at repo root, MOD_NAME will be "." -> rename to 'root'
+            if [ "$MOD_NAME" = "." ] || [ -z "$MOD_NAME" ]; then MOD_NAME="root"; fi
+      
+            ZIP="artifacts/${MOD_NAME}-sonatype-staging.zip"
+            echo "Zipping $ROOT -> $ZIP"
+            (cd "$TARGET_DIR" && zip -r "$GITHUB_WORKSPACE/$ZIP" sonatype-staging)
+            echo "Created $ZIP"
+          done
         shell: bash
-
-      - name: Upload artifact (staged bundle)
+      
+      - name: Upload artifact (staged bundles)
         uses: actions/upload-artifact@v4
         with:
-          name: sona-staging-bundle
-          path: artifacts/staging_bundle.zip
+          name: sonatype-staging-bundles
+          path: artifacts/*.zip
           if-no-files-found: error
 
       - name: Release to Central (sonatypeCentralRelease)
