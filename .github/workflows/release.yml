@@ -51,7 +51,7 @@ jobs:
         run: sbt "project rewriterCore" clean test
 
       - name: Publish signed (core)
-        run: sbt "project rewriterCore" publishSigned
+        run: sbt "project rewriterCore" +publishSigned
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
