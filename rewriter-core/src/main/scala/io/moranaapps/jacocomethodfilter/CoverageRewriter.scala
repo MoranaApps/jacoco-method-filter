@@ -5,7 +5,7 @@ import org.objectweb.asm._
 import scopt.OParser
 
 import java.nio.file.{Files, Path, Paths}
-import scala.jdk.CollectionConverters.IteratorHasAsScala
+import scala.jdk.CollectionConverters._
 
 final case class CliConfig(
                             in: Path   = Paths.get("target/scala-2.13/classes"),
