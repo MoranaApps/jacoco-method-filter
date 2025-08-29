@@ -9,7 +9,7 @@ ThisBuild / version      := "0.1.4"
 import xerial.sbt.Sonatype.*
 ThisBuild / sonatypeCredentialHost := sonatypeCentralHost
 ThisBuild / publishTo              := sonatypePublishToBundle.value
-ThisBuild / sbtPluginPublishLegacyMavenStyle := true
+ThisBuild / sbtPluginPublishLegacyMavenStyle := false
 ThisBuild / sonatypeBundleDirectory := target.value / "sonatype-staging"
 
 // --- core tool (2.13)
@@ -31,7 +31,7 @@ lazy val sbtPlugin = (project in file("sbt-plugin"))
   .settings(
     name := "jacoco-method-filter-sbt",
     scalaVersion := "2.12.19",
-    sbtPluginPublishLegacyMavenStyle := true, // explicit at project level
+    sbtPluginPublishLegacyMavenStyle := false, // explicit at project level
     libraryDependencies += "org.jacoco" % "org.jacoco.cli" % "0.8.12" classifier "nodeps"
   )
 
