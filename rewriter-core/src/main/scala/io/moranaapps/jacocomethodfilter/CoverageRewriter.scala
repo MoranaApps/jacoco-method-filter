@@ -45,7 +45,7 @@ object CoverageRewriter {
     var marked = 0
 
     using(Files.walk(cfg.in)) { s =>
-      val it = s.iterator().asScal
+      val it = s.iterator().asScala
       for {
         p <- it
         if Files.isRegularFile(p) && p.toString.endsWith(".class")
