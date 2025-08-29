@@ -39,6 +39,8 @@ lazy val root = (project in file("."))
     publish / skip := true
   )
 
+ThisBuild / publish / checksums := Nil
+
 import xerial.sbt.Sonatype._
 ThisBuild / sonatypeCredentialHost := sonatypeCentralHost
 ThisBuild / publishTo              := sonatypePublishToBundle.value
