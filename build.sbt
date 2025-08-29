@@ -10,9 +10,6 @@ ThisBuild / versionScheme := Some("early-semver")
 ThisBuild / sonatypeCredentialHost := sonatypeCentralHost
 ThisBuild / publishTo              := sonatypePublishToBundle.value
 
-// Central dislikes legacy *.md5/*.sha1 sidecars
-ThisBuild / publish / checksums := Nil
-
 // Project metadata (keep these — you already had them)
 ThisBuild / homepage := Some(url("https://github.com/MoranaApps/jacoco-method-filter"))
 ThisBuild / licenses := Seq("Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0"))
