@@ -10,7 +10,6 @@ import xerial.sbt.Sonatype.*
 ThisBuild / sonatypeCredentialHost := sonatypeCentralHost
 ThisBuild / publishTo              := sonatypePublishToBundle.value
 ThisBuild / sbtPluginPublishLegacyMavenStyle := false
-ThisBuild / publish / checksums := Nil
 ThisBuild / sonatypeBundleDirectory := target.value / "sonatype-staging"
 
 // --- core tool (2.13)
