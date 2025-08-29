@@ -1,9 +1,11 @@
 package io.moranaapps.jacocomethodfilter
 
+import io.moranaapps.jacocomethodfilter.Compat.using
 import org.objectweb.asm._
-import java.nio.file.{Files, Path, Paths}
-import scala.jdk.StreamConverters._
 import scopt.OParser
+
+import java.nio.file.{Files, Path, Paths}
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 final case class CliConfig(
                             in: Path   = Paths.get("target/scala-2.13/classes"),
