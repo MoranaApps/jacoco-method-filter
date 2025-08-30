@@ -1,3 +1,4 @@
+import com.github.sbt.jacoco.JacocoPlugin.autoImport.{ jacocoSkip, jacocoDataFile }
 import sbt.*
 import sbt.Keys.*
 
@@ -20,12 +21,12 @@ object JacocoFilteredSettings extends AutoPlugin {
     val jacocoFiltered      = taskKey[(File, File)]("Render filtered HTML+XML from jacoco.exec + classes-filtered")
     val jmfDryRun           = settingKey[Boolean]("If true, log matches but don't modify bytecode")
     val jmfScalaVersion     = settingKey[String]("Scala version required by the rewriter core (2.13.x)")
-    val jmfCoreVersion      = settingKey[String]("jacoco-method-filter-core version")
+    val jmfCoreVersion  = settingKey[String]("Version of jacoco-method-filter-core to use")
+    val jmfScalaBinary  = settingKey[String]("Scala binary version used to pick the core artifact")
     val jmfSourceDirNames   = settingKey[Seq[String]]("Names under src/main to include as source roots for JaCoCo (manual list).")
     val jmfExtraSourceDirs  = settingKey[Seq[File]]("Extra source directories (absolute or relative to module) to include.")
     val jmfBaseTestFullClasspath = taskKey[Classpath]("Snapshot of Test/fullClasspath before JMF overrides.")
     val jmfMaybeExecFile   = taskKey[Option[File]]("Optional path to Test jacoco.exec (if present).")
-    val jmfScalaBinary = settingKey[String]("Scala binary version for JMF core")
   }
   import autoImport.*
 
@@ -40,6 +41,7 @@ object JacocoFilteredSettings extends AutoPlugin {
     Seq(
       // pick the right suffix per subproject
       jmfScalaBinary := scalaBinaryVersion.value,
+      jmfCoreVersion := "0.1.7",
 
       // tool deps live ONLY on Jmf
       libraryDependencies ++= Seq(
@@ -132,11 +134,16 @@ object JacocoFilteredSettings extends AutoPlugin {
         // STEP 1: capture logger & expected exec path up front
         val log         = streams.value.log
 
+        val jacocoWorkDir = (Test / crossTarget).value / "jacoco"
+        val instrDir      = jacocoWorkDir / "instrumented-classes"
+        if (instrDir.exists) {
+          log.info(s"[jmf] removing stale offline dir: ${instrDir.getAbsolutePath}")
+          IO.delete(instrDir)
+        }
+
         // choose the standard sbt-jacoco path so tooling stays happy:
         val expectedExec = (Test / jacocoDataFile).value       // e.g. target/scala-2.12/jacoco/data/jacoco.exec
         IO.createDirectory(expectedExec.getParentFile)         // agent won't create parent dirs
-        if (expectedExec.exists()) IO.delete(expectedExec)     // remove stale file
-        log.info(s"[jmf] expected exec path: ${expectedExec.getAbsolutePath}")
 
         // STEP 2: ensure filtered classes exist (rewriter runs after compile)
         val classesDir  = jmfRewrite.value
@@ -148,10 +155,6 @@ object JacocoFilteredSettings extends AutoPlugin {
         val backupDir   = jmfOutDir.value / "backup-original-classes"
 
         // STEP 3: delete stale exec (don’t rely on task ordering/races)
-        jmfMaybeExecFile.value.foreach { f =>
-          log.info(s"[jmf] deleting stale exec: ${f.getAbsolutePath}")
-          IO.delete(f)
-        }
 
         // small helper for dir copies
         def copyDir(from: File, to: File): Unit = {
@@ -165,15 +168,6 @@ object JacocoFilteredSettings extends AutoPlugin {
         if (compiledDir.exists()) { IO.createDirectory(backupDir); IO.copyDirectory(compiledDir, backupDir) }
         else IO.createDirectory(compiledDir)
 
-        log.info(s"[jmf] backing up compiled classes from: ${compiledDir.getAbsolutePath}")
-        IO.delete(backupDir)
-        if (compiledDir.exists()) {
-          IO.createDirectory(backupDir)
-          IO.copyDirectory(compiledDir, backupDir)
-        } else {
-          IO.createDirectory(compiledDir)
-        }
-
         // copy only .class files from filtered → compiled, overwriting originals
         val filteredClasses = (classesDir ** GlobFilter("*.class")).pair(Path.relativeTo(classesDir)).toMap
         filteredClasses.foreach { case (src, rel) =>
@@ -183,12 +177,8 @@ object JacocoFilteredSettings extends AutoPlugin {
         }
         log.info(s"[jmf] overlaid ${filteredClasses.size} class files into ${compiledDir.getAbsolutePath}")
 
-        val agentExec = jmfOutDir.value / "data" / "jmf.jacoco.exec"
-
         try {
           // STEP 5: run tests via sbt-jacoco (writes exec for the *filtered* bytes)
-          log.info("[jmf] running `Test / jacoco` with filtered classes on classpath…")
-
           // pick one sample and compare hashes in filtered vs compiled
           def md5(f: File): String = {
             val md = java.security.MessageDigest.getInstance("MD5")
@@ -209,43 +199,59 @@ object JacocoFilteredSettings extends AutoPlugin {
           val compiledSample = (compiledDir ** GlobFilter("*.class")).get.take(5).map(_.getName).mkString(", ")
           log.info(s"[jmf] sample classes in compiledDir: $compiledSample")
 
-          if (expectedExec.exists()) {
-            log.info(s"[jmf] deleting stale exec: ${expectedExec.getAbsolutePath}")
-            IO.delete(expectedExec)
-          }
-
-          // Now run Jacoco (offline instrumentation + tests) using the filtered bytes
-          log.info("[jmf] running `Test / jacoco` with filtered classes on classpath…")
-
           // --- run tests once with JaCoCo agent (ONLINE instrumentation) ---
-          // we’ll put the exec in our filtered area to avoid any path ambiguity
-          IO.createDirectory(agentExec.getParentFile)
-          if (agentExec.exists()) IO.delete(agentExec)
+          // --- run tests once with JaCoCo agent (ONLINE instrumentation) ---
+          IO.createDirectory(expectedExec.getParentFile)
+          // don't delete expectedExec here; it can be created late on JVM exit
 
-          // resolve the agent jar from the Jmf configuration
+          // resolve agent JAR
           val updateRpt = (Jmf / update).value
           val agentJar  = updateRpt.allFiles.find(_.getName.startsWith("org.jacoco.agent-"))
             .getOrElse(sys.error("[jmf] jacoco agent jar not resolved (org.jacoco.agent:runtime)"))
+
+          // build agent option to WRITE TO expectedExec
           val agentOpt = s"-javaagent:${agentJar.getAbsolutePath}=destfile=${expectedExec.getAbsolutePath},append=false,output=file"
 
           val st0       = state.value
           val extracted = Project.extract(st0)
+          val pr        = thisProjectRef.value            // <-- current subproject ref
+          val moduleBase  = (ThisProject / baseDirectory).value
+          val forkOpts0   = (Test / forkOptions).value
+          val javaOpts0   = (Test / javaOptions).value
 
-          // TEMP settings only for this run: fork + agent option
+          // scope temp settings to THIS subproject only
           val tempSettings: Seq[Setting[_]] = Seq(
-            Test / fork := true,
-            Test / javaOptions ++= Seq(agentOpt)
+            // turn OFF sbt-jacoco’s offline path everywhere for this run
+            Global / jacocoSkip := true,
+            // (belt & suspenders) also off on this module
+            pr / jacocoSkip     := true,
+
+            // ensure tests fork and run from the module root (fixes file: api/src/test/resources/... lookups)
+            pr / Test / fork        := true,
+            pr / Test / forkOptions := forkOpts0.withWorkingDirectory(Some(moduleBase)),
+
+            // inject agent; also strip any pre-existing -javaagent to avoid duplicates
+            pr / Test / javaOptions := javaOpts0.filterNot(_.startsWith("-javaagent:")) :+ agentOpt
           )
 
           log.info(s"[jmf] running tests with JaCoCo agent: ${agentJar.getName}")
-          val st1: State = extracted.appendWithSession(tempSettings.toList, st0)
-          Project.extract(st1).runTask(Test / test, st1)
+          log.info(s"[jmf] using agentOpt: " + agentOpt)
 
-          // wait until agentExec appears and is stable
-          def waitForExec(f: File, timeoutMs: Int = 10000, pollMs: Int = 200): File = {
+          // append settings and explicitly select the project before running
+          val st1: State = extracted.appendWithSession(tempSettings.toList, st0)
+          val stSel      = Command.process(s"project ${pr.project}", st1)
+
+          // (important) EVALUATE javaOptions to prove the agent flag is present
+          val (st2, effOpts) = Project.extract(stSel).runTask(pr / Test / javaOptions, stSel)
+          effOpts.foreach(o => log.info("[jmf] Test/javaOptions: " + o))
+
+          // run the tests for THIS subproject
+          val (st3, _) = Project.extract(st2).runTask(pr / Test / test, st2)
+
+          // wait for expectedExec (agent writes on JVM exit)
+          def waitForExec(f: File, timeoutMs: Int = 120000, pollMs: Int = 200): File = {
             val deadline = System.nanoTime() + timeoutMs.toLong * 1000000L
-            var last     = -1L
-            var stable   = 0
+            var last = -1L; var stable = 0
             while (System.nanoTime() < deadline) {
               if (f.exists()) {
                 val len = f.length()
@@ -256,7 +262,7 @@ object JacocoFilteredSettings extends AutoPlugin {
             }
             sys.error(s"[jmf] jacoco.exec not present/stable after ${timeoutMs}ms at ${f.getAbsolutePath}")
           }
-          val exec = waitForExec(agentExec)
+          val execFile = waitForExec(expectedExec)
           // --- end agent block ---
 
         } finally {
@@ -297,7 +303,7 @@ object JacocoFilteredSettings extends AutoPlugin {
 
         val cmd = Seq(
           "java", "-jar", cliJar.getAbsolutePath,
-          "report", agentExec.getAbsolutePath,
+          "report", expectedExec.getAbsolutePath,
           "--classfiles", classesDir.getAbsolutePath
         ) ++ filteredSrcs.flatMap(d => Seq("--sourcefiles", d.getAbsolutePath)) ++ Seq(
           "--html", htmlOut.getAbsolutePath,
