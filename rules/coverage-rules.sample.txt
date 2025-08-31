@@ -42,9 +42,7 @@
 #   name-ends:<s>       # method name must end with <s>
 #
 # Notes
-# - Regex (re:) is NOT supported — use globs only.
 # - Always use dot-form (com.example.Foo) for class names.
-# - Rules written with either dot or slash still match, but all inputs to the matcher are dot-form.
 # - Comments (# …) and blank lines are ignored.
 #
 # ─────────────────────────────────────────────────────────────────────────────
@@ -52,34 +50,64 @@
 #
 # Simple wildcards
 #   *#*(*)
+#     → Match EVERY method in EVERY class (any package). Useful only for diagnostics.
+#       "(*)" normalizes to "(*)*" ⇒ any args, any return.
 #   *.dto.*#*(*)
-#
+#     → Match every method on any class under any package segment named "dto".
+#       Good when you treat DTOs as generated/boilerplate.
+
 # Scala case class helpers
 #   *.model.*#copy(*)
+#     → Matches Scala case-class `copy` methods under `*.model.*`.
+#       Hides boilerplate clones with any parameter list and any return.
 #   *.model.*#productArity()
+#     → Matches zero-arg `productArity` (case-class/Product API).
 #   *.model.*#productElement(*)
+#     → Matches `productElement(int)` (or any descriptor form) on case classes.
 #   *.model.*#productPrefix()
-#
+#     → Matches `productPrefix()`; returns the case class' constructor name.
+
 # Companion objects and defaults
 #   *.model.*$*#apply(*)
+#     → Matches companion `apply` factories under `*.model.*` (any args).
+#       BE CAREFUL: can hide real factory logic; keep the package scope narrow.
 #   *.model.*$*#unapply(*)
+#     → Matches extractor `unapply` methods in companions under `*.model.*`.
 #   *#*$default$*(*)
-#
+#     → Matches Scala-generated default-argument helpers everywhere.
+#       Safe to keep enabled; they’re compiler-synthesized.
+
 # Anonymous / synthetic / bridge
 #   *#$anonfun$*
-#   *#*(* ) synthetic            # any synthetic
-#   *#*(* ) bridge               # any bridge
-#
+#     → Matches any method whose name contains `$anonfun$` (Scala lambdas).
+#       Consider adding `synthetic` and/or a package scope in real configs.
+#   *#*(*):synthetic            # any synthetic
+#     → Matches ANY method marked `synthetic` (compiler-generated).
+#       Powerful; scope by package to avoid hiding intentional glue code.
+#   *#*(*):bridge               # any bridge
+#     → Matches Java generic bridge methods the compiler inserts.
+#       Usually safe globally, but scoping is still recommended.
+
 # Setters / fluent APIs
 #   *.dto.*#*_$eq(*)
+#     → Matches Scala var setters in DTO packages (e.g., `name_=(...)`).
+#       Good for excluding trivial field writes.
 #   *.builder.*#with*(*)
+#     → Matches builder-style fluent setters (`withXxx(...)`) in builder pkgs.
+#       Treats chainable configuration as boilerplate.
 #   *.client.*#with*(*) ret:Lcom/api/client/*
-#
+#     → Like above but ONLY when the return type matches your client package.
+#       The `ret:` predicate protects real logic that returns other types.
+
 # Return-type constraints
-#   *.jobs.*#*(* ) ret:V
-#   *.math.*#*(* ) ret:I
-#   *.model.*#*(* ) ret:Lcom/example/model/*
-#
+#   *.jobs.*#*(*):ret:V
+#     → Any method under `*.jobs.*` returning `void` (`V`). Often orchestration.
+#   *.math.*#*(*):ret:I
+#     → Any method under `*.math.*` returning primitive int (`I`).
+#   *.model.*#*(*):ret:Lcom/example/model/*
+#     → Any method under `*.model.*` that returns a type in `com.example.model`.
+#       Handy when the *return type* uniquely identifies boilerplate.
+
 # ─────────────────────────────────────────────────────────────────────────────
 # DEFAULT RULES (start here; replace YOUR.PACKAGE.ROOT)
 # ─────────────────────────────────────────────────────────────────────────────
