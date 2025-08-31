@@ -6,7 +6,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # HOW TO USE (quick)
 # 1) Replace YOUR.PACKAGE.ROOT with your project’s package root (e.g., com.example.app).
-# 2) Start with the CONSERVATIVE section only. Run your tool in dry-run and read the hits.
+# 2) Start with the CONSERVATIVE section only.
 # 3) If clean, enable STANDARD. Use AGGRESSIVE only inside DTO/auto‑generated packages.
 # 4) Keep rules narrow (by package), prefer flags (synthetic/bridge) for compiler artifacts,
 #    and add `id:` labels so logs are easy to read.
@@ -111,69 +111,68 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # DEFAULT RULES (start here; replace YOUR.PACKAGE.ROOT)
 # ─────────────────────────────────────────────────────────────────────────────
-#
 # SECTION: CONSERVATIVE (safe starters; mainly compiler/boilerplate)
-#
+
 YOUR.PACKAGE.ROOT.model.*#copy(*)                          id:case-copy
 YOUR.PACKAGE.ROOT.model.*#productArity()                   id:case-prod-arity
 YOUR.PACKAGE.ROOT.model.*#productElement(*)                id:case-prod-elem
 YOUR.PACKAGE.ROOT.model.*#productPrefix()                  id:case-prod-prefix
 YOUR.PACKAGE.ROOT.model.*$*#apply(*)                       id:comp-apply
 YOUR.PACKAGE.ROOT.model.*$*#unapply(*)                     id:comp-unapply
-YOUR.PACKAGE.ROOT.*#*$default$*(* )                        id:default-args
-YOUR.PACKAGE.ROOT.dto.*#*_$eq(* )                          id:scala-setter
-YOUR.PACKAGE.ROOT.*#*(* )  synthetic name-contains:$anonfun$  id:scala-anonfun
-YOUR.PACKAGE.ROOT.*#*(* )  synthetic                        id:synthetic-generic
-#
+YOUR.PACKAGE.ROOT.*#*$default$*(*)                        id:default-args
+YOUR.PACKAGE.ROOT.dto.*#*_$eq(*)                          id:scala-setter
+YOUR.PACKAGE.ROOT.*#*(*)  synthetic name-contains:$anonfun$  id:scala-anonfun
+YOUR.PACKAGE.ROOT.*#*(*)  synthetic                        id:synthetic-generic
+
+# ─────────────────────────────────────────────────────────────────────────────
 # SECTION: STANDARD (enable after verifying impact)
-#
+
 # Scala product API beyond model (uncomment if polluting)
 # YOUR.PACKAGE.ROOT.*#productIterator()                    id:prod-iter
 # YOUR.PACKAGE.ROOT.*#canEqual(*)                          id:prod-canequal
-#
+
 # Scala 2 trait init stub
-# YOUR.PACKAGE.ROOT.*#<$init$>(* )                         id:trait-init
-#
+# YOUR.PACKAGE.ROOT.*#<$init$>(*)                         id:trait-init
+
 # Java generics bridge methods (safe)
-YOUR.PACKAGE.ROOT.*#*(* )  bridge                          id:java-bridge
-#
+YOUR.PACKAGE.ROOT.*#*(*)  bridge                          id:java-bridge
+
 # Java 8+ lambdas named "lambda$..."
-YOUR.PACKAGE.ROOT.*#*(* )  synthetic name-starts:lambda$   id:java-lambda
-#
+YOUR.PACKAGE.ROOT.*#*(*)  synthetic name-starts:lambda$   id:java-lambda
+
 # Java synthetic accessors (compiler-generated)
-YOUR.PACKAGE.ROOT.*#*(* )  synthetic name-starts:access$   id:java-accessor
-#
+YOUR.PACKAGE.ROOT.*#*(*)  synthetic name-starts:access$   id:java-accessor
+
 # Example return-type constraint (keep commented until you need it)
-# YOUR.PACKAGE.ROOT.*#*(* )  ret:Lscala/collection/immutable/List;  id:any-returns-list
-#
+# YOUR.PACKAGE.ROOT.*#*(*)  ret:Lscala/collection/immutable/List;  id:any-returns-list
+
+# ─────────────────────────────────────────────────────────────────────────────
 # SECTION: AGGRESSIVE (opt-in; narrow by package to avoid hiding real logic)
-#
+
 # Lombok/Beans-style accessors – restrict to DTO-only packages
 # YOUR.PACKAGE.ROOT.dto.*#get*(*)     public               id:lombok-getter
 # YOUR.PACKAGE.ROOT.dto.*#is*(*)      public               id:lombok-boolean
 # YOUR.PACKAGE.ROOT.dto.*#set*(*)     public               id:lombok-setter
-#
 # Java Records: component accessors (often fine to count; usually leave off)
 # YOUR.PACKAGE.ROOT.dto.*#*()                              id:record-components
-#
+
 # Wider companion apply/unapply (ONLY if you’re sure)
 # YOUR.PACKAGE.ROOT.*$*#apply(*)                           id:wide-apply
 # YOUR.PACKAGE.ROOT.*$*#unapply(*)                         id:wide-unapply
-#
+
 # Fluent builder/client methods (consider ret: to restrict to clients)
 # YOUR.PACKAGE.ROOT.builder.*#with*(*)                     id:builder-with
 # YOUR.PACKAGE.ROOT.client.*#with*(*)  ret:Lcom/api/client/*  id:client-fluent
-#
-# SECTION: DIAGNOSTICS (temporary; use with --dry-run only)
-#
-# Show all anonfun matches under your root
-# YOUR.PACKAGE.ROOT.*#*(* )  name-contains:$anonfun$        id:diag-anonfun
-#
-# List all synthetic methods (broad; do not keep enabled)
-# YOUR.PACKAGE.ROOT.*#*(* )  synthetic                      id:diag-synthetic
-#
-# SECTION: GLOBAL SAFETY NETS (only if you cannot set a package root)
-#
-# *#*(* )  synthetic                      id:global-synthetic
-# *#*(* )  bridge                         id:global-bridge
-# *#*(* )  synthetic name-contains:$anonfun$  id:global-anonfun
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION: GLOBAL (temporary; use with --dry-run only)
+
+# All anonfun matches under your root
+# *#*(*)  name-contains:$anonfun$        id:global-anonfun
+
+# All synthetic methods (broad; do not keep enabled)
+# *#*(*)  synthetic                      id:global-synthetic
+
+# *#*(*)  synthetic                      id:global-synthetic
+# *#*(*)  bridge                         id:global-bridge
+# *#*(*)  synthetic name-contains:$anonfun$  id:global-anonfun
