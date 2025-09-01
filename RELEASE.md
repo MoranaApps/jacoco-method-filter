@@ -77,7 +77,7 @@ Expected coordinates:
 
 - Core library:
 
-```
+```scala
 io.github.moranaapps:jacoco-method-filter-core_2.13:<version>
 ```
 
