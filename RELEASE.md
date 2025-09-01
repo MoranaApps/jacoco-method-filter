@@ -3,8 +3,11 @@
 This document describes how to publish **jacoco-method-filter** artifacts to Maven Central via the
 [Central Publisher Portal (CPP)](https://central.sonatype.com).
 
-Releases are fully automated using GitHub Actions.  
-You only need to bump the version, push a commit, and trigger the workflow.
+Releases are fully automated using GitHub Actions.
+- [Publish / Release Sonatype](./.github/workflows/publish-sonatype.yml) workflow.
+  - You only need to bump the version, push a commit, and trigger the workflow. 
+- [Release - create draft release](./.github/workflows/release_draft.yml) GH draft workflow.
+  - You need to manually start the action and provide the version.
 
 ---
 
@@ -37,7 +40,7 @@ You only need to bump the version, push a commit, and trigger the workflow.
    ```bash
    git add build.sbt
    git commit -m "Release 0.2.0"
-   git push origin main
+   git push origin master
    ```
 
 ---
@@ -86,7 +89,7 @@ Expected coordinates:
 
 ```bash
 git commit -am "Set version to 0.3.0-SNAPSHOT"
-git push origin main
+git push origin master
 ```
 
 ---
@@ -94,9 +97,7 @@ git push origin main
 ## 6. Quick checklist
 
 - [ ] Version updated in `build.sbt`
-- [ ] Commit pushed to `main`
+- [ ] Commit pushed to `master`
 - [ ] Workflow triggered via GitHub Actions
 - [ ] Artifacts staged or released successfully
 - [ ] Verified on [search.maven.org](https://search.maven.org)
-
----

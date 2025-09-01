@@ -1,4 +1,4 @@
-name: Publish / Release (manual)
+name: Publish / Release Sonatype
 
 on:
   workflow_dispatch:

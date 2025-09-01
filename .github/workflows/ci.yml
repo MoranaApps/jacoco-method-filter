@@ -1,5 +1,10 @@
 name: ci
-on: [push, pull_request]
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+    branches: [ master ]
+
 jobs:
   build:
     runs-on: ubuntu-latest
