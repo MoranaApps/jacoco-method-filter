@@ -6,7 +6,7 @@ This document describes how to publish **jacoco-method-filter** artifacts to Mav
 Releases are fully automated using GitHub Actions.
 
 - [Publish / Release Sonatype](./.github/workflows/publish-sonatype.yml) workflow.
-  - You only need to bump the version, push a commit, and trigger the workflow. 
+  - You only need to bump the version, push a commit, and trigger the workflow.
 - [Release - create draft release](./.github/workflows/release_draft.yml) GH draft workflow.
   - You need to manually start the action and provide the version.
 
@@ -22,6 +22,7 @@ Releases are fully automated using GitHub Actions.
   - `PGP_PASSPHRASE` → passphrase used when generating the key
 - `sbt.version=1.11.0` in `project/build.properties`
 - `sbt-pgp` plugin in `project/plugins.sbt`:
+
 ```scala
 addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.2.1")
 ```
@@ -31,13 +32,16 @@ addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.2.1")
 ## 2. Prepare the release
 
 1. **Bump the version** in `build.sbt` (top-level):
+2. 
 ```scala
 ThisBuild / version := "0.2.0"
 ```
+
 - Use [semantic versioning](https://semver.org/).
 - Do **not** include `-SNAPSHOT`.
 
 2. Commit and push:
+3. 
 ```bash
 git add build.sbt
 git commit -m "Release 0.2.0"
@@ -73,10 +77,13 @@ git push origin master
 Expected coordinates:
 
 - Core library:
+- 
 ```
 io.github.moranaapps:jacoco-method-filter-core_2.13:<version>
 ```
+
 - sbt plugin:
+
 ```scala
 addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "<version>")
 ```

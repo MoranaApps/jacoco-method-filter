@@ -64,14 +64,14 @@ Each rule tells the rewriter _which methods should be annotated as `*Generated` 
     - `get*`
     - `*_$eq`
 - `descriptor_glob` – JVM method descriptor in `(args)ret`.
-    - you may omit it entirely.
-      - `x.A#m2` ⇒ treated as `x.A#m2(*)*` (wildcard args & return).
-    - If provided, short/empty forms normalize as:
-      - `""`, `"()"`, `"(*)"` ⇒ all become `"(*)*"` (match any args & return).
-      - Examples:
-        - `(I)I` → takes int, returns int
-        - `(Ljava/lang/String;)V` → takes String, returns void
-        - `()` or `(*)` or omitted → any args, any return
+  - you may omit it entirely.
+    - `x.A#m2` ⇒ treated as `x.A#m2(*)*` (wildcard args & return).
+  - If provided, short/empty forms normalize as:
+    - `""`, `"()"`, `"(*)"` ⇒ all become `"(*)*"` (match any args & return).
+    - Examples:
+      - `(I)I` → takes int, returns int
+      - `(Ljava/lang/String;)V` → takes String, returns void
+      - `()` or `(*)` or omitted → any args, any return
 - `FLAGS` _(optional)_ – space or comma separated access modifiers.
   - Supported: `public | protected | private | synthetic | bridge | static | abstract`.
 - **Predicates** (optional) – fine-grained constraints:
@@ -177,13 +177,14 @@ sbt coverageFiltered
 
 > **Notes**
 > 
-> - Rules file defaults to rules/coverage-rules.txt (relative to project root).
-> - You can run in dry mode with:
+>- Rules file defaults to rules/coverage-rules.txt (relative to project root).
+>- You can run in dry mode with:
+>
 >```scala
 >coverageRewriteDryRun := true
 >```
-> - FQCN inputs should be dot-form (com.example.Foo). Rules may use dot or slash globs.
-
+>
+>- FQCN inputs should be dot-form (com.example.Foo). Rules may use dot or slash globs.
 
 ---
 
