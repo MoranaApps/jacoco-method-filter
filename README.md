@@ -171,6 +171,7 @@ sbt coverageFiltered
 ```
 
 #### Output
+
 - Filtered classes: `target/scala-*/classes-filtered`
 - HTML report: `target/jacoco-html/`
 - XML report: `target/jacoco.xml`

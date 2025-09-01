@@ -51,15 +51,15 @@ git push origin master
 
 ## 3. Trigger the release workflow
 
-1. Go to **GitHub → Actions → Publish / Release (manual)**.  
-2. Click **“Run workflow”** (top-right).  
-3. Options:
-- `doRelease`:  
-  - `yes` → publish + release immediately to Maven Central  
-  - `no` → only stage the bundle; downloadable as artifact
-- `runScripted`:  
-  - `true` → also run sbt-plugin scripted tests  
-  - `false` → skip them (faster)
+- **1.** Go to **GitHub → Actions → Publish / Release (manual)**.  
+- **2.** Click **“Run workflow”** (top-right).  
+- **3.** Options:
+  - `doRelease`:  
+    - `yes` → publish + release immediately to Maven Central  
+    - `no` → only stage the bundle; downloadable as artifact
+  - `runScripted`:  
+    - `true` → also run sbt-plugin scripted tests  
+    - `false` → skip them (faster)
 
 ---
 
@@ -76,7 +76,7 @@ git push origin master
 Expected coordinates:
 
 - Core library:
-- 
+
 ```
 io.github.moranaapps:jacoco-method-filter-core_2.13:<version>
 ```
