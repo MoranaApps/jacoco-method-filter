@@ -1,8 +1,11 @@
 
 # jacoco-method-filter
 
-**Scala-based bytecode rewriter for Java/Scala projects** that injects an annotation whose simple name contains `Generated` into selected methods *before* JaCoCo reporting.  
-Since **JaCoCo ≥ 0.8.2** ignores classes and methods annotated with an annotation whose simple name contains `Generated` (with retention `CLASS` or `RUNTIME`), this lets you **filter coverage at the method level** without touching your source code — and keep **HTML and XML numbers consistent**.
+**Scala-based bytecode rewriter for Java/Scala projects** that injects an annotation whose simple name contains
+`Generated` into selected methods *before* JaCoCo reporting. Since **JaCoCo ≥ 0.8.2** ignores classes and methods
+annotated with an annotation whose simple name contains `Generated` (with retention `CLASS` or `RUNTIME`), this lets
+you **filter coverage at the method level** without touching your source code — and keep **HTML and XML numbers
+consistent**.
 
 - [Why this exists](#why-this-exists)
 - [Goals](#goals)
@@ -18,7 +21,8 @@ Since **JaCoCo ≥ 0.8.2** ignores classes and methods annotated with an annotat
 ## Why this exists
 
 JaCoCo does not natively support arbitrary **method-level** filtering based on patterns.  
-Typical needs include removing **compiler noise** from Scala/Java coverage (e.g., Scala `copy`, `$default$N`, `$anonfun$*`, or `synthetic/bridge` methods) while keeping **real business logic** visible in coverage metrics.
+Typical needs include removing **compiler noise** from Scala/Java coverage (e.g., Scala `copy`, `$default$N`,
+`$anonfun$*`, or `synthetic/bridge` methods) while keeping **real business logic** visible in coverage metrics.
 
 ---
 
@@ -46,7 +50,7 @@ Each rule tells the rewriter _which methods should be annotated as `*Generated` 
 
 ### General Syntax
 
-```
+```text
 <FQCN_glob>#<method_glob>(<descriptor_glob>) [FLAGS and PREDICATES...]
 ```
 

@@ -4,6 +4,7 @@ This document describes how to publish **jacoco-method-filter** artifacts to Mav
 [Central Publisher Portal (CPP)](https://central.sonatype.com).
 
 Releases are fully automated using GitHub Actions.
+
 - [Publish / Release Sonatype](./.github/workflows/publish-sonatype.yml) workflow.
   - You only need to bump the version, push a commit, and trigger the workflow. 
 - [Release - create draft release](./.github/workflows/release_draft.yml) GH draft workflow.
@@ -21,27 +22,27 @@ Releases are fully automated using GitHub Actions.
   - `PGP_PASSPHRASE` → passphrase used when generating the key
 - `sbt.version=1.11.0` in `project/build.properties`
 - `sbt-pgp` plugin in `project/plugins.sbt`:
-  ```scala
-  addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.2.1")
-  ```
+```scala
+addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.2.1")
+```
 
 ---
 
 ## 2. Prepare the release
 
 1. **Bump the version** in `build.sbt` (top-level):
-   ```scala
-   ThisBuild / version := "0.2.0"
-   ```
-   - Use [semantic versioning](https://semver.org/).
-   - Do **not** include `-SNAPSHOT`.
+```scala
+ThisBuild / version := "0.2.0"
+```
+- Use [semantic versioning](https://semver.org/).
+- Do **not** include `-SNAPSHOT`.
 
 2. Commit and push:
-   ```bash
-   git add build.sbt
-   git commit -m "Release 0.2.0"
-   git push origin master
-   ```
+```bash
+git add build.sbt
+git commit -m "Release 0.2.0"
+git push origin master
+```
 
 ---
 
@@ -50,12 +51,12 @@ Releases are fully automated using GitHub Actions.
 1. Go to **GitHub → Actions → Publish / Release (manual)**.  
 2. Click **“Run workflow”** (top-right).  
 3. Options:
-   - `doRelease`:  
-     - `yes` → publish + release immediately to Maven Central  
-     - `no` → only stage the bundle; downloadable as artifact
-   - `runScripted`:  
-     - `true` → also run sbt-plugin scripted tests  
-     - `false` → skip them (faster)
+- `doRelease`:  
+  - `yes` → publish + release immediately to Maven Central  
+  - `no` → only stage the bundle; downloadable as artifact
+- `runScripted`:  
+  - `true` → also run sbt-plugin scripted tests  
+  - `false` → skip them (faster)
 
 ---
 
@@ -72,13 +73,13 @@ Releases are fully automated using GitHub Actions.
 Expected coordinates:
 
 - Core library:
-  ```
-  io.github.moranaapps:jacoco-method-filter-core_2.13:<version>
-  ```
+```
+io.github.moranaapps:jacoco-method-filter-core_2.13:<version>
+```
 - sbt plugin:
-  ```scala
-  addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "<version>")
-  ```
+```scala
+addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "<version>")
+```
 
 ---
 
