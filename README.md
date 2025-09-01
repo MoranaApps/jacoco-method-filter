@@ -151,20 +151,20 @@ jacocoCliJar             := baseDirectory.value / "tools" / "jacococli.jar"
 
 ### Workflow
 
-1. Run tests → `sbt-jacoco` produces `target/jacoco.exec` and unfiltered classes.
-2. Rewrite classes according to your rules (adds `@Generated`):
+- **1.** Run tests → `sbt-jacoco` produces `target/jacoco.exec` and unfiltered classes.
+- **2.** Rewrite classes according to your rules (adds `@Generated`):
 
 ```scala
 sbt coverageRewrite
 ```
 
-3. Generate filtered JaCoCo report:
+- **3.** Generate filtered JaCoCo report:
 
 ```scala
 sbt coverageReportFiltered
 ```
 
-4. Or run the full pipeline in one step:
+- **4.** Or run the full pipeline in one step:
 
 ```scala
 sbt coverageFiltered
@@ -176,7 +176,7 @@ sbt coverageFiltered
 - XML report: `target/jacoco.xml`
 
 > **Notes**
-> 
+>
 >- Rules file defaults to rules/coverage-rules.txt (relative to project root).
 >- You can run in dry mode with:
 >

@@ -31,17 +31,16 @@ addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.2.1")
 
 ## 2. Prepare the release
 
-1. **Bump the version** in `build.sbt` (top-level):
-2. 
+- **Bump the version** in `build.sbt` (top-level):
+  - Use [semantic versioning](https://semver.org/).
+  - Do **not** include `-SNAPSHOT`.
+
 ```scala
 ThisBuild / version := "0.2.0"
 ```
 
-- Use [semantic versioning](https://semver.org/).
-- Do **not** include `-SNAPSHOT`.
+- Commit and push:
 
-2. Commit and push:
-3. 
 ```bash
 git add build.sbt
 git commit -m "Release 0.2.0"
