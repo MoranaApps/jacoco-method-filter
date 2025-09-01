@@ -1,8 +1,11 @@
 
 # jacoco-method-filter
 
-**Scala-based bytecode rewriter for Java/Scala projects** that injects an annotation whose simple name contains `Generated` into selected methods *before* JaCoCo reporting.  
-Since **JaCoCo ≥ 0.8.2** ignores classes and methods annotated with an annotation whose simple name contains `Generated` (with retention `CLASS` or `RUNTIME`), this lets you **filter coverage at the method level** without touching your source code — and keep **HTML and XML numbers consistent**.
+**Scala-based bytecode rewriter for Java/Scala projects** that injects an annotation whose simple name contains
+`Generated` into selected methods *before* JaCoCo reporting. Since **JaCoCo ≥ 0.8.2** ignores classes and methods
+annotated with an annotation whose simple name contains `Generated` (with retention `CLASS` or `RUNTIME`), this lets
+you **filter coverage at the method level** without touching your source code — and keep **HTML and XML numbers
+consistent**.
 
 - [How to Build](#how-to-build)
 - [Installation](#installation)

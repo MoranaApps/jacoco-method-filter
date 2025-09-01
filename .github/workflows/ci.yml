@@ -1,5 +1,10 @@
 name: ci
-on: [push, pull_request]
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+    branches: [ master ]
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -10,4 +15,9 @@ jobs:
           distribution: temurin
           java-version: 21
       - uses: coursier/cache-action@v6
+      - name: Install sbt (sbt-extras)
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/dwijnand/sbt-extras/master/sbt -o sbt
+          chmod +x sbt
+          sudo mv sbt /usr/local/bin/
       - run: sbt "+test"

@@ -1,8 +1,11 @@
 
 # jacoco-method-filter
 
-**Scala-based bytecode rewriter for Java/Scala projects** that injects an annotation whose simple name contains `Generated` into selected methods *before* JaCoCo reporting.  
-Since **JaCoCo ≥ 0.8.2** ignores classes and methods annotated with an annotation whose simple name contains `Generated` (with retention `CLASS` or `RUNTIME`), this lets you **filter coverage at the method level** without touching your source code — and keep **HTML and XML numbers consistent**.
+**Scala-based bytecode rewriter for Java/Scala projects** that injects an annotation whose simple name contains
+`Generated` into selected methods *before* JaCoCo reporting. Since **JaCoCo ≥ 0.8.2** ignores classes and methods
+annotated with an annotation whose simple name contains `Generated` (with retention `CLASS` or `RUNTIME`), this lets
+you **filter coverage at the method level** without touching your source code — and keep **HTML and XML numbers
+consistent**.
 
 - [Why this exists](#why-this-exists)
 - [Goals](#goals)
@@ -18,7 +21,8 @@ Since **JaCoCo ≥ 0.8.2** ignores classes and methods annotated with an annotat
 ## Why this exists
 
 JaCoCo does not natively support arbitrary **method-level** filtering based on patterns.  
-Typical needs include removing **compiler noise** from Scala/Java coverage (e.g., Scala `copy`, `$default$N`, `$anonfun$*`, or `synthetic/bridge` methods) while keeping **real business logic** visible in coverage metrics.
+Typical needs include removing **compiler noise** from Scala/Java coverage (e.g., Scala `copy`, `$default$N`,
+`$anonfun$*`, or `synthetic/bridge` methods) while keeping **real business logic** visible in coverage metrics.
 
 ---
 
@@ -46,7 +50,7 @@ Each rule tells the rewriter _which methods should be annotated as `*Generated` 
 
 ### General Syntax
 
-```
+```text
 <FQCN_glob>#<method_glob>(<descriptor_glob>) [FLAGS and PREDICATES...]
 ```
 
@@ -60,14 +64,14 @@ Each rule tells the rewriter _which methods should be annotated as `*Generated` 
     - `get*`
     - `*_$eq`
 - `descriptor_glob` – JVM method descriptor in `(args)ret`.
-    - you may omit it entirely.
-      - `x.A#m2` ⇒ treated as `x.A#m2(*)*` (wildcard args & return).
-    - If provided, short/empty forms normalize as:
-      - `""`, `"()"`, `"(*)"` ⇒ all become `"(*)*"` (match any args & return).
-      - Examples:
-        - `(I)I` → takes int, returns int
-        - `(Ljava/lang/String;)V` → takes String, returns void
-        - `()` or `(*)` or omitted → any args, any return
+  - you may omit it entirely.
+    - `x.A#m2` ⇒ treated as `x.A#m2(*)*` (wildcard args & return).
+  - If provided, short/empty forms normalize as:
+    - `""`, `"()"`, `"(*)"` ⇒ all become `"(*)*"` (match any args & return).
+    - Examples:
+      - `(I)I` → takes int, returns int
+      - `(Ljava/lang/String;)V` → takes String, returns void
+      - `()` or `(*)` or omitted → any args, any return
 - `FLAGS` _(optional)_ – space or comma separated access modifiers.
   - Supported: `public | protected | private | synthetic | bridge | static | abstract`.
 - **Predicates** (optional) – fine-grained constraints:
@@ -147,39 +151,41 @@ jacocoCliJar             := baseDirectory.value / "tools" / "jacococli.jar"
 
 ### Workflow
 
-1. Run tests → `sbt-jacoco` produces `target/jacoco.exec` and unfiltered classes.
-2. Rewrite classes according to your rules (adds `@Generated`):
+- **1.** Run tests → `sbt-jacoco` produces `target/jacoco.exec` and unfiltered classes.
+- **2.** Rewrite classes according to your rules (adds `@Generated`):
 
 ```scala
 sbt coverageRewrite
 ```
 
-3. Generate filtered JaCoCo report:
+- **3.** Generate filtered JaCoCo report:
 
 ```scala
 sbt coverageReportFiltered
 ```
 
-4. Or run the full pipeline in one step:
+- **4.** Or run the full pipeline in one step:
 
 ```scala
 sbt coverageFiltered
 ```
 
 #### Output
+
 - Filtered classes: `target/scala-*/classes-filtered`
 - HTML report: `target/jacoco-html/`
 - XML report: `target/jacoco.xml`
 
 > **Notes**
-> 
-> - Rules file defaults to rules/coverage-rules.txt (relative to project root).
-> - You can run in dry mode with:
+>
+>- Rules file defaults to rules/coverage-rules.txt (relative to project root).
+>- You can run in dry mode with:
+>
 >```scala
 >coverageRewriteDryRun := true
 >```
-> - FQCN inputs should be dot-form (com.example.Foo). Rules may use dot or slash globs.
-
+>
+>- FQCN inputs should be dot-form (com.example.Foo). Rules may use dot or slash globs.
 
 ---
 
