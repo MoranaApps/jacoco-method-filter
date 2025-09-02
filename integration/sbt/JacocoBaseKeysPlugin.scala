@@ -1,3 +1,5 @@
+// JacocoBaseKeysPlugin.scala | last modified in v0.1.7
+
 import sbt._
 import sbt.Keys._
 

@@ -1,3 +1,5 @@
+// FilteredJacocoAgentPlugin.scala | last modified in v0.1.7
+
 import JacocoBaseKeysPlugin.autoImport.*
 import sbt.Keys.*
 import sbt.{ScopeFilter, inProjects as inP, *}
