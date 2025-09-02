@@ -67,11 +67,12 @@ and optional **flags/predicates**.
 - **Flags** _(optional)_  
   `public | protected | private | synthetic | bridge | static | abstract`
 - **Predicates** _(optional)_
-    - `ret:<glob>` → match return type only
-    - `id:<string>` → identifier for logs/reports
-    - `name-contains:<s>`, `name-starts:<s>`, `name-ends:<s>`
+  - `ret:<glob>` → match return type only
+  - `id:<string>` → identifier for logs/reports
+  - `name-contains:<s>`, `name-starts:<s>`, `name-ends:<s>`
 
 > **Notes**
+> 
 >- Regex selectors (`re:`) are not supported — **globs only**.
 >- **Always use dot-form (**`com.example.Foo`**) for class names**.
 >  - Rules written with either dot or slash still match, but all inputs to the matcher must be dot-form.
@@ -185,7 +186,7 @@ Usable commands:
 mvn clean verify -Pcode-coverage                # full pipeline: test → rewrite → report
 ```
 
-### Outputs:
+### Outputs
 
 - **Filtered classes** → target/classes-filtered
 - **HTML report** → target/jacoco-html/index.html
