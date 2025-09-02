@@ -74,7 +74,8 @@ and optional **flags/predicates**.
 > **Notes**
 >
 >- Regex selectors (`re:`) are not supported — **globs only**.
->- **Always use dot-form (**`com.example.Foo`**) for class names**. Rules written with either dot or slash still match, but all inputs to the matcher must be dot-form.
+>- **Always use dot-form (**`com.example.Foo`**) for class names**. Rules written with either dot or slash still
+>match, but all inputs to the matcher must be dot-form.
 >- Comments (`# …`) and blank lines are ignored.
 
 ### Quick Examples
