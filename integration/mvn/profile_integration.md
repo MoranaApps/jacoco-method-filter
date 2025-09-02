@@ -1,8 +1,8 @@
-## Maven Integration by Profile
+# Maven Integration by Profile
 
 This project provides a Maven profile for integrating **JaCoCo coverage with method-level filtering**.  
-It rewrites compiled classes according to custom rules, attaches the JaCoCo agent for test runs, and generates **filtered coverage reports** (HTML + XML).
-
+It rewrites compiled classes according to custom rules, attaches the JaCoCo agent for test runs, and 
+generates **filtered coverage reports** (HTML + XML).
 
 - [Add Dependency](#add-dependency)
 - [Profile to place in `root pom.xml`](#profile-to-place-in-root-pomxml)
