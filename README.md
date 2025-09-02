@@ -129,25 +129,10 @@ jacocoExec               := target.value / "jacoco.exec"
 jacocoCliJar             := baseDirectory.value / "tools" / "jacococli.jar"
 ```
 
-### Workflow
+### Run
 
-- **1.** Run tests → `sbt-jacoco` produces `target/jacoco.exec` and unfiltered classes.
-- **2.** Rewrite classes according to your rules (adds `@Generated`):
-
-```scala
-sbt coverageRewrite
-```
-
-- **3.** Generate filtered JaCoCo report:
-
-```scala
-sbt coverageReportFiltered
-```
-
-- **4.** Or run the full pipeline in one step:
-
-```scala
-sbt coverageFiltered
+```bash
+sbt jacoco
 ```
 
 #### Output
@@ -191,6 +176,25 @@ mvn clean verify -Pcode-coverage                # full pipeline: test → rewrit
 - **Filtered classes** → target/classes-filtered
 - **HTML report** → target/jacoco-html/index.html
 - **XML report** → target/jacoco.xml
+
+## Usage - Customization
+
+### No Tests in Module
+
+If your module does not contain tests, the jacoco will not generate the jacoco.exec file.
+It will lead to an error when the jacoco-cli tries to generate the report.
+You have two options:
+- Deactivate the profile in this module (Not recommended)
+- Allow no exec file in the configuration in integration.
+
+#### Sbt
+TBD
+
+#### Maven
+TBD
+
+
+
 
 ---
 
