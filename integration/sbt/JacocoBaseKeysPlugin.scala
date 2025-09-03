@@ -1,4 +1,4 @@
-// JacocoBaseKeysPlugin.scala | last modified in v0.1.7
+// JacocoBaseKeysPlugin.scala | last modified in v1.0.0
 
 import sbt._
 import sbt.Keys._
