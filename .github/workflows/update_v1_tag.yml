@@ -1,8 +1,8 @@
 name: Update v2 tag on release
 
 # TODO: activate after first v1 release
-#on:
-#  release:
+on:
+  workflow_dispatch:
 #    types: [published]
 
 jobs:
