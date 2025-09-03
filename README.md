@@ -4,7 +4,7 @@
 **Scala-based bytecode rewriter for Java/Scala projects** that injects an annotation whose simple name contains
 `Generated` into selected methods *before* JaCoCo reporting. Since **JaCoCo ≥ 0.8.2** ignores classes and methods
 annotated with an annotation whose simple name contains `Generated` (with retention `CLASS` or `RUNTIME`), this lets
-you **filter coverage at the method level** without touching your source code — and keep **HTML and XML numbers
+You **filter coverage at the method level** without touching your source code — and keep **HTML and XML numbers
 consistent**.
 
 - [Why this exists](#why-this-exists)
@@ -28,7 +28,7 @@ Typical needs include removing **compiler noise** from Scala/Java coverage (e.g.
 ## Goals
 
 - Method-level filtering using a simple **rules file** (globs + flags).
-- **No source changes**: the tool annotates bytecode (`.class`) after compile.
+- **No source changes**: the tool annotates bytecode (`.class`) after compilation.
 - Works locally and in CI with **sbt**, **Maven**, and **GitHub Actions**.
 - Supports **Scala and Java** (JVM bytecode).
 - Simple flow: `test → rewriter → jacococli report`.
@@ -106,33 +106,46 @@ to help you adapt the rules to your own project.
 
 ## Usage — sbt plugin
 
-- Add the plugin to your build:
+- Paste auto plugin sbt files into your `{root}/project` directory:
+  - [JacocoBaseKeysPlugin.scala](./integration/sbt/JacocoBaseKeysPlugin.scala)
+  - [FilteredJacocoAgentPlugin.scala](./integration/sbt/FilteredJacocoAgentPlugin.scala)
+
+- Paste the default rules config to the project root directory:
+  - [jmf-rules for Scala projects](./integration/jmf-rules_for_scala_project.txt)
+
+- In your root `build.sbt`, enable plugin for each module where required:
 
 ```scala
-// project/plugins.sbt
-addSbtPlugin("com.github.sbt" % "sbt-jacoco" % "3.5.0")
-addSbtPlugin("MoranaApps" % "jacoco-method-filter-sbt" % "0.1.0-SNAPSHOT")
+.enablePlugins(FilteredJacocoAgentPlugin)
 ```
 
-- In your project build:
-
+### Register Aliases
+#### In `build.sbt`
 ```scala
-enablePlugins(morana.coverage.JacocoFilterPlugin)
+// Run activate jacoco + clean + test + per-module reports across the whole build + deactivate jacoco
+addCommandAlias("jacoco", "; jacocoOn; clean; test; jacocoReportAll; jacocoOff")
+addCommandAlias("jacocoOff",  "; set every jacocoPluginEnabled := false")
+addCommandAlias("jacocoOn",   "; set every jacocoPluginEnabled := true")
+```
 
-// make the tool available at runtime for the plugin to run
-libraryDependencies += "MoranaApps" %% "jacoco-method-filter-core" % "0.1.0-SNAPSHOT"
-
-// (optional) overrides
-coverageRewriteRules     := baseDirectory.value / "rules" / "coverage-rules.txt"
-coverageRewriteOutputDir := target.value / s"scala-${scalaBinaryVersion.value}" / "classes-filtered"
-jacocoExec               := target.value / "jacoco.exec"
-jacocoCliJar             := baseDirectory.value / "tools" / "jacococli.jar"
+#### In `.sbtrc`
+```scala
+# Jacoco Aliases
+alias jacoco=; jacocoOn; +clean; +test; jacocoReportAll; jacocoOff
+alias jacocoOff=; set every jacocoPluginEnabled := false
+alias jacocoOn=; set every jacocoPluginEnabled := true
 ```
 
 ### Run
 
 ```bash
 sbt jacoco
+```
+
+If you need to run module in isolation. (Different java can be required)
+
+```bash
+sbt "project xzy" jacoco
 ```
 
 #### Output
@@ -143,14 +156,13 @@ sbt jacoco
 
 > **Notes**
 >
->- Rules file defaults to rules/coverage-rules.txt (relative to project root).
->- You can run in dry mode with:
+>- You can run in dry mode. See the provided plugin code and change:
 >
 >```scala
->coverageRewriteDryRun := true
+>jmfDryRun   := false      # see in `override def projectSettings: Seq[Setting[_]]`
 >```
 >
->- FQCN inputs should be dot-form (com.example.Foo). Rules may use dot or slash globs.
+>- FQCN inputs should be dot-form (com.example.Foo).
 
 ---
 
@@ -164,6 +176,9 @@ To use **jacoco-method-filter** in your project:
 
 Full **copy-paste ready** configuration (including the complete `<profile>` block) is documented in  
 [Maven Integration](./integration/mvn/profile_integration.md).
+
+Full **copy-paste ready** default rules config to the project root directory:
+  - [jmf-rules for Scala projects](./integration/jmf-rules_for_scala_project.txt)
 
 Usable commands:
 
@@ -181,20 +196,8 @@ mvn clean verify -Pcode-coverage                # full pipeline: test → rewrit
 
 ### No Tests in Module
 
-If your module does not contain tests, the jacoco will not generate the jacoco.exec file.
-It will lead to an error when the jacoco-cli tries to generate the report.
-You have two options:
-- Deactivate the profile in this module (Not recommended)
-- Allow no exec file in the configuration in integration.
-
-#### Sbt
-TBD
-
-#### Maven
-TBD
-
-
-
+If your module does not contain tests, JaCoCo will not generate the report.exec file.
+In this situation, the generation of the JaCoCo report will be skipped.
 
 ---
 
