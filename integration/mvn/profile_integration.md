@@ -78,7 +78,8 @@ Add the following profile to the `<profiles>` section of your **root POM**
                       Step 2: Ant tasks for:
                         (a) computing skip.coverage for aggregator modules,
                         (b) determining test.classes.dir,
-                        (c) swapping filtered classes back into target/classes before tests.
+                        (c) computing jacoco.report.skip based on exec presence,
+                        (d) swapping filtered classes back into target/classes before tests.
                       We use a single antrun with multiple executions to share properties.
                     -->
                     <plugin>
