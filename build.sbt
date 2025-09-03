@@ -4,7 +4,7 @@ import xerial.sbt.Sonatype._
 ThisBuild / organization   := "io.github.moranaapps"
 ThisBuild / scalaVersion   := "2.13.14"             // default
 ThisBuild / crossScalaVersions := Seq("2.12.19", "2.13.14")
-ThisBuild / version        := "0.2.0"
+ThisBuild / version        := "1.0.0"
 ThisBuild / versionScheme  := Some("early-semver")
 
 // Central (bundle flow)
