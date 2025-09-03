@@ -19,7 +19,7 @@ Add the dependency to your target project:
     <dependency>
         <groupId>MoranaApps</groupId>
         <artifactId>jacoco-method-filter-core_2.12</artifactId>
-        <version>0.2.0</version>
+        <version>1.0.0</version>
         <scope>test</scope>
     </dependency>
 </dependencies>
@@ -40,19 +40,7 @@ Add the following profile to the `<profiles>` section of your **root POM**
     4. Swap in filtered classes before tests.
     5. Run tests with JaCoCo agent attached.
     6. Generate filtered coverage reports (HTML + XML).
-   Last  modified: v0.2.0
--->
-<!--
-  Profile: code-coverage
-  Purpose: Integrates JaCoCo code coverage with custom filtering (jacoco-method-filter).
-  Workflow:
-    1. Resolve JaCoCo CLI jar (nodeps variant).
-    2. Compute skip flags for aggregator projects.
-    3. Rewrite classes to apply filtering rules.
-    4. Swap in filtered classes before tests.
-    5. Run tests with JaCoCo agent attached.
-    6. Generate filtered coverage reports (HTML + XML).
-   Last  modified: v0.2.0
+   Last  modified: jmf:v1.0.0
 -->
 <profile>
     <id>code-coverage</id>
