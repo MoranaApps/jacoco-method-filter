@@ -42,6 +42,18 @@ Add the following profile to the `<profiles>` section of your **root POM**
     6. Generate filtered coverage reports (HTML + XML).
    Last  modified: v0.2.0
 -->
+<!--
+  Profile: code-coverage
+  Purpose: Integrates JaCoCo code coverage with custom filtering (jacoco-method-filter).
+  Workflow:
+    1. Resolve JaCoCo CLI jar (nodeps variant).
+    2. Compute skip flags for aggregator projects.
+    3. Rewrite classes to apply filtering rules.
+    4. Swap in filtered classes before tests.
+    5. Run tests with JaCoCo agent attached.
+    6. Generate filtered coverage reports (HTML + XML).
+   Last  modified: v0.2.0
+-->
 <profile>
     <id>code-coverage</id>
     <build>
@@ -49,7 +61,7 @@ Add the following profile to the `<profiles>` section of your **root POM**
             <!--
               Step 1: Resolve JaCoCo CLI jar into Maven properties.
               We use the `nodeps` classifier so it is executable as a fat JAR.
-            -->            
+            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -78,7 +90,8 @@ Add the following profile to the `<profiles>` section of your **root POM**
               Step 2: Ant tasks for:
                 (a) computing skip.coverage for aggregator modules,
                 (b) determining test.classes.dir,
-                (c) swapping filtered classes back into target/classes before tests.
+                (c) computing jacoco.report.skip based on exec presence,
+                (d) swapping filtered classes back into target/classes before tests.
               We use a single antrun with multiple executions to share properties.
             -->
             <plugin>
@@ -136,6 +149,46 @@ Add the following profile to the `<profiles>` section of your **root POM**
                                     <!-- If classes-filtered doesn't exist, this fileset is empty and copy is a no-op -->
                                     <fileset dir="${project.build.directory}/classes-filtered" erroronmissingdir="false"/>
                                 </copy>
+                            </target>
+                        </configuration>
+                    </execution>
+
+                    <!-- Compute jacoco.report.skip based on jacoco.exec presence and print a message if missing -->
+                    <execution>
+                        <id>compute-skip-jacoco-report</id>
+                        <phase>verify</phase>
+                        <goals><goal>run</goal></goals>
+                        <configuration>
+                            <exportAntProperties>true</exportAntProperties>
+                            <target>
+                                <!-- is aggregator? -->
+                                <condition property="is.aggregator" value="true" else="false">
+                                    <equals arg1="${project.packaging}" arg2="pom"/>
+                                </condition>
+
+                                <!-- does exec file exist? -->
+                                <available file="${project.build.directory}/jacoco.exec" property="jacoco.exec.present"/>
+
+                                <!-- final skip: skip.coverage OR aggregator OR missing exec -->
+                                <condition property="skip.jacoco.report" value="true" else="false">
+                                    <or>
+                                        <equals arg1="${skip.coverage}" arg2="true"/>
+                                        <equals arg1="${is.aggregator}" arg2="true"/>
+                                        <not><isset property="jacoco.exec.present"/></not>
+                                    </or>
+                                </condition>
+
+                                <!-- Friendly message when skipping due to missing exec (only in non-aggregator modules) -->
+                                <condition property="jacoco.exec.missing.msg"
+                                           value="[code-coverage] jacoco.exec not found in ${project.build.directory} — skipping JaCoCo report generation."
+                                           else="">
+                                    <and>
+                                        <equals arg1="${skip.jacoco.report}" arg2="true"/>
+                                        <not><equals arg1="${is.aggregator}" arg2="true"/></not>
+                                        <not><isset property="jacoco.exec.present"/></not>
+                                    </and>
+                                </condition>
+                                <echo message="${jacoco.exec.missing.msg}"/>
                             </target>
                         </configuration>
                     </execution>
@@ -225,7 +278,7 @@ Add the following profile to the `<profiles>` section of your **root POM**
                         <phase>verify</phase>
                         <goals><goal>exec</goal></goals>
                         <configuration>
-                            <skip>${skip.coverage}</skip>
+                            <skip>${skip.jacoco.report}</skip>
                             <executable>java</executable>
                             <arguments>
                                 <argument>-jar</argument>
