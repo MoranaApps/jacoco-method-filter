@@ -1,4 +1,4 @@
-// JacocoBaseKeysPlugin.scala | last modified in v1.0.0
+// JacocoBaseKeysPlugin.scala | last modified in v1.0.0 + local changes
 
 import JacocoBaseKeysPlugin.autoImport.*
 import sbt.*
@@ -79,11 +79,11 @@ object FilteredJacocoAgentPlugin extends AutoPlugin {
     else targets.foldLeft(state) { (st, ref) => Command.process(s"${ref.project}/jacocoClean", st) }
   }
 
-  private lazy val jacocoReportAllCmd = Command.command("jacocoReportAll") { state0 =>
-    val e         = Project.extract(state0)
+  private lazy val jacocoReportAllCmd = Command.command("jacocoReportAll") { state =>
+    val e         = Project.extract(state)
     val current   = e.currentRef
     // your existing helper (enabled projects under current aggregate)
-    val under     = enabledUnder(state0)
+    val under     = enabledUnder(state)
 
     // Also include current project if enabled
     val selfEnabled =
@@ -92,9 +92,10 @@ object FilteredJacocoAgentPlugin extends AutoPlugin {
     val targets = (if (selfEnabled) current +: under else under).distinct
 
     if (targets.isEmpty) {
-      println("[jacoco] nothing to report (no enabled modules here)."); state0
+      println("[jacoco] nothing to report (no enabled modules here).");
+      state
     } else {
-      targets.foldLeft(state0) { (st, ref) =>
+      targets.foldLeft(state) { (st, ref) =>
         Command.process(s"${ref.project}/jacocoReport", st)
       }
     }
@@ -155,7 +156,7 @@ object FilteredJacocoAgentPlugin extends AutoPlugin {
       s"Report: $moduleId - scala:${scalaVersion.value}"
     },
 
-  // --- JMF tool wiring
+    // --- JMF tool wiring
     ivyConfigurations += Jmf,
 
     jmfOutDir   := target.value / "jmf",
@@ -370,4 +371,3 @@ object FilteredJacocoAgentPlugin extends AutoPlugin {
     }
   )
 }
-
