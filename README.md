@@ -11,8 +11,10 @@ consistent**.
 - [Goals](#goals)
 - [Non-goals](#non-goals)
 - [Rules file format](#rules-file-format)
-- [Usage — sbt plugin](#usage--sbt-plugin)
-- [Usage — Maven](#usage--maven)
+- [Integration](#integration)
+  - [With sbt plugin](#with-sbt-plugin)
+  - [With Maven](#with-maven)
+  - [Customization](#customization)
 - [License](#license)
 
 ---
@@ -104,7 +106,14 @@ to help you adapt the rules to your own project.
 
 ---
 
-## Usage — sbt plugin
+## Integration
+
+The integration snippets follow the partially independent versioning dependency on source code:
+- **minor** change means change in source code (released to Maven Central) and is applied to all integrations
+- **patch** change means change in integration only (released in GItHub repo)
+  - the source not change and compatible
+
+### With sbt plugin
 
 - Paste auto plugin sbt files into your `{root}/project` directory:
   - [JacocoBaseKeysPlugin.scala](./integration/sbt/JacocoBaseKeysPlugin.scala)
@@ -119,8 +128,8 @@ to help you adapt the rules to your own project.
 .enablePlugins(FilteredJacocoAgentPlugin)
 ```
 
-### Register Aliases
-#### In `build.sbt`
+#### Register Aliases
+##### In `build.sbt`
 ```scala
 // Run activate jacoco + clean + test + per-module reports across the whole build + deactivate jacoco
 addCommandAlias("jacoco", "; jacocoOn; clean; test; jacocoReportAll; jacocoOff")
@@ -128,7 +137,7 @@ addCommandAlias("jacocoOff",  "; set every jacocoPluginEnabled := false")
 addCommandAlias("jacocoOn",   "; set every jacocoPluginEnabled := true")
 ```
 
-#### In `.sbtrc`
+##### In `.sbtrc`
 ```scala
 # Jacoco Aliases
 alias jacoco=; jacocoOn; +clean; +test; jacocoReportAll; jacocoOff
@@ -136,7 +145,7 @@ alias jacocoOff=; set every jacocoPluginEnabled := false
 alias jacocoOn=; set every jacocoPluginEnabled := true
 ```
 
-### Run
+#$## Run
 
 ```bash
 sbt jacoco
@@ -148,7 +157,7 @@ If you need to run module in isolation. (Different java can be required)
 sbt "project xzy" jacoco
 ```
 
-#### Output
+##### Output
 
 - Filtered classes: `target/scala-*/classes-filtered`
 - HTML report: `target/jacoco-html/`
@@ -166,7 +175,7 @@ sbt "project xzy" jacoco
 
 ---
 
-## Usage — Maven
+### With Maven
 
 To use **jacoco-method-filter** in your project:
 
@@ -186,15 +195,15 @@ Usable commands:
 mvn clean verify -Pcode-coverage                # full pipeline: test → rewrite → report
 ```
 
-### Outputs
+#### Outputs
 
 - **Filtered classes** → target/classes-filtered
 - **HTML report** → target/jacoco-html/index.html
 - **XML report** → target/jacoco.xml
 
-## Usage - Customization
+### Customization
 
-### No Tests in Module
+#### No Tests in Module
 
 If your module does not contain tests, JaCoCo will not generate the report.exec file.
 In this situation, the generation of the JaCoCo report will be skipped.
