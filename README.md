@@ -109,6 +109,7 @@ to help you adapt the rules to your own project.
 ## Integration
 
 The integration snippets follow the partially independent versioning dependency on source code:
+
 - **minor** change means change in source code (released to Maven Central) and is applied to all integrations
 - **patch** change means change in integration only (released in GItHub repo)
   - the source not change and compatible
@@ -129,7 +130,9 @@ The integration snippets follow the partially independent versioning dependency 
 ```
 
 #### Register Aliases
+
 ##### In `build.sbt`
+
 ```scala
 // Run activate jacoco + clean + test + per-module reports across the whole build + deactivate jacoco
 addCommandAlias("jacoco", "; jacocoOn; clean; test; jacocoReportAll; jacocoOff")
@@ -138,6 +141,7 @@ addCommandAlias("jacocoOn",   "; set every jacocoPluginEnabled := true")
 ```
 
 ##### In `.sbtrc`
+
 ```scala
 # Jacoco Aliases
 alias jacoco=; jacocoOn; +clean; +test; jacocoReportAll; jacocoOff
@@ -145,7 +149,7 @@ alias jacocoOff=; set every jacocoPluginEnabled := false
 alias jacocoOn=; set every jacocoPluginEnabled := true
 ```
 
-#$## Run
+#### Run
 
 ```bash
 sbt jacoco
