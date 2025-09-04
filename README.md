@@ -191,7 +191,8 @@ Full **copy-paste ready** configuration (including the complete `<profile>` bloc
 [Maven Integration](./integration/mvn/profile_integration.md).
 
 Full **copy-paste ready** default rules config to the project root directory:
-  - [jmf-rules for Scala projects](./integration/jmf-rules_for_scala_project.txt)
+
+- [jmf-rules for Scala projects](./integration/jmf-rules_for_scala_project.txt)
 
 Usable commands:
 
