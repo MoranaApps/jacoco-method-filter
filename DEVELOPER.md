@@ -32,24 +32,24 @@ If you want to try the plugin and core library locally before release, publish t
 ```bash
 # from jacoco-method-filter repo root
 sbt "project rewriterCore" +publishLocal   # publishes jacoco-method-filter-core for all Scala versions
-sbt "project sbtPlugin"    publishLocal    # publishes jacoco-method-filter-sbt for sbt 1.x (Scala 2.12)
+sbt "project sbtPlugin"    publishLocal    # publishes jacoco-method-filter-sbt sbt plugin
 ```
 
 Artifacts will appear in:
 
-- ~/.ivy2/local/MoranaApps/...
-- ~/.m2/repository/MoranaApps/...
+- ~/.ivy2/local/io.github.moranaapps/...
+- ~/.m2/repository/io/github/moranaapps/...
 
 #### sbt (local snapshot)
 
 ```scala
 // project/plugins.sbt
-resolvers += Resolver.ivyLocal
-addSbtPlugin("MoranaApps" % "jacoco-method-filter-sbt" % "0.1.0-SNAPSHOT")
+resolvers += Resolver.defaultLocal
+addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "1.0.0")
 
 // build.sbt
 enablePlugins(morana.coverage.JacocoFilterPlugin)
-libraryDependencies += "MoranaApps" %% "jacoco-method-filter-core" % "0.1.0-SNAPSHOT"
+libraryDependencies += "io.github.moranaapps" %% "jacoco-method-filter-core" % "1.0.0"
 ```
 
 #### Maven (local snapshot)
@@ -68,9 +68,9 @@ libraryDependencies += "MoranaApps" %% "jacoco-method-filter-core" % "0.1.0-SNAP
 
 <dependencies>
   <dependency>
-    <groupId>MoranaApps</groupId>
+    <groupId>io.github.moranaapps</groupId>
     <artifactId>jacoco-method-filter-core_2.13</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>1.0.0</version>
   </dependency>
 </dependencies>
 ```

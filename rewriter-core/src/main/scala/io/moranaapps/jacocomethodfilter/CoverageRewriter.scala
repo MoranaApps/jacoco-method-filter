@@ -2,10 +2,10 @@ package io.moranaapps.jacocomethodfilter
 
 import io.moranaapps.jacocomethodfilter.Compat.using
 import org.objectweb.asm._
-import scopt.OParser
+import scopt.OptionParser
 
 import java.nio.file.{Files, Path, Paths}
-import scala.jdk.CollectionConverters._
+import scala.collection.JavaConverters._
 
 final case class CliConfig(
                             in: Path   = Paths.get("target/scala-2.13/classes"),
@@ -18,19 +18,28 @@ object CoverageRewriter {
   private val AnnotationDesc = "Lio/moranaapps/jacocomethodfilter/CoverageGenerated;"
 
   def main(args: Array[String]): Unit = {
-    val b = OParser.builder[CliConfig]
-    val parser = {
-      import b._
-      OParser.sequence(
-        programName("jacoco-method-filter"),
-        opt[String]("in").required().action((v,c) => c.copy(in = Paths.get(v))).text("Input classes directory"),
-        opt[String]("out").required().action((v,c) => c.copy(out = Paths.get(v))).text("Output classes directory"),
-        opt[String]("rules").required().action((v,c) => c.copy(rules = Paths.get(v))).text("Rules file path"),
-        opt[Unit]("dry-run").action((_,c) => c.copy(dryRun = true)).text("Only print matches; do not modify classes")
-      )
+    val parser = new OptionParser[CliConfig]("jacoco-method-filter") {
+      opt[String]("in")
+        .required()
+        .action((v, c) => c.copy(in = Paths.get(v)))
+        .text("Input classes directory")
+
+      opt[String]("out")
+        .required()
+        .action((v, c) => c.copy(out = Paths.get(v)))
+        .text("Output classes directory")
+
+      opt[String]("rules")
+        .required()
+        .action((v, c) => c.copy(rules = Paths.get(v)))
+        .text("Rules file path")
+
+      opt[Unit]("dry-run")
+        .action((_, c) => c.copy(dryRun = true))
+        .text("Only print matches; do not modify classes")
     }
 
-    OParser.parse(parser, args, CliConfig()) match {
+    parser.parse(args, CliConfig()) match {
       case Some(cfg) => run(cfg)
       case None      => sys.exit(2)
     }

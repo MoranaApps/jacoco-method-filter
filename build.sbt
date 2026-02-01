@@ -3,7 +3,7 @@ import xerial.sbt.Sonatype._
 // ---- global ---------------------------------------------------------------
 ThisBuild / organization   := "io.github.moranaapps"
 ThisBuild / scalaVersion   := "2.13.14"             // default
-ThisBuild / crossScalaVersions := Seq("2.12.19", "2.13.14")
+ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.21", "2.13.18")
 ThisBuild / version        := "1.0.0"
 ThisBuild / versionScheme  := Some("early-semver")
 
@@ -38,18 +38,27 @@ lazy val rewriterCore = (project in file("rewriter-core"))
     libraryDependencies ++= Seq(
       "org.ow2.asm"            %  "asm"                      % "9.6",
       "org.ow2.asm"            %  "asm-commons"              % "9.6",
-      "com.github.scopt"       %% "scopt"                    % "4.1.0",
-      // brings 2.13 APIs/collections shims to 2.12
-      "org.scala-lang.modules" %% "scala-collection-compat"  % "2.12.0",
-      "org.scalatest"          %% "scalatest"                % "3.2.19" % Test
+      "com.github.scopt"       %% "scopt"                    % "3.7.1",
+      "org.scalatest"          %% "scalatest"                % "3.1.4" % Test
     ),
 
     Compile / doc / scalacOptions ++= Seq("-no-link-warnings")
   )
 
+// SBT PLUGIN (publish this)
+lazy val sbtPlugin = (project in file("sbt-plugin"))
+  .enablePlugins(SbtPlugin)
+  .settings(
+    name := "jacoco-method-filter-sbt",
+    // sbt plugins are built with Scala 2.12 for sbt 1.x
+    scalaVersion := "2.12.21",
+    crossScalaVersions := Seq("2.12.21"),
+    publish / skip := false
+  )
+
 // AGGREGATOR (don’t publish)
 lazy val root = (project in file("."))
-  .aggregate(rewriterCore)
+  .aggregate(rewriterCore, sbtPlugin)
   .settings(
     name := "jacoco-method-filter",
     publish / skip := true

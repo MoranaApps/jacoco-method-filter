@@ -19,11 +19,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Java
+      # Scala 2.11 is significantly more reliable to publish under JDK 8.
+      - name: Setup Java (8 for Scala 2.11)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 8
           cache: sbt
 
       - name: Install sbt (sbt-extras)
@@ -45,13 +46,30 @@ jobs:
           sbt sbtVersion
 
       - name: Clean previous local bundle
-        run: rm -rf **/target/sonatype-staging || true
+        run: find . -type d -path "*/target/sonatype-staging" -prune -exec rm -rf {} + || true
 
-      - name: Test (core)
-        run: sbt "project rewriterCore" clean test
+      - name: Test + publish signed (core, Scala 2.11)
+        run: sbt "; project rewriterCore; ++2.11.12 test; ++2.11.12 publishSigned"
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          PGP_PASSPHRASE:    ${{ secrets.PGP_PASSPHRASE }}
 
-      - name: Publish signed (core)
-        run: sbt "project rewriterCore" +publishSigned
+      - name: Setup Java (17 for Scala 2.12/2.13 + release)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: sbt
+
+      - name: Show Java (17)
+        run: java -version
+
+      - name: Test (sbt plugin)
+        run: sbt "project sbtPlugin" clean compile
+
+      - name: Test + publish signed (core 2.12/2.13 + sbt plugin)
+        run: sbt "; project rewriterCore; ++2.12.21 test; ++2.13.18 test; ++2.12.21 publishSigned; ++2.13.18 publishSigned; project sbtPlugin; publishSigned"
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
