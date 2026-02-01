@@ -1,0 +1,18 @@
+# JaCoCo Method Filter Rules
+# This is a minimal example rules file for filtering coverage.
+# For a comprehensive set of Scala-specific rules, see:
+# https://github.com/MoranaApps/jacoco-method-filter/blob/main/integration/jmf-rules_for_scala_project.txt
+
+# Example: Filter all synthetic methods (compiler-generated)
+*#*(*):synthetic
+
+# Example: Filter all bridge methods
+*#*(*):bridge
+
+# Example: Filter Scala case class boilerplate
+*.model.*#copy(*)
+*.model.*#productArity()
+*.model.*#productElement(*)
+
+# Example: Filter anonymous functions
+*#$anonfun$*
