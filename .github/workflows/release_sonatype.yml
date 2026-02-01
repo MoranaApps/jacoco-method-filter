@@ -69,7 +69,7 @@ jobs:
         run: sbt "project sbtPlugin" clean compile
 
       - name: Test + publish signed (core 2.12/2.13 + sbt plugin)
-        run: sbt "; project rewriterCore; ++2.12.21 test; ++2.13.18 test; ++2.12.21 publishSigned; ++2.13.18 publishSigned; project sbtPlugin; publishSigned"
+        run: sbt "; project rewriterCore; ++2.12.21 test; ++2.13.18 test; ++2.12.21 publishSigned; ++2.13.18 publishSigned; project sbtPlugin; clean; publishSigned"
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}

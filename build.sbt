@@ -53,6 +53,10 @@ lazy val sbtPlugin = (project in file("sbt-plugin"))
     // sbt plugins are built with Scala 2.12 for sbt 1.x
     scalaVersion := "2.12.21",
     crossScalaVersions := Seq("2.12.21"),
+    // Prevent publishing the legacy (non-suffixed) Maven artifacts like
+    // `jacoco-method-filter-sbt-<ver>.jar` which Sonatype Central cannot associate
+    // with the sbt-plugin coordinates `jacoco-method-filter-sbt_2.12_1.0`.
+    sbtPluginPublishLegacyMavenStyle := false,
     publish / skip := false
   )
 
