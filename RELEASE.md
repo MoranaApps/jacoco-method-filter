@@ -59,6 +59,11 @@ git push origin master
     - `yes` → publish + release immediately to Maven Central  
     - `no` → only stage the bundle; downloadable as artifact
 
+Notes:
+
+- The workflow publishes **Scala 2.11** under **JDK 8**, then publishes **Scala 2.12/2.13** and the **sbt plugin** under **JDK 17** (this reduces Scala 2.11 release failures).
+- `release_draft.yml` validates tags against branch `master`.
+
 ---
 
 ## 4. Verify the release
