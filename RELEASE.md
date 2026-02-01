@@ -61,7 +61,8 @@ git push origin master
 
 Notes:
 
-- The workflow publishes **Scala 2.11** under **JDK 8**, then publishes **Scala 2.12/2.13** and the **sbt plugin** under **JDK 17** (this reduces Scala 2.11 release failures).
+- The workflow publishes **Scala 2.11** under **JDK 8**, then publishes **Scala 2.12/2.13** and the **sbt plugin**
+ under **JDK 17** (this reduces Scala 2.11 release failures).
 - `release_draft.yml` validates tags against branch `master`.
 
 ---
