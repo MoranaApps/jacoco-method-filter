@@ -5,7 +5,7 @@ This document describes how to publish **jacoco-method-filter** artifacts to Mav
 
 Releases are fully automated using GitHub Actions.
 
-- [Publish / Release Sonatype](./.github/workflows/publish-sonatype.yml) workflow.
+- [Publish / Release Sonatype](./.github/workflows/release_sonatype.yml) workflow.
   - You only need to bump the version, push a commit, and trigger the workflow.
 - [Release - create draft release](./.github/workflows/release_draft.yml) GH draft workflow.
   - You need to manually start the action and provide the version.
@@ -20,11 +20,12 @@ Releases are fully automated using GitHub Actions.
   - `SONATYPE_PASSWORD` → Central token password
   - `PGP_SECRET` → ASCII-armored GPG private key (`-----BEGIN PGP PRIVATE KEY BLOCK-----`)
   - `PGP_PASSPHRASE` → passphrase used when generating the key
+  - `TOKEN` → GitHub token used by `release_draft.yml` (tag creation + release notes)
 - `sbt.version=1.11.0` in `project/build.properties`
 - `sbt-pgp` plugin in `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.2.1")
+addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.3.1")
 ```
 
 ---
@@ -57,16 +58,13 @@ git push origin master
   - `doRelease`:  
     - `yes` → publish + release immediately to Maven Central  
     - `no` → only stage the bundle; downloadable as artifact
-  - `runScripted`:  
-    - `true` → also run sbt-plugin scripted tests  
-    - `false` → skip them (faster)
 
 ---
 
 ## 4. Verify the release
 
 - **Staging only (`doRelease = no`)**:
-  - Download the `sona-staging-bundle` artifact from the workflow run.
+  - Download the `sonatype-staging-bundles` artifact from the workflow run.
   - Inspect contents: jars, POMs, sources, javadocs, signatures.
 
 - **Release (`doRelease = yes`)**:

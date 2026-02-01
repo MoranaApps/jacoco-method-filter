@@ -45,9 +45,20 @@ lazy val rewriterCore = (project in file("rewriter-core"))
     Compile / doc / scalacOptions ++= Seq("-no-link-warnings")
   )
 
+// SBT PLUGIN (publish this)
+lazy val sbtPlugin = (project in file("sbt-plugin"))
+  .enablePlugins(SbtPlugin)
+  .settings(
+    name := "jacoco-method-filter-sbt",
+    // sbt plugins are built with Scala 2.12 for sbt 1.x
+    scalaVersion := "2.12.21",
+    crossScalaVersions := Seq("2.12.21"),
+    publish / skip := false
+  )
+
 // AGGREGATOR (don’t publish)
 lazy val root = (project in file("."))
-  .aggregate(rewriterCore)
+  .aggregate(rewriterCore, sbtPlugin)
   .settings(
     name := "jacoco-method-filter",
     publish / skip := true

@@ -50,8 +50,11 @@ jobs:
       - name: Test (core)
         run: sbt "project rewriterCore" clean test
 
+      - name: Test (sbt plugin)
+        run: sbt "project sbtPlugin" clean compile
+
       - name: Publish signed (core)
-        run: sbt "project rewriterCore" +publishSigned
+        run: sbt "; project rewriterCore; +publishSigned; project sbtPlugin; publishSigned"
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
