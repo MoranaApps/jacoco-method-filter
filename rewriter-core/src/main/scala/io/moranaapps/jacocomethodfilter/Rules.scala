@@ -2,7 +2,7 @@ package io.moranaapps.jacocomethodfilter
 
 import java.nio.file.{Files, Path}
 import java.util.regex.Pattern
-import scala.jdk.CollectionConverters._
+import scala.collection.JavaConverters._
 import org.objectweb.asm.Opcodes
 
 // --- Selector helpers -------------------------------------------------------
@@ -36,7 +36,7 @@ final case class MethodRule(
                              id: Option[String],           // id:<string> for logs/reports
                              nameContains: Option[String], // name-contains:<s>
                              nameStarts: Option[String],   // name-starts:<s>
-                             nameEnds: Option[String],     // name-ends:<s>
+                             nameEnds: Option[String]      // name-ends:<s>
                            )
 
 object Rules {
@@ -131,7 +131,7 @@ object Rules {
                fqcn: String, // e.g., "za.co.absa.Foo$Bar"
                methodName: String, // e.g., "copy", "$anonfun$...", "contextSearch"
                desc: String, // full JVM method descriptor: "(args...)ret"
-               access: Int,
+               access: Int
              ): Boolean = {
     require(!fqcn.contains('/'),
       s"Pass FQCN in dot form (e.g., com.example.Foo). Got: $fqcn")

@@ -32,6 +32,7 @@ Typical needs include removing **compiler noise** from Scala/Java coverage (e.g.
 - Method-level filtering using a simple **rules file** (globs + flags).
 - **No source changes**: the tool annotates bytecode (`.class`) after compilation.
 - Works locally and in CI with **sbt**, **Maven**, and **GitHub Actions**.
+- Cross-built for **Scala 2.11**, **2.12**, and **2.13**.
 - Supports **Scala and Java** (JVM bytecode).
 - Simple flow: `test → rewriter → jacococli report`.
 
