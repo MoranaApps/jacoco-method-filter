@@ -47,7 +47,7 @@ sbt-basic/
    sbt jmfInitRules
    ```
    
-   This creates `jmf-rules.txt` with sensible defaults for Scala projects.
+   This creates `jmf-rules.txt` with sensible defaults for Scala projects (also suitable for Scala + Java mixed projects).
    
    **Option B (Manual):** Create the file manually with patterns for methods to exclude from coverage.
 

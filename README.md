@@ -128,14 +128,7 @@ addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "1.2.0")
 sbt jmfInitRules
 ```
 
-This creates a `jmf-rules.txt` file with sensible defaults for Scala projects.
-
-For Scala + Java mixed projects, set the template first:
-```scala
-// build.sbt
-jmfRulesTemplate := "scala-java"
-```
-Then run `sbt jmfInitRules`.
+This creates a `jmf-rules.txt` file with sensible defaults for Scala projects (also suitable for Scala + Java mixed projects).
 
 **Option B (Manual):** Download [jmf-rules.txt](./integration/jmf-rules_for_scala_project.txt) and place it in your project root directory.
 

@@ -153,8 +153,7 @@ object JacocoFilterPlugin extends AutoPlugin {
         log.info(s"[jmf] Created rules file: ${rulesFile.getAbsolutePath}")
         log.info("[jmf] Next steps:")
         log.info("[jmf]   1. Review and customize the rules for your project")
-        log.info("[jmf]   2. Replace 'YOUR.PACKAGE.ROOT' with your actual package prefix (if using scala-java template)")
-        log.info("[jmf]   3. Run 'sbt jacocoOn test jacocoReportAll jacocoOff' to generate coverage")
+        log.info("[jmf]   2. Run 'sbt jacocoOn test jacocoReportAll jacocoOff' to generate coverage")
         rulesFile
       }
     },
