@@ -40,5 +40,8 @@ object Keys {
     val jmfDryRun          = settingKey[Boolean]("Dry-run rewriter")
     val jmfEnabled         = settingKey[Boolean]("Enable JMF rewriting")
     val jmfPrepareForTests = taskKey[Unit]("Run JMF rewrite when enabled")
+    val jmfInitRules       = taskKey[File]("Create default jmf-rules.txt if it does not exist")
+    val jmfInitRulesForce  = settingKey[Boolean]("Force overwrite existing jmf-rules.txt (default: false)")
+    val jmfRulesTemplate   = settingKey[String]("Template type: 'scala' (default) or 'scala-java'")
   }
 }
