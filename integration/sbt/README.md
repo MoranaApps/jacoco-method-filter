@@ -41,7 +41,7 @@ If you have determined that you need the manual integration:
 
 **Important**: Files copied manually will not automatically update when new versions are released. You'll need
  to manually track and update them to get bug fixes and new features. The published plugin approach handles versioning
-  automatically through your build configuration.
+ automatically through your build configuration.
 
 ## Files
 
