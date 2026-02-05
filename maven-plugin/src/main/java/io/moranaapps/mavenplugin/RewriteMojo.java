@@ -1,5 +1,6 @@
 package io.moranaapps.mavenplugin;
 
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -18,6 +19,9 @@ public class RewriteMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
     private MavenProject project;
+    
+    @Parameter(defaultValue = "${plugin}", readonly = true, required = true)
+    private org.apache.maven.plugin.descriptor.PluginDescriptor pluginDescriptor;
 
     @Parameter(property = "jmf.rulesFile", defaultValue = "${project.basedir}/jmf-rules.txt")
     private File rulesFile;
@@ -94,11 +98,23 @@ public class RewriteMojo extends AbstractMojo {
     }
 
     private String buildCp() throws MojoExecutionException {
-        try {
-            return String.join(File.pathSeparator, project.getRuntimeClasspathElements());
-        } catch (Exception ex) {
-            throw new MojoExecutionException("Classpath assembly failed", ex);
+        List<String> paths = new ArrayList<>();
+        
+        // Get dependencies from plugin descriptor
+        List<?> deps = pluginDescriptor.getArtifacts();
+        for (Object depObj : deps) {
+            Artifact dep = (Artifact) depObj;
+            File jarFile = dep.getFile();
+            if (jarFile != null && jarFile.exists()) {
+                paths.add(jarFile.getAbsolutePath());
+            }
         }
+        
+        if (paths.isEmpty()) {
+            throw new MojoExecutionException("No plugin dependencies resolved");
+        }
+        
+        return String.join(File.pathSeparator, paths);
     }
 
     private String locateJavaExec() {

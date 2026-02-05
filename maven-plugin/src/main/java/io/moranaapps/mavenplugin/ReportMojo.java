@@ -1,5 +1,6 @@
 package io.moranaapps.mavenplugin;
 
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -15,6 +16,9 @@ public class ReportMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
     private MavenProject project;
+    
+    @Parameter(defaultValue = "${plugin}", readonly = true, required = true)
+    private org.apache.maven.plugin.descriptor.PluginDescriptor pluginDescriptor;
 
     @Parameter(property = "jmf.jacocoExecFile", defaultValue = "${project.build.directory}/jacoco.exec")
     private File jacocoExecFile;
@@ -137,25 +141,19 @@ public class ReportMojo extends AbstractMojo {
     }
 
     private File findJacocoCliJar() throws MojoExecutionException {
-        try {
-            List<String> cpItems = project.getRuntimeClasspathElements();
-            
-            for (String item : cpItems) {
-                File f = new File(item);
-                String fileName = f.getName();
-                // Match org.jacoco.cli-<version>-nodeps.jar pattern
-                if (fileName.startsWith("org.jacoco.cli-") && 
-                    fileName.endsWith("-nodeps.jar")) {
-                    return f;
+        // Search plugin dependencies for JaCoCo CLI
+        List<?> deps = pluginDescriptor.getArtifacts();
+        for (Object depObj : deps) {
+            Artifact dep = (Artifact) depObj;
+            if ("org.jacoco".equals(dep.getGroupId()) && 
+                "org.jacoco.cli".equals(dep.getArtifactId())) {
+                File jarLocation = dep.getFile();
+                if (jarLocation != null && jarLocation.exists()) {
+                    return jarLocation;
                 }
             }
-            
-            throw new MojoExecutionException(
-                "JaCoCo CLI jar missing from classpath. Expected: org.jacoco.cli-<version>-nodeps.jar");
-            
-        } catch (Exception ex) {
-            throw new MojoExecutionException("CLI jar lookup failed", ex);
         }
+        throw new MojoExecutionException("JaCoCo CLI JAR not found in plugin dependencies");
     }
 
     private String locateJavaExec() {
