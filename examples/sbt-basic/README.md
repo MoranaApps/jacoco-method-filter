@@ -42,14 +42,14 @@ sbt-basic/
 
 3. **Rules File** (`jmf-rules.txt`):
    
-   **Option A (Recommended):** Run the bootstrap task to create it:
-   ```bash
-   sbt jmfInitRules
-   ```
+**Option A (Recommended):** Run the bootstrap task to create it:
+```bash
+sbt jmfInitRules
+```
    
-   This creates `jmf-rules.txt` with sensible defaults for Scala projects.
+This creates `jmf-rules.txt` with sensible defaults for Scala projects.
    
-   **Option B (Manual):** Create the file manually with patterns for methods to exclude from coverage.
+**Option B (Manual):** Create the file manually with patterns for methods to exclude from coverage.
 
 ## Running Coverage
 

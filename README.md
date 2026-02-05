@@ -124,13 +124,15 @@ addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "1.2.0")
 #### 2. Add the default rules file to your project root
 
 **Option A (Recommended):** Run the bootstrap task:
+
 ```bash
 sbt jmfInitRules
 ```
 
 This creates a `jmf-rules.txt` file with sensible defaults for Scala projects.
 
-**Option B (Manual):** Download [jmf-rules.template.txt](./jmf-rules.template.txt) and place it in your project root directory as `jmf-rules.txt`.
+**Option B (Manual):** Download [jmf-rules.template.txt](./jmf-rules.template.txt) and place it in your project root
+ directory as `jmf-rules.txt`.
 
 #### 3. Enable the plugin in `build.sbt`
 
