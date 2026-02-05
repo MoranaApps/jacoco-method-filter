@@ -4,7 +4,7 @@ This example demonstrates the recommended way to integrate jacoco-method-filter 
 
 ## Project Structure
 
-```
+```txt
 sbt-basic/
 ├── build.sbt                   # Build configuration with plugin enabled
 ├── project/
@@ -19,11 +19,13 @@ sbt-basic/
 ## Setup
 
 1. **Plugin Configuration** (`project/plugins.sbt`):
+
    ```scala
    addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "1.2.0")
    ```
 
 2. **Build Configuration** (`build.sbt`):
+
    ```scala
    lazy val root = (project in file("."))
      .enablePlugins(JacocoFilterPlugin)
@@ -50,6 +52,7 @@ sbt jacoco
 ```
 
 This will:
+
 1. Enable JaCoCo instrumentation
 2. Clean the build
 3. Run tests with coverage

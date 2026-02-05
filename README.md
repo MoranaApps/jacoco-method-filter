@@ -115,17 +115,17 @@ to help you adapt the rules to your own project.
 
 > **Quick Start**: See the [minimal working example](./examples/sbt-basic) for a complete setup.
 
-#### 1. Add the plugin to `project/plugins.sbt`:
+#### 1. Add the plugin to `project/plugins.sbt`
 
 ```scala
 addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "1.2.0")
 ```
 
-#### 2. Add the default rules file to your project root:
+#### 2. Add the default rules file to your project root
 
 Download [jmf-rules.txt](./integration/jmf-rules_for_scala_project.txt) and place it in your project root directory.
 
-#### 3. Enable the plugin in `build.sbt`:
+#### 3. Enable the plugin in `build.sbt`
 
 Enable the plugin for each module where coverage filtering is required:
 
@@ -180,7 +180,8 @@ After running coverage, reports are generated in each module's target directory:
 
 > **Configuration Notes**
 >
->- The plugin is disabled by default. Enable it per-module with `.enablePlugins(JacocoFilterPlugin)` or globally with `set every jacocoPluginEnabled := true`.
+>- The plugin is disabled by default. Enable it per-module with `.enablePlugins(JacocoFilterPlugin)` or globally
+ with `set every jacocoPluginEnabled := true`.
 >- FQCN inputs in rules files should use dot-form (e.g., `com.example.Foo`).
 >- To run in dry mode (preview what would be filtered), set `jmfDryRun := true` in your build.
 
@@ -188,9 +189,11 @@ After running coverage, reports are generated in each module's target directory:
 
 #### Legacy/Manual Integration (Advanced Users Only)
 
-For users who need fine-grained control or are working with custom build setups, you can manually copy the plugin source files.
+For users who need fine-grained control or are working with custom build setups, you can manually copy the plugin
+ source files.
 
-**See [integration/sbt/README.md](./integration/sbt/README.md) for detailed instructions and important maintenance warnings.**
+**See [integration/sbt/README.md](./integration/sbt/README.md) for detailed instructions and important maintenance
+ warnings.**
 
 Quick summary:
 
@@ -202,11 +205,13 @@ Quick summary:
    - [jmf-rules for Scala projects](./integration/jmf-rules_for_scala_project.txt)
 
 3. Enable the plugin in `build.sbt`:
+
    ```scala
    .enablePlugins(FilteredJacocoAgentPlugin)
    ```
 
-**⚠️ Warning:** This approach is harder to maintain and keep in sync with releases. The published plugin (described above) is strongly recommended for most users.
+**⚠️ Warning:** This approach is harder to maintain and keep in sync with releases. The published plugin
+ (described above) is strongly recommended for most users.
 
 ---
 

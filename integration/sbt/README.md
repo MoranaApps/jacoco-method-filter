@@ -7,6 +7,7 @@ This directory contains the Scala source files for the sbt plugin that can be ma
 **For most users, we recommend using the published sbt plugin from Maven Central instead of copying these files.**
 
 See the main [README](../../README.md#with-sbt-plugin) for the recommended integration approach using:
+
 ```scala
 addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "1.2.0")
 ```
@@ -28,6 +29,7 @@ If you have determined that you need the manual integration:
    - `FilteredJacocoAgentPlugin.scala`
 
 2. Enable the plugin in your `build.sbt`:
+
    ```scala
    lazy val myModule = (project in file("my-module"))
      .enablePlugins(FilteredJacocoAgentPlugin)
@@ -37,9 +39,12 @@ If you have determined that you need the manual integration:
 
 ## Maintenance Warning
 
-**Important**: Files copied manually will not automatically update when new versions are released. You'll need to manually track and update them to get bug fixes and new features. The published plugin approach handles versioning automatically through your build configuration.
+**Important**: Files copied manually will not automatically update when new versions are released. You'll need
+ to manually track and update them to get bug fixes and new features. The published plugin approach handles versioning
+  automatically through your build configuration.
 
 ## Files
 
 - **JacocoBaseKeysPlugin.scala**: Base plugin that defines core keys and provides no-op defaults for all projects
-- **FilteredJacocoAgentPlugin.scala**: Main plugin implementation that configures JaCoCo agent, runs the method filter rewriter, and generates reports
+- **FilteredJacocoAgentPlugin.scala**: Main plugin implementation that configures JaCoCo agent, runs the method
+ filter rewriter, and generates reports
