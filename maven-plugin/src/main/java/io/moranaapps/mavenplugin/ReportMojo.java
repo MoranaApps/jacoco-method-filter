@@ -1,0 +1,170 @@
+package io.moranaapps.mavenplugin;
+
+import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
+
+import java.io.*;
+import java.util.*;
+
+@Mojo(name = "report", threadSafe = true)
+public class ReportMojo extends AbstractMojo {
+
+    @Parameter(defaultValue = "${project}", readonly = true, required = true)
+    private MavenProject project;
+
+    @Parameter(property = "jmf.jacocoExecFile", defaultValue = "${project.build.directory}/jacoco.exec")
+    private File jacocoExecFile;
+
+    @Parameter(property = "jmf.classesDirectory", defaultValue = "${project.build.directory}/classes-filtered")
+    private File classesDirectory;
+
+    @Parameter(property = "jmf.sourceDirectories")
+    private File[] sourceDirectories;
+
+    @Parameter(property = "jmf.reportDirectory", defaultValue = "${project.build.directory}/jacoco-html")
+    private File reportDirectory;
+
+    @Parameter(property = "jmf.xmlOutputFile", defaultValue = "${project.build.directory}/jacoco.xml")
+    private File xmlOutputFile;
+
+    @Parameter(property = "jmf.skip", defaultValue = "false")
+    private boolean skip;
+
+    @Parameter(property = "jmf.skipIfExecMissing", defaultValue = "true")
+    private boolean skipIfExecMissing;
+
+    public void execute() throws MojoExecutionException, MojoFailureException {
+        if (skip) {
+            getLog().info("Report generation bypassed");
+            return;
+        }
+
+        if (!jacocoExecFile.exists()) {
+            String msg = "Execution data not found: " + jacocoExecFile.getAbsolutePath();
+            if (skipIfExecMissing) {
+                getLog().info(msg + " (skipping)");
+                return;
+            } else {
+                throw new MojoExecutionException(msg);
+            }
+        }
+
+        if (sourceDirectories == null || sourceDirectories.length == 0) {
+            sourceDirectories = new File[]{new File(project.getBasedir(), "src/main/java")};
+        }
+
+        produceReports();
+    }
+
+    private void produceReports() throws MojoExecutionException {
+        File cliJar = findJacocoCliJar();
+        String javaCmd = locateJavaExec();
+        List<String> command = buildReportCmd(javaCmd, cliJar);
+        
+        getLog().info("╔═══ JaCoCo Method Filter: Report Generation ═══");
+        getLog().info("║ Exec data: " + jacocoExecFile.getAbsolutePath());
+        getLog().info("║ Classes:   " + classesDirectory.getAbsolutePath());
+        getLog().info("║ HTML:      " + reportDirectory.getAbsolutePath());
+        getLog().info("║ XML:       " + xmlOutputFile.getAbsolutePath());
+        getLog().info("╚════════════════════════════════════════════════");
+
+        executeReportTool(command);
+    }
+
+    private List<String> buildReportCmd(String javaBin, File jarFile) {
+        List<String> cmd = new ArrayList<>();
+        cmd.add(javaBin);
+        cmd.add("-jar");
+        cmd.add(jarFile.getAbsolutePath());
+        cmd.add("report");
+        cmd.add(jacocoExecFile.getAbsolutePath());
+        cmd.add("--classfiles");
+        cmd.add(classesDirectory.getAbsolutePath());
+        
+        for (File src : sourceDirectories) {
+            if (src.exists()) {
+                cmd.add("--sourcefiles");
+                cmd.add(src.getAbsolutePath());
+            }
+        }
+        
+        cmd.add("--html");
+        cmd.add(reportDirectory.getAbsolutePath());
+        cmd.add("--xml");
+        cmd.add(xmlOutputFile.getAbsolutePath());
+        
+        return cmd;
+    }
+
+    private void executeReportTool(List<String> cmdArgs) throws MojoExecutionException {
+        try {
+            Process p = new ProcessBuilder(cmdArgs).redirectErrorStream(true).start();
+            
+            Thread logCapture = new Thread(() -> {
+                try (BufferedReader rdr = new BufferedReader(
+                        new InputStreamReader(p.getInputStream(), "UTF-8"))) {
+                    String line;
+                    while ((line = rdr.readLine()) != null) {
+                        if (!line.trim().isEmpty()) {
+                            getLog().info(line.trim());
+                        }
+                    }
+                } catch (IOException ex) {
+                    getLog().error("Log capture error: " + ex.getMessage());
+                }
+            });
+            logCapture.start();
+            
+            int exitVal = p.waitFor();
+            logCapture.join();
+            
+            if (exitVal != 0) {
+                throw new MojoExecutionException("JaCoCo CLI exited with code: " + exitVal);
+            }
+            
+            getLog().info("Reports generated successfully");
+            
+        } catch (IOException ex) {
+            throw new MojoExecutionException("CLI launch failed", ex);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new MojoExecutionException("Report generation interrupted", ex);
+        }
+    }
+
+    private File findJacocoCliJar() throws MojoExecutionException {
+        try {
+            List<String> cpItems = project.getRuntimeClasspathElements();
+            
+            for (String item : cpItems) {
+                File f = new File(item);
+                String fileName = f.getName();
+                // Match org.jacoco.cli-<version>-nodeps.jar pattern
+                if (fileName.startsWith("org.jacoco.cli-") && 
+                    fileName.endsWith("-nodeps.jar")) {
+                    return f;
+                }
+            }
+            
+            throw new MojoExecutionException(
+                "JaCoCo CLI jar missing from classpath. Expected: org.jacoco.cli-<version>-nodeps.jar");
+            
+        } catch (Exception ex) {
+            throw new MojoExecutionException("CLI jar lookup failed", ex);
+        }
+    }
+
+    private String locateJavaExec() {
+        String home = System.getProperty("java.home");
+        if (home == null) return "java";
+        
+        String osName = System.getProperty("os.name", "").toLowerCase();
+        String binName = osName.startsWith("win") ? "java.exe" : "java";
+        File execFile = new File(new File(home, "bin"), binName);
+        return execFile.exists() ? execFile.getAbsolutePath() : "java";
+    }
+}
