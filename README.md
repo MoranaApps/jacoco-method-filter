@@ -109,74 +109,109 @@ to help you adapt the rules to your own project.
 
 ## Integration
 
-The integration snippets follow the partially independent versioning dependency on source code:
-
-- **minor** change means change in source code (released to Maven Central) and is applied to all integrations
-- **patch** change means change in integration only (released in GItHub repo)
-  - the source not change and compatible
-
 ### With sbt plugin
 
-- Paste auto plugin sbt files into your `{root}/project` directory:
-  - [JacocoBaseKeysPlugin.scala](./integration/sbt/JacocoBaseKeysPlugin.scala)
-  - [FilteredJacocoAgentPlugin.scala](./integration/sbt/FilteredJacocoAgentPlugin.scala)
+**Recommended approach:** Use the published sbt plugin from Maven Central.
 
-- Paste the default rules config to the project root directory:
-  - [jmf-rules for Scala projects](./integration/jmf-rules_for_scala_project.txt)
+> **Quick Start**: See the [minimal working example](./examples/sbt-basic) for a complete setup.
 
-- In your root `build.sbt`, enable plugin for each module where required:
+#### 1. Add the plugin to `project/plugins.sbt`
 
 ```scala
-.enablePlugins(FilteredJacocoAgentPlugin)
+addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "1.2.0")
 ```
 
-#### Register Aliases
+#### 2. Add the default rules file to your project root
 
-##### In `build.sbt`
+Download [jmf-rules.txt](./integration/jmf-rules_for_scala_project.txt) and place it in your project root directory.
+
+#### 3. Enable the plugin in `build.sbt`
+
+Enable the plugin for each module where coverage filtering is required:
+
+```scala
+lazy val myModule = (project in file("my-module"))
+  .enablePlugins(JacocoFilterPlugin)
+  .settings(
+    // your other settings
+  )
+```
+
+#### 4. Configure Coverage Control (Optional)
+
+In your root `build.sbt`, add command aliases to control coverage across all modules:
 
 ```scala
 // Run activate jacoco + clean + test + per-module reports across the whole build + deactivate jacoco
 addCommandAlias("jacoco", "; jacocoOn; clean; test; jacocoReportAll; jacocoOff")
-addCommandAlias("jacocoOff",  "; set every jacocoPluginEnabled := false")
-addCommandAlias("jacocoOn",   "; set every jacocoPluginEnabled := true")
+addCommandAlias("jacocoOff", "; set every jacocoPluginEnabled := false")
+addCommandAlias("jacocoOn", "; set every jacocoPluginEnabled := true")
 ```
 
-##### In `.sbtrc`
+Or add to `.sbtrc` for persistent aliases:
 
-```scala
+```text
 # Jacoco Aliases
 alias jacoco=; jacocoOn; +clean; +test; jacocoReportAll; jacocoOff
 alias jacocoOff=; set every jacocoPluginEnabled := false
 alias jacocoOn=; set every jacocoPluginEnabled := true
 ```
 
-#### Run
+#### 5. Run Coverage
 
 ```bash
 sbt jacoco
 ```
 
-If you need to run module in isolation. (Different java can be required)
+For a single module in isolation:
 
 ```bash
-sbt "project xzy" jacoco
+sbt "project myModule" jacoco
 ```
 
-##### Output
+#### 6. View Reports
 
-- Filtered classes: `target/scala-*/classes-filtered`
-- HTML report: `target/jacoco-html/`
-- XML report: `target/jacoco.xml`
+After running coverage, reports are generated in each module's target directory:
 
-> **Notes**
+- **Filtered classes**: `target/jmf/classes-filtered`
+- **HTML report**: `target/jacoco/report/index.html`
+- **XML report**: `target/jacoco/report/jacoco.xml`
+- **CSV report**: `target/jacoco/report/jacoco.csv`
+
+> **Configuration Notes**
 >
->- You can run in dry mode. See the provided plugin code and change:
->
->```scala
->jmfDryRun   := false      # see in `override def projectSettings: Seq[Setting[_]]`
->```
->
->- FQCN inputs should be dot-form (com.example.Foo).
+> - The plugin is disabled by default. Enable it per-module with `.enablePlugins(JacocoFilterPlugin)` or globally with
+ `set every jacocoPluginEnabled := true`.
+> - FQCN inputs in rules files should use dot-form (e.g., `com.example.Foo`).
+> - To run in dry mode (preview what would be filtered), set `jmfDryRun := true` in your build.
+
+---
+
+#### Legacy/Manual Integration (Advanced Users Only)
+
+For users who need fine-grained control or are working with custom build setups, you can manually copy the plugin
+ source files.
+
+**See [integration/sbt/README.md](./integration/sbt/README.md) for detailed instructions and important maintenance
+warnings.**
+
+Quick summary:
+
+1. Copy these files into your `{root}/project` directory:
+   - [JacocoBaseKeysPlugin.scala](./integration/sbt/JacocoBaseKeysPlugin.scala)
+   - [FilteredJacocoAgentPlugin.scala](./integration/sbt/FilteredJacocoAgentPlugin.scala)
+
+2. Add the default rules file to your project root:
+   - [jmf-rules for Scala projects](./integration/jmf-rules_for_scala_project.txt)
+
+3. Enable the plugin in `build.sbt`:
+
+   ```scala
+   .enablePlugins(FilteredJacocoAgentPlugin)
+   ```
+
+**⚠️ Warning:** This approach is harder to maintain and keep in sync with releases. The published plugin
+ (described above) is strongly recommended for most users.
 
 ---
 
