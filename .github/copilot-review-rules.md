@@ -1,40 +1,81 @@
 # Copilot Review Rules
 
-Default review
+Purpose
+- Define consistent review behavior and response formatting for Copilot code reviews
+- Keep responses concise; do not generate long audit reports unless requested
 
-- Scope: Single PR, normal risk.
-- Priorities (in order): correctness → security → tests → maintainability → style.
-- Checks:
-  - Highlight logic bugs, missing edge cases, and regressions.
-  - Flag security or data‑handling issues.
-  - Check that tests exist and cover the changed logic.
-  - Point out large complexity / duplication hotspots.
-  - For this repo: treat rules parsing/matching, CLI flags/exit codes, and sbt plugin behavior as compatibility surfaces.
-- Response format:
-  - Use short bullet points.
-  - Reference files + line ranges where possible.
-  - Do NOT rewrite the whole PR or produce long reports.
+Mode: Default review
 
-Double-check review
+- Scope
+  - Single PR, normal risk
+- Priorities (in order)
+  - correctness → security → tests → maintainability → style
+- Checks
+  - Correctness
+    - Highlight logic bugs, missing edge cases, regressions, and contract changes
+  - Security and data handling
+    - Flag unsafe input handling, secrets exposure, auth/authz issues, and insecure defaults
+  - Tests
+    - Check that tests exist for changed logic and cover success + failure paths
+  - Maintainability
+    - Point out unnecessary complexity, duplication, and unclear naming/structure
+  - Style
+    - Note style issues only when they reduce readability or break repo conventions
+- Response format
+  - Use short bullet points
+  - Reference files + line ranges where possible
+  - Group comments by severity: Blocker (must fix), Important (should fix), Nit (optional)
+  - Provide actionable suggestions (what to change), not rewrites
+  - Do NOT rewrite the whole PR or produce long reports
 
-- Scope: Higher‑risk PRs (security, infra, money flows, wide refactors).
-- Additional focus:
-  - Re‑validate that previous review comments were correctly addressed.
-  - Re‑check high‑risk areas: filesystem writes (bytecode rewrite), rule parsing edge cases, and backward compatibility.
-  - Look for hidden side effects and backward‑compatibility issues.
-- Response format:
-  - Only add comments where risk/impact is non‑trivial.
-  - Avoid repeating minor style notes already covered by default review.
+Mode: Double-check review
 
-Shared
+- Scope
+  - Higher-risk PRs (security, infra, money flows, wide refactors, data migrations)
+- Additional focus
+  - Confirm previous review comments were correctly addressed (if applicable)
+  - Re-check high-risk areas: filesystem writes (bytecode rewrite), rule parsing edge cases, backward compatibility
+  - Look for hidden side effects: rollout/upgrade path, failure modes, idempotency
+  - Validate safe defaults: least privilege, secure logging, safe error messages
+- Response format
+  - Only add comments where risk/impact is non-trivial
+  - Avoid repeating minor style notes already covered by default review
+  - Call out "risk acceptance" explicitly if something is left as-is
+
+Commenting rules (all modes)
+
+- Always include:
+  - What is the issue (1 line)
+  - Why it matters (impact/risk)
+  - How to fix (minimal actionable suggestion)
+- Prefer linking to existing patterns in the repo over introducing new ones
+- If you cannot be certain (missing context), ask a targeted question instead of assuming
+
+Non-goals
+
+- Do not request refactors unrelated to the PR's intent
+- Do not bikeshed formatting if tools (formatter/linter) handle it
+- Do not propose architectural rewrites unless explicitly requested
 
 PR Body Management
 
-- PR body format: Write PR description as a changelog, appending new changes to the end.
-- Prohibited: Rewriting or replacing the entire PR body. Always append updates.
+- Treat PR description as a changelog; append new changes at the end
+- Must not rewrite/replace entire PR body; always append updates
 - Structure:
   - Keep original description at top
   - Add new sections/updates chronologically below
-  - Use clear headings like "## Update [date/commit]" or "## Changes Added"
-  - Each update should reference the commit hash that made the changes
-- Purpose: Maintain full history of PR evolution for reviewers and future reference.
+  - Use headings like `## Update [YYYY-MM-DD]` referencing commit hashes
+- Purpose: preserve review history and decision trail
+
+Repo additions
+
+- Domain-specific high-risk areas:
+  - Filesystem writes (bytecode rewriting)
+  - Rule parsing/matching semantics
+  - Backward compatibility of CLI flags/exit codes
+- Contract-sensitive outputs:
+  - rules file syntax and matching semantics
+  - CLI flags and exit codes
+  - sbt plugin keys and integration behavior
+- Required tests: ScalaTest in `rewriter-core/src/test/scala`
+- Repo-specific style: prefer explicit Scala; avoid clever tricks
