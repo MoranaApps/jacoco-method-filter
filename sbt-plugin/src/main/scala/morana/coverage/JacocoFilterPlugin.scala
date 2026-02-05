@@ -130,6 +130,33 @@ object JacocoFilterPlugin extends AutoPlugin {
     jmfCliMain := "io.moranaapps.jacocomethodfilter.CoverageRewriter",
     jmfDryRun := false,
     jmfEnabled := true,
+    jmfInitRulesForce := false,
+    jmfRulesTemplate := "scala",
+
+    jmfInitRules := {
+      val log = streams.value.log
+      val rulesFile = jmfRulesFile.value
+      val force = jmfInitRulesForce.value
+      val template = jmfRulesTemplate.value
+      
+      if (rulesFile.exists() && !force) {
+        log.info(s"[jmf] Rules file already exists: ${rulesFile.getAbsolutePath}")
+        log.info("[jmf] To overwrite, set jmfInitRulesForce := true and run again.")
+        rulesFile
+      } else {
+        val templateContent = template.toLowerCase match {
+          case "scala-java" | "scalajava" | "java" => DefaultRulesTemplates.scalaJava
+          case _ => DefaultRulesTemplates.scala
+        }
+        
+        IO.write(rulesFile, templateContent)
+        log.info(s"[jmf] Created rules file: ${rulesFile.getAbsolutePath}")
+        log.info("[jmf] Next steps:")
+        log.info("[jmf]   1. Review and customize the rules for your project")
+        log.info("[jmf]   2. Run 'sbt jacocoOn test jacocoReportAll jacocoOff' to generate coverage")
+        rulesFile
+      }
+    },
 
     jmfRewrite := {
       val _ = (Compile / compile).value

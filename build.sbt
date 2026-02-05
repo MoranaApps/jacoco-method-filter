@@ -57,7 +57,15 @@ lazy val sbtPlugin = (project in file("sbt-plugin"))
     // `jacoco-method-filter-sbt-<ver>.jar` which Sonatype Central cannot associate
     // with the sbt-plugin coordinates `jacoco-method-filter-sbt_2.12_1.0`.
     sbtPluginPublishLegacyMavenStyle := false,
-    publish / skip := false
+    publish / skip := false,
+    
+    // Copy template from repo root to resources during build
+    Compile / resourceGenerators += Def.task {
+      val templateSource = (LocalRootProject / baseDirectory).value / "jmf-rules.template.txt"
+      val templateTarget = (Compile / resourceManaged).value / "jmf-rules.template.txt"
+      IO.copyFile(templateSource, templateTarget)
+      Seq(templateTarget)
+    }.taskValue
   )
 
 // AGGREGATOR (don’t publish)
