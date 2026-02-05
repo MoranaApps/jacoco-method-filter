@@ -180,11 +180,9 @@ After running coverage, reports are generated in each module's target directory:
 
 > **Configuration Notes**
 >
-> - The plugin is disabled by default. Enable it per-module with `.enablePlugins(JacocoFilterPlugin)` or globally
- with `set every jacocoPluginEnabled := true`.
+> - The plugin is disabled by default. Enable it per-module with `.enablePlugins(JacocoFilterPlugin)` or globally with `set every jacocoPluginEnabled := true`.
 > - FQCN inputs in rules files should use dot-form (e.g., `com.example.Foo`).
 > - To run in dry mode (preview what would be filtered), set `jmfDryRun := true` in your build.
-
 ---
 
 #### Legacy/Manual Integration (Advanced Users Only)
