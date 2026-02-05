@@ -1,5 +1,30 @@
 # Maven Integration by Profile
 
+> **⚠️ DEPRECATED - Legacy Integration Method**
+>
+> This manual profile-based integration approach is **deprecated** as of version 1.2.0.
+> 
+> **Please use the published Maven plugin instead**: [`jacoco-method-filter-maven-plugin`](../../maven-plugin/)
+>
+> **Why migrate:**
+> - ✅ Simpler configuration (no copy-paste of large XML profiles)
+> - ✅ Automatic version management
+> - ✅ Easier to maintain across multiple projects
+> - ✅ Better aligned with Maven best practices
+>
+> **See the [Maven example](../../examples/maven-basic) for the recommended approach.**
+>
+> ---
+>
+> **This document is retained for:**
+> - Advanced users requiring fine-grained control
+> - Legacy projects that cannot migrate immediately
+> - Reference implementation for custom build setups
+>
+> **Last updated:** v1.0.0 (profile-based approach)
+
+---
+
 This project provides a Maven profile for integrating **JaCoCo coverage with method-level filtering**.  
 It rewrites compiled classes according to custom rules, attaches the JaCoCo agent for test runs, and
 generates **filtered coverage reports** (HTML + XML).

@@ -226,30 +226,80 @@ Quick summary:
 
 ### With Maven
 
-To use **jacoco-method-filter** in your project:
+**Recommended approach:** Use the published Maven plugin from Maven Central.
 
-1. Add the library as a dependency.
-2. Enable the provided Maven profile to rewrite classes and generate filtered JaCoCo reports.
-3. Run your build with the profile active.
+> **Quick Start**: See the [minimal working example](./examples/maven-basic) for a complete setup.
 
-Full **copy-paste ready** configuration (including the complete `<profile>` block) is documented in  
-[Maven Integration](./integration/mvn/profile_integration.md).
+#### 1. Add the plugin to your `pom.xml`
 
-Full **copy-paste ready** default rules config to the project root directory:
-
-- [jmf-rules for Scala projects](./integration/jmf-rules_for_scala_project.txt)
-
-Usable commands:
-
-```bash
-mvn clean verify -Pcode-coverage                # full pipeline: test → rewrite → report
+```xml
+<build>
+  <plugins>
+    <plugin>
+      <groupId>io.github.moranaapps</groupId>
+      <artifactId>jacoco-method-filter-maven-plugin</artifactId>
+      <version>1.2.0</version>
+      <configuration>
+        <rulesFile>${project.basedir}/jmf-rules.txt</rulesFile>
+      </configuration>
+      <executions>
+        <execution>
+          <goals>
+            <goal>rewrite</goal>
+            <goal>report</goal>
+          </goals>
+        </execution>
+      </executions>
+    </plugin>
+  </plugins>
+</build>
 ```
 
-#### Outputs
+#### 2. Add the default rules file to your project root
 
-- **Filtered classes** → target/classes-filtered
-- **HTML report** → target/jacoco-html/index.html
-- **XML report** → target/jacoco.xml
+**Option A (Recommended):** Run the plugin's bootstrap goal:
+
+```bash
+mvn jacoco-method-filter:init-rules
+```
+
+This creates a `jmf-rules.txt` file with sensible defaults.
+
+**Option B (Manual):** Download [jmf-rules.template.txt](./jmf-rules.template.txt) and place it in your project
+ root directory as `jmf-rules.txt`.
+
+#### 3. Run Coverage
+
+```bash
+mvn clean verify                # full pipeline: test → rewrite → report
+```
+
+#### 4. View Reports
+
+After running coverage, reports are generated in:
+
+- **Filtered classes** → `target/classes-filtered`
+- **HTML report** → `target/jacoco-html/index.html`
+- **XML report** → `target/jacoco.xml`
+
+> **Configuration Notes**
+>
+> - The plugin integrates seamlessly with the standard `jacoco-maven-plugin` for agent attachment.
+> - Default rules file location is `${project.basedir}/jmf-rules.txt`.
+> - To skip coverage processing, set `-Djacoco.skip=true` or configure `<skip>true</skip>` in the plugin.
+
+---
+
+#### Legacy/Manual Integration (Advanced Users Only)
+
+For users who need fine-grained control or are working with custom build setups, you can manually configure a Maven
+ profile.
+
+**See [integration/mvn/profile_integration.md](./integration/mvn/profile_integration.md) for detailed instructions and important maintenance
+warnings.**
+
+**⚠️ Warning:** This approach is harder to maintain and keep in sync with releases. The published plugin
+ (described above) is strongly recommended for most users.
 
 ### Customization
 
