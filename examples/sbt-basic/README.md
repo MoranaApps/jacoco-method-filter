@@ -41,8 +41,10 @@ sbt-basic/
    ```
 
 3. **Rules File** (`jmf-rules.txt`):
-
-**Option A (Recommended):** Run the bootstrap task to create it:
+   
+   Contains patterns for methods to exclude from coverage.
+   
+   **Option A (Recommended):** Run the bootstrap task to create it:
 
 ```bash
 sbt jmfInitRules
