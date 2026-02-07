@@ -43,3 +43,27 @@ jobs:
           sudo apt-get install -y maven
       - name: Integration tests
         run: ./integration-tests/run-all.sh
+
+  jacoco-compat:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        jacoco-version: ['0.8.2', '0.8.14']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: coursier/cache-action@v6
+      - name: Install sbt (sbt-extras)
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/dwijnand/sbt-extras/master/sbt -o sbt
+          chmod +x sbt
+          sudo mv sbt /usr/local/bin/
+      - name: Build rewriter-core JAR
+        run: sbt "project rewriterCore" +package
+      - name: JaCoCo compatibility E2E test (v${{ matrix.jacoco-version }})
+        run: bash integration-tests/test-jacoco-compat.sh ${{ matrix.jacoco-version }}

@@ -41,6 +41,7 @@ bash integration-tests/test-sbt-init-rules.sh
 | `test-sbt-basic.sh` | `examples/sbt-basic` passes tests without filtering, then with filtering + report generation |
 | `test-maven-basic.sh` | `examples/maven-basic` (Java) passes tests without and with `-Pcode-coverage` |
 | `test-maven-scala.sh` | `examples/maven-scala` (Scala) passes tests without and with `-Pcode-coverage` |
+| `test-jacoco-compat.sh` | End-to-end JaCoCo compatibility — generates coverage, rewrites classes, verifies filtering works across JaCoCo versions |
 
 ## How It Works
 

@@ -1,0 +1,121 @@
+name: Check JaCoCo Version
+
+on:
+  schedule:
+    # Weekly on Monday at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  check-jacoco-version:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Get latest JaCoCo version from Maven Central
+        id: maven-central
+        run: |
+          set -euo pipefail
+          
+          echo "Fetching latest JaCoCo version from Maven Central..."
+          RESPONSE=$(curl -fsSL 'https://search.maven.org/solrsearch/select?q=g:org.jacoco+AND+a:org.jacoco.cli&rows=1&wt=json')
+          
+          LATEST_VERSION=$(echo "$RESPONSE" | jq -r '.response.docs[0].latestVersion')
+          
+          if [[ -z "$LATEST_VERSION" || "$LATEST_VERSION" == "null" ]]; then
+            echo "ERROR: Failed to fetch latest JaCoCo version"
+            exit 1
+          fi
+          
+          echo "Latest JaCoCo version: $LATEST_VERSION"
+          echo "latest_version=$LATEST_VERSION" >> "$GITHUB_OUTPUT"
+      
+      - name: Get current pinned version from CI
+        id: current-version
+        run: |
+          set -euo pipefail
+          
+          # Extract the latest version from the matrix in ci.yml
+          # This assumes the matrix lists versions in order, with latest last
+          CURRENT_VERSION=$(grep -A5 'jacoco-version:' .github/workflows/ci.yml | \
+            grep -oP "'\K[0-9]+\.[0-9]+\.[0-9]+" | tail -1)
+          
+          if [[ -z "$CURRENT_VERSION" ]]; then
+            echo "ERROR: Failed to extract current JaCoCo version from ci.yml"
+            exit 1
+          fi
+          
+          echo "Current pinned JaCoCo version: $CURRENT_VERSION"
+          echo "current_version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+      
+      - name: Compare versions and create issue if needed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LATEST_VERSION: ${{ steps.maven-central.outputs.latest_version }}
+          CURRENT_VERSION: ${{ steps.current-version.outputs.current_version }}
+        run: |
+          set -euo pipefail
+          
+          echo "Latest: $LATEST_VERSION"
+          echo "Current: $CURRENT_VERSION"
+          
+          if [[ "$LATEST_VERSION" == "$CURRENT_VERSION" ]]; then
+            echo "✅ JaCoCo version is up to date ($CURRENT_VERSION)"
+            exit 0
+          fi
+          
+          echo "🔔 New JaCoCo version available: $LATEST_VERSION (current: $CURRENT_VERSION)"
+          
+          # Check if an issue already exists
+          ISSUE_TITLE="Update JaCoCo compatibility matrix to $LATEST_VERSION"
+          
+          EXISTING_ISSUE=$(gh issue list \
+            --state open \
+            --search "Update JaCoCo compatibility matrix in:title" \
+            --json number,title \
+            --jq ".[0].number" || echo "")
+          
+          if [[ -n "$EXISTING_ISSUE" ]]; then
+            echo "ℹ️  Issue already exists: #$EXISTING_ISSUE"
+            exit 0
+          fi
+          
+          # Create a new issue
+          echo "Creating issue for JaCoCo $LATEST_VERSION..."
+          
+          MAVEN_CENTRAL_URL="https://repo1.maven.org/maven2/org/jacoco/org.jacoco.cli/$LATEST_VERSION/"
+          
+          ISSUE_BODY=$(cat <<EOF
+## New JaCoCo Version Available
+
+A new version of JaCoCo has been released: **$LATEST_VERSION**
+
+### Current Status
+- **Latest JaCoCo version:** $LATEST_VERSION
+- **Current version in CI matrix:** $CURRENT_VERSION
+
+### Action Items
+- [ ] Update the \`jacoco-version\` matrix in \`.github/workflows/ci.yml\` to include \`$LATEST_VERSION\`
+- [ ] Update \`jacoco.version\` property in \`examples/maven-basic/pom.xml\` to \`$LATEST_VERSION\`
+- [ ] Run the integration tests locally to verify compatibility
+- [ ] Consider whether to keep older versions in the matrix or replace them
+
+### References
+- [JaCoCo $LATEST_VERSION on Maven Central]($MAVEN_CENTRAL_URL)
+- [JaCoCo Release Notes](https://www.jacoco.org/jacoco/trunk/doc/changes.html)
+
+---
+*This issue was automatically created by the [check_jacoco_version](.github/workflows/check_jacoco_version.yml) workflow.*
+EOF
+)
+          
+          gh issue create \
+            --title "$ISSUE_TITLE" \
+            --body "$ISSUE_BODY" \
+            --label "dependencies" \
+            --label "enhancement"
+          
+          echo "✅ Issue created successfully"
