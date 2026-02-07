@@ -61,8 +61,8 @@ Or to skip the publish step when it's done in a prior step:
 ```yaml
 - name: Publish locally
   run: |
-    sbt --no-colors "project rewriterCore" +publishLocal
-    sbt --no-colors "project sbtPlugin" publishLocal
+    sbt "project rewriterCore" +publishLocal
+    sbt "project sbtPlugin" publishLocal
     cd maven-plugin && mvn -B install -DskipTests
 
 - name: Integration tests

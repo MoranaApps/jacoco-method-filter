@@ -49,16 +49,16 @@ if [[ "$SKIP_PUBLISH" == false ]]; then
 
   if [[ "$HAS_SBT" == true ]]; then
     echo -e "${YELLOW}Publishing rewriter-core (all Scala versions) to Ivy local…${NC}"
-    (cd "$REPO_ROOT" && sbt --no-colors "project rewriterCore" +publishLocal)
+    (cd "$REPO_ROOT" && sbt "project rewriterCore" +publishLocal)
 
     # Also publish to Maven local (~/.m2/repository) so the Maven plugin can resolve it.
     # Remove any previous non-SNAPSHOT artifacts first – sbt publishM2 refuses to overwrite.
     rm -rf ~/.m2/repository/io/github/moranaapps/jacoco-method-filter-core_2.12 2>/dev/null || true
     echo -e "${YELLOW}Publishing rewriter-core (Scala 2.12) to Maven local…${NC}"
-    (cd "$REPO_ROOT" && sbt --no-colors "project rewriterCore" ++2.12.21 publishM2)
+    (cd "$REPO_ROOT" && sbt "project rewriterCore" ++2.12.21 publishM2)
 
     echo -e "${YELLOW}Publishing sbt plugin…${NC}"
-    (cd "$REPO_ROOT" && sbt --no-colors "project sbtPlugin" publishLocal)
+    (cd "$REPO_ROOT" && sbt "project sbtPlugin" publishLocal)
   else
     echo -e "${YELLOW}Skipping sbt publish (sbt not found).${NC}"
   fi

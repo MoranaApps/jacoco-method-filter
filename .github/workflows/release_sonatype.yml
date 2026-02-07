@@ -100,7 +100,7 @@ jobs:
       - name: Build + deploy Maven plugin
         run: |
           cd maven-plugin
-          mvn -B clean deploy \
+          mvn -B clean deploy -Prelease \
             -Dgpg.passphrase="${GPG_PASSPHRASE}" \
             -Dcentral.publishing.autoPublish=${{ inputs.doRelease == 'yes' && 'true' || 'false' }}
         env:

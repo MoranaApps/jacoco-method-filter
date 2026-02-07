@@ -14,13 +14,13 @@ cd "$WORK_DIR/project"
 
 # ── 1. Without filtering (plain test) ──────────────────────────────────────
 info "$TEST_NAME — running tests WITHOUT coverage filtering"
-sbt --no-colors clean test
+sbt clean test
 
 pass "$TEST_NAME — tests pass without filtering"
 
 # ── 2. With filtering (jacoco alias) ───────────────────────────────────────
 info "$TEST_NAME — running tests WITH coverage filtering (sbt jacoco)"
-sbt --no-colors jacoco
+sbt jacoco
 
 # Verify reports were generated
 assert_dir_not_empty "target/jacoco/report" \
