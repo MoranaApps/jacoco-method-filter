@@ -45,6 +45,12 @@ public class RewriteMojo extends AbstractMojo {
             return;
         }
 
+        // Skip aggregator (pom-packaged) projects where there is no real output directory
+        if ("pom".equals(project.getPackaging())) {
+            getLog().info("Execution bypassed for aggregator project with packaging 'pom'");
+            return;
+        }
+
         checkInputs();
         runTransformation();
     }

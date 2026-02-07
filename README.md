@@ -115,7 +115,13 @@ Example usage:
 
 ```bash
 sbt jmfInitRules
-sbt jacoco
+sbt jacocoReport
+```
+
+Or define a `jacoco` alias in your `build.sbt`:
+
+```scala
+addCommandAlias("jacoco", "; jacocoOn; clean; test; jacocoReportAll; jacocoOff")
 ```
 
 See [`sbt-plugin/README.md`](./sbt-plugin/README.md) for installation, available tasks, and settings.

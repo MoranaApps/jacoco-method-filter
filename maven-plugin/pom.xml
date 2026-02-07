@@ -42,6 +42,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <mavenVersion>3.6.0</mavenVersion>
         <jacocoVersion>0.8.14</jacocoVersion>
+        <central.publishing.autoPublish>false</central.publishing.autoPublish>
     </properties>
 
     <dependencies>
@@ -165,7 +166,7 @@
                         <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>central</publishingServerId>
-                            <autoPublish>false</autoPublish>
+                            <autoPublish>${central.publishing.autoPublish}</autoPublish>
                         </configuration>
                     </plugin>
                 </plugins>

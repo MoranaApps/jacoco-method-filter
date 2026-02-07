@@ -49,6 +49,12 @@ public class ReportMojo extends AbstractMojo {
             return;
         }
 
+        // Skip aggregator (pom-packaged) projects where there is no real output directory
+        if ("pom".equals(project.getPackaging())) {
+            getLog().info("Report generation bypassed for aggregator project with packaging 'pom'");
+            return;
+        }
+
         if (!jacocoExecFile.exists()) {
             String msg = "Execution data not found: " + jacocoExecFile.getAbsolutePath();
             if (skipIfExecMissing) {
