@@ -23,6 +23,7 @@ Maven plugin for filtering JaCoCo coverage by annotating methods based on config
 ## Implementation Details
 
 The plugin executes the CoverageRewriter CLI tool by:
+
 1. Building the runtime classpath from Maven dependencies
 2. Locating the Java executable from the current JVM
 3. Invoking the tool as a subprocess with appropriate arguments
@@ -98,6 +99,7 @@ Rewrites compiled class files to add `@CoverageGenerated` annotations to methods
 **Default Phase:** `process-test-classes`
 
 **Parameters:**
+
 - `jmf.rulesFile` - Rules file path (default: `${project.basedir}/jmf-rules.txt`)
 - `jmf.inputDirectory` - Input classes directory (default: `${project.build.outputDirectory}`)
 - `jmf.outputDirectory` - Output classes directory (default: `${project.build.directory}/classes-filtered`)
@@ -105,6 +107,7 @@ Rewrites compiled class files to add `@CoverageGenerated` annotations to methods
 - `jmf.skip` - Skip execution (default: `false`)
 
 **Example:**
+
 ```xml
 <plugin>
     <groupId>io.github.moranaapps</groupId>
@@ -125,6 +128,7 @@ Rewrites compiled class files to add `@CoverageGenerated` annotations to methods
 Generates JaCoCo HTML and XML reports using filtered classes.
 
 **Parameters:**
+
 - `jmf.jacocoExecFile` - JaCoCo exec file (default: `${project.build.directory}/jacoco.exec`)
 - `jmf.classesDirectory` - Classes directory for report (default: `${project.build.directory}/classes-filtered`)
 - `jmf.sourceDirectories` - Source directories (default: `src/main/java`)
@@ -134,6 +138,7 @@ Generates JaCoCo HTML and XML reports using filtered classes.
 - `jmf.skipIfExecMissing` - Skip if exec file missing (default: `true`)
 
 **Example:**
+
 ```xml
 <execution>
     <id>report</id>
@@ -149,10 +154,12 @@ Generates JaCoCo HTML and XML reports using filtered classes.
 Creates a `jmf-rules.txt` file from template (manual invocation only).
 
 **Parameters:**
+
 - `jmf.rulesFile` - Target rules file (default: `${project.basedir}/jmf-rules.txt`)
 - `jmf.overwrite` - Overwrite existing file (default: `false`)
 
 **Example:**
+
 ```bash
 mvn jacoco-method-filter:init-rules
 ```

@@ -5,6 +5,7 @@ Minimal working example demonstrating **jacoco-method-filter-maven-plugin** with
 ## What This Demonstrates
 
 This project shows how to:
+
 - Use the Maven plugin with Scala code compiled via `scala-maven-plugin`
 - Filter Scala case class boilerplate (copy, productArity, equals, hashCode, toString, …) from coverage
 - Run ScalaTest tests with filtered coverage analysis
@@ -12,7 +13,7 @@ This project shows how to:
 
 ## Project Structure
 
-```
+```text
 maven-scala/
 ├── pom.xml                       # Maven configuration with Scala + plugin setup
 ├── jmf-rules.txt                 # Scala-oriented method filtering rules
@@ -35,6 +36,7 @@ mvn clean verify -Pcode-coverage
 ```
 
 This runs:
+
 1. `scala-maven-plugin` – Compiles Scala source and test code
 2. `jacoco-maven-plugin` – Instruments code and attaches JaCoCo agent
 3. `jacoco-method-filter-maven-plugin:rewrite` – Annotates filtered methods as @Generated
@@ -60,11 +62,14 @@ cat target/jacoco.xml
 ## Expected Coverage Results
 
 With filtering enabled:
-- **Business logic methods** (`distanceFromOrigin`, `quadrant`, `applyAmplification`, …): Fully covered and reported
+
+- **Business logic methods** (`distanceFromOrigin`, `quadrant`, `applyAmplification`, …):
+  Fully covered and reported
 - **Case class boilerplate** (`copy`, `productArity`, `productElement`, `equals`, `hashCode`, `toString`): Excluded from coverage
 - **Synthetic/bridge methods**: Excluded from coverage
 
 Without filtering (standard JaCoCo):
+
 - Coverage percentages diluted by compiler-generated methods
 - Reports show trivial Scala boilerplate as "uncovered"
 

@@ -24,6 +24,7 @@ sbt plugin for filtering JaCoCo coverage by annotating methods based on configur
 ## Implementation Details
 
 The plugin executes the coverage flow by:
+
 1. Rewriting compiled class files to mark matched methods as generated
 2. Generating JaCoCo HTML, XML, and CSV reports from the filtered classes
 3. Providing aggregate helpers (`jacocoReportAll`, `jacocoCleanAll`) for multi-module builds
@@ -74,6 +75,7 @@ sbt jmfInitRules
 ### `jacocoReport`
 
 Runs the full coverage pipeline for a single module:
+
 1. Rewrites compiled classes to add `@CoverageGenerated` annotations to matched methods
 2. Generates JaCoCo HTML, XML, and CSV reports
 

@@ -5,6 +5,7 @@ Minimal working example demonstrating **jacoco-method-filter-maven-plugin** inte
 ## What This Demonstrates
 
 This project shows how to:
+
 - Configure the plugin in a standalone Maven project
 - Filter boilerplate methods (getters/setters/equals/hashCode/toString) from coverage reports
 - Run tests with filtered coverage analysis
@@ -12,7 +13,7 @@ This project shows how to:
 
 ## Project Structure
 
-```
+```text
 maven-basic/
 ├── pom.xml                      # Maven configuration with plugin setup
 ├── jmf-rules.txt                # Method filtering rules
@@ -35,6 +36,7 @@ mvn clean verify -Pcode-coverage
 ```
 
 This runs:
+
 1. `maven-compiler-plugin` - Compiles source and test code
 2. `jacoco-maven-plugin` - Instruments code and attaches JaCoCo agent
 3. `jacoco-method-filter-maven-plugin:rewrite` - Annotates filtered methods as @Generated
@@ -84,7 +86,7 @@ cat target/jacoco.xml
 
 The `jmf-rules.txt` file uses glob patterns to match methods:
 
-```
+```text
 example.*#get*(*)       # All getters in example package
 example.*#set*(*) ret:V # All setters returning void
 example.*#equals(*)     # equals methods
@@ -97,11 +99,13 @@ Run `mvn jacoco-method-filter:init-rules` to generate a comprehensive template.
 ## Expected Coverage Results
 
 With filtering enabled:
+
 - **Business logic methods**: Fully covered and reported
 - **Getters/setters**: Excluded from coverage metrics
 - **equals/hashCode/toString**: Excluded from coverage metrics
 
 Without filtering (standard JaCoCo):
+
 - Coverage percentages diluted by boilerplate code
 - Reports show trivial methods as "uncovered"
 
@@ -140,6 +144,7 @@ mvn jacoco-method-filter:rewrite -Djmf.dryRun=true
 **Issue**: Tests run but no coverage report generated
 
 **Solution**: Ensure you activate the profile and run the `verify` phase:
+
 ```bash
 mvn clean verify -Pcode-coverage  # Correct
 mvn clean test -Pcode-coverage    # Won't trigger report goal
@@ -148,6 +153,7 @@ mvn clean test -Pcode-coverage    # Won't trigger report goal
 **Issue**: Coverage shows 0% for all classes
 
 **Solution**: Check that Surefire uses filtered classes:
+
 ```xml
 <additionalClasspathElements>
     <additionalClasspathElement>${project.build.directory}/classes-filtered</additionalClasspathElement>

@@ -132,14 +132,17 @@ mvn jacoco-method-filter:init-rules
 mvn clean verify -Pcode-coverage
 ```
 
-See [`maven-plugin/README.md`](./maven-plugin/README.md) for installation, available goals, and parameters.
-Examples: [`examples/maven-basic/`](./examples/maven-basic/) (Java) | [`examples/maven-scala/`](./examples/maven-scala/) (Scala)
+See [`maven-plugin/README.md`](./maven-plugin/README.md) for installation, available goals,
+and parameters.
+Examples: [`examples/maven-basic/`](./examples/maven-basic/) (Java)
+| [`examples/maven-scala/`](./examples/maven-scala/) (Scala)
 
 ---
 
 ### Customization
 
 See plugin documentation for rules file location, dry-run mode, and behavior when JaCoCo execution data is missing:
+
 - [`sbt-plugin/README.md`](./sbt-plugin/README.md)
 - [`maven-plugin/README.md`](./maven-plugin/README.md)
 
