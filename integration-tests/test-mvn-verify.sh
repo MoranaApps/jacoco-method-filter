@@ -34,6 +34,15 @@ echo "$OUTPUT" | grep -q "Verification complete" || \
 echo "$OUTPUT" | grep -q "scanned [0-9]* class file" || \
   fail "$TEST_NAME — output missing scan summary"
 
+# DataPoint (has getters/setters/equals/hashCode/toString) should appear in output
+echo "$OUTPUT" | grep -q "example.DataPoint" || \
+  fail "$TEST_NAME — output should mention DataPoint (has matched methods)"
+
+# StringFormatter (pure logic, no boilerplate) should NOT appear — no methods match rules
+if echo "$OUTPUT" | grep -q "StringFormatter"; then
+  fail "$TEST_NAME — output should NOT mention StringFormatter (no methods match rules)"
+fi
+
 # Verify that no output directory was created (read-only mode)
 [[ ! -d "target/classes-filtered" ]] || \
   fail "$TEST_NAME — verify should not create output directory"

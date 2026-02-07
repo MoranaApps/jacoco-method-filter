@@ -18,7 +18,8 @@ cd "$WORK_DIR/project"
 # Run init-rules — should create jmf-rules.txt
 # Use fully-qualified syntax because the groupId is not in Maven's default
 # plugin groups (org.apache.maven.plugins, org.codehaus.mojo).
-mvn -B io.github.moranaapps:jacoco-method-filter-maven-plugin:init-rules
+run_cmd "$TEST_NAME — mvn init-rules" \
+  mvn -B io.github.moranaapps:jacoco-method-filter-maven-plugin:init-rules
 
 assert_file_exists "jmf-rules.txt" "$TEST_NAME — rules file created"
 assert_file_contains "jmf-rules.txt" "jmf" "$TEST_NAME — rules file has content"

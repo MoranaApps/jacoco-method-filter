@@ -16,7 +16,7 @@ rm -f "$WORK_DIR/project/jmf-rules.txt"
 cd "$WORK_DIR/project"
 
 # Run jmfInitRules — should create jmf-rules.txt
-sbt jmfInitRules
+run_cmd "$TEST_NAME — sbt jmfInitRules" sbt jmfInitRules
 
 assert_file_exists "jmf-rules.txt" "$TEST_NAME — rules file created"
 assert_file_contains "jmf-rules.txt" "jmf" "$TEST_NAME — rules file has content"

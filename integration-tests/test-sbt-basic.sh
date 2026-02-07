@@ -13,14 +13,12 @@ cp -R "$REPO_ROOT/examples/sbt-basic" "$WORK_DIR/project"
 cd "$WORK_DIR/project"
 
 # ── 1. Without filtering (plain test) ──────────────────────────────────────
-info "$TEST_NAME — running tests WITHOUT coverage filtering"
-sbt clean test
+run_cmd "$TEST_NAME — sbt clean test (no filtering)" sbt clean test
 
 pass "$TEST_NAME — tests pass without filtering"
 
 # ── 2. With filtering (jacoco alias) ───────────────────────────────────────
-info "$TEST_NAME — running tests WITH coverage filtering (sbt jacoco)"
-sbt jacoco
+run_cmd "$TEST_NAME — sbt jacoco (with filtering)" sbt jacoco
 
 # Verify reports were generated
 assert_dir_not_empty "target/jacoco-report" \
