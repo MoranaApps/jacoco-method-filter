@@ -27,6 +27,12 @@ public class RewriteMojo extends AbstractMojo {
     @Parameter(property = "jmf.rulesFile", defaultValue = "${project.basedir}/jmf-rules.txt")
     private File rulesFile;
 
+    @Parameter(property = "jmf.globalRules")
+    private String globalRules;
+
+    @Parameter(property = "jmf.localRules")
+    private File localRules;
+
     @Parameter(property = "jmf.inputDirectory", defaultValue = "${project.build.outputDirectory}")
     private File inputDirectory;
 
@@ -58,7 +64,11 @@ public class RewriteMojo extends AbstractMojo {
     private void checkInputs() throws MojoExecutionException {
         StringBuilder errors = new StringBuilder();
         
-        if (rulesFile == null || !rulesFile.exists()) {
+        boolean hasRulesConfig = (rulesFile != null && rulesFile.exists()) || 
+                                 globalRules != null || 
+                                 (localRules != null && localRules.exists());
+        
+        if (!hasRulesConfig) {
             errors.append("\n  - Rules configuration missing");
             if (rulesFile != null) errors.append(" at: ").append(rulesFile.getAbsolutePath());
             errors.append("\n    Solution: execute 'mvn ")
@@ -104,8 +114,22 @@ public class RewriteMojo extends AbstractMojo {
         cmd.add(inputDirectory.getAbsolutePath());
         cmd.add("--out");
         cmd.add(outputDirectory.getAbsolutePath());
-        cmd.add("--rules");
-        cmd.add(rulesFile.getAbsolutePath());
+        
+        // Add rules configuration (priority: global/local > legacy)
+        if (globalRules != null || localRules != null) {
+            if (globalRules != null) {
+                cmd.add("--global-rules");
+                cmd.add(globalRules);
+            }
+            if (localRules != null) {
+                cmd.add("--local-rules");
+                cmd.add(localRules.getAbsolutePath());
+            }
+        } else {
+            cmd.add("--rules");
+            cmd.add(rulesFile.getAbsolutePath());
+        }
+        
         if (dryRun) cmd.add("--dry-run");
         return cmd;
     }

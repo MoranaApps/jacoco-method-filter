@@ -35,7 +35,9 @@ object Keys {
     val Jmf                = config("jmf").extend(Compile).hide
     val jmfRewrite         = taskKey[File]("Rewrite compiled classes using JMF tool; returns output dir")
     val jmfOutDir          = settingKey[File]("JMF output base dir")
-    val jmfRulesFile       = settingKey[File]("JMF rules file")
+    val jmfRulesFile       = settingKey[File]("JMF rules file (legacy)")
+    val jmfGlobalRules     = settingKey[Option[String]]("JMF global rules (path or URL)")
+    val jmfLocalRules      = settingKey[Option[File]]("JMF local rules file")
     val jmfCliMain         = settingKey[String]("Main class of the JMF CLI")
     val jmfDryRun          = settingKey[Boolean]("Dry-run rewriter")
     val jmfEnabled         = settingKey[Boolean]("Enable JMF rewriting")
