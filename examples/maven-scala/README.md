@@ -65,7 +65,8 @@ With filtering enabled:
 
 - **Business logic methods** (`distanceFromOrigin`, `quadrant`, `applyAmplification`, …):
   Fully covered and reported
-- **Case class boilerplate** (`copy`, `productArity`, `productElement`, `equals`, `hashCode`, `toString`): Excluded from coverage
+- **Case class boilerplate** (`copy`, `productArity`, `productElement`, `equals`, `hashCode`, `toString`): Excluded
+ from coverage
 - **Synthetic/bridge methods**: Excluded from coverage
 
 Without filtering (standard JaCoCo):
