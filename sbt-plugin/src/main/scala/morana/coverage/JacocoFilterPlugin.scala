@@ -163,6 +163,53 @@ object JacocoFilterPlugin extends AutoPlugin {
       }
     },
 
+    jmfVerify := {
+      val _ = (Compile / compile).value
+
+      val rules     = jmfRulesFile.value
+      val log       = streams.value.log
+      val workDir   = baseDirectory.value
+      val classesIn = (Compile / classDirectory).value
+
+      val compileCp: Seq[File] = Attributed.data((Compile / fullClasspath).value)
+      val jmfJars: Seq[File] = (Jmf / update).value.matching(artifactFilter(`type` = "jar")).distinct
+      val cp: Seq[File] = (compileCp ++ jmfJars :+ (Compile / classDirectory).value).distinct
+      val cpStr = cp.map(_.getAbsolutePath).mkString(java.io.File.pathSeparator)
+
+      val javaBin = {
+        val h = sys.props.get("java.home").getOrElse("")
+        if (h.nonEmpty) new java.io.File(new java.io.File(h, "bin"), "java").getAbsolutePath else "java"
+      }
+
+      if (!classesIn.exists) {
+        log.warn(s"[jmf] compiled classes dir not found, skipping: ${classesIn.getAbsolutePath}")
+      } else {
+        val hasClasses = (classesIn ** sbt.GlobFilter("*.class")).get.nonEmpty
+        if (!hasClasses) {
+          log.warn(s"[jmf] no .class files under ${classesIn.getAbsolutePath}; skipping.")
+        } else if (!rules.exists) {
+          log.warn(s"[jmf] rules file missing: ${rules.getAbsolutePath}; skipping.")
+          log.info(s"[jmf] Run 'jmfInitRules' to create a rules file.")
+        } else {
+          val args = Seq(
+            javaBin,
+            "-cp",
+            cpStr,
+            jmfCliMain.value,
+            "--verify",
+            "--in",
+            classesIn.getAbsolutePath,
+            "--rules",
+            rules.getAbsolutePath
+          )
+
+          log.info(s"[jmf] verify: ${args.mkString(" ")}")
+          val code = scala.sys.process.Process(args, workDir).!
+          if (code != 0) sys.error(s"[jmf] verify failed ($code)")
+        }
+      }
+    },
+
     jmfRewrite := {
       val _ = (Compile / compile).value
 
