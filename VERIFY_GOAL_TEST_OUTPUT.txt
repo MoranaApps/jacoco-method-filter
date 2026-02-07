@@ -1,0 +1,133 @@
+═══════════════════════════════════════════════════════════════
+ Maven Plugin Verify Goal - Full Test Output
+═══════════════════════════════════════════════════════════════
+
+BUILD SETUP
+───────────────────────────────────────────────────────────────
+1. Published rewriter-core to M2:
+   ./sbt/bin/sbt "project rewriterCore" ++2.12.21 publishM2
+   ✅ SUCCESS
+
+2. Built and installed Maven plugin:
+   cd maven-plugin && mvn clean install
+   ✅ SUCCESS - installed to local M2 repository
+
+3. Compiled example project:
+   cd examples/maven-basic && mvn clean compile
+   ✅ SUCCESS
+
+
+TEST 1: Successful Verification
+───────────────────────────────────────────────────────────────
+Command: mvn io.github.moranaapps:jacoco-method-filter-maven-plugin:1.2.0:verify
+
+Full Output:
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------< com.example:maven-basic-example >-------------------
+[INFO] Building Maven Basic Example - JaCoCo Method Filter 1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco-method-filter:1.2.0:verify (default-cli) @ maven-basic-example ---
+[INFO] ╔═══ JaCoCo Method Filter: Verify Rules Impact ═══
+[INFO] ║ Classes:     /home/runner/work/jacoco-method-filter/jacoco-method-filter/examples/maven-basic/target/classes
+[INFO] ║ Rules:       /home/runner/work/jacoco-method-filter/jacoco-method-filter/examples/maven-basic/jmf-rules.txt
+[INFO] ╚══════════════════════════════════════════════════
+[INFO] Active rules (from /home/runner/work/jacoco-method-filter/jacoco-method-filter/examples/maven-basic/jmf-rules.txt):
+[INFO] 1. *#*(*)  id:java-equals
+[INFO] 2. *#*(*)  id:java-hashcode
+[INFO] 3. *#*(*)  id:java-tostring
+[INFO] 4. *#*(*)  id:java-getter
+[INFO] 5. *#*(*)  id:java-setter
+[INFO] example.DataPoint
+[INFO] #equals(Ljava/lang/Object;)Z  rule-id:java-equals
+[INFO] #getIdentifier()Ljava/lang/String;  rule-id:java-getter
+[INFO] #getXCoordinate()D  rule-id:java-getter
+[INFO] #getYCoordinate()D  rule-id:java-getter
+[INFO] #hashCode()I  rule-id:java-hashcode
+[INFO] #setIdentifier(Ljava/lang/String;)V  rule-id:java-setter
+[INFO] #setXCoordinate(D)V  rule-id:java-setter
+[INFO] #setYCoordinate(D)V  rule-id:java-setter
+[INFO] #toString()Ljava/lang/String;  rule-id:java-tostring
+[INFO] example.WaveformProcessor
+[INFO] #getAmplitudeFactor()D  rule-id:java-getter
+[INFO] #getSamplingRate()I  rule-id:java-getter
+[INFO] #setAmplitudeFactor(D)V  rule-id:java-setter
+[INFO] #setSamplingRate(I)V  rule-id:java-setter
+[INFO] Verification complete: scanned 2 class file(s), found 13 method(s) matched by rules.
+[INFO] Verification completed
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  0.591 s
+[INFO] Finished at: 2026-02-07T18:17:54Z
+[INFO] ------------------------------------------------------------------------
+
+✅ Verified Features:
+- Banner with box drawing characters (╔, ═, ║, ╚)
+- Shows classes directory path
+- Shows rules file path
+- Lists all active rules with IDs
+- Groups methods by class
+- Shows method signatures with matched rule IDs
+- Summary statistics (2 classes, 13 methods)
+- Clean Maven INFO logging format
+
+
+TEST 2: Missing Classes Directory
+───────────────────────────────────────────────────────────────
+Command: mvn clean && mvn io.github.moranaapps:jacoco-method-filter-maven-plugin:1.2.0:verify
+
+Full Output:
+[INFO] --- jacoco-method-filter:1.2.0:verify (default-cli) @ maven-basic-example ---
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal io.github.moranaapps:jacoco-method-filter-maven-plugin:1.2.0:verify (default-cli) on project maven-basic-example: Configuration problems detected:
+[ERROR]   - Invalid input location: /home/runner/work/jacoco-method-filter/jacoco-method-filter/examples/maven-basic/target/classes
+[ERROR] -> [Help 1]
+
+✅ Verified Features:
+- Detects missing classes directory
+- Fails build with clear error message
+- No cryptic stack traces
+
+
+TEST 3: Missing Rules File
+───────────────────────────────────────────────────────────────
+Command: mvn io.github.moranaapps:jacoco-method-filter-maven-plugin:1.2.0:verify
+(after removing jmf-rules.txt)
+
+Full Output:
+[INFO] --- jacoco-method-filter:1.2.0:verify (default-cli) @ maven-basic-example ---
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal io.github.moranaapps:jacoco-method-filter-maven-plugin:1.2.0:verify (default-cli) on project maven-basic-example: Configuration problems detected:
+[ERROR]   - Rules configuration missing at: /home/runner/work/jacoco-method-filter/jacoco-method-filter/examples/maven-basic/jmf-rules.txt
+[ERROR]     Solution: execute 'mvn io.github.moranaapps:jacoco-method-filter-maven-plugin:1.2.0:init-rules'
+
+✅ Verified Features:
+- Detects missing rules file
+- Fails build with clear error message
+- Provides actionable solution (run init-rules)
+- User-friendly error handling
+
+
+═══════════════════════════════════════════════════════════════
+ CONCLUSION
+═══════════════════════════════════════════════════════════════
+
+ALL TESTS PASSED ✅
+
+The Maven plugin's verify goal is working correctly and meets all requirements:
+1. ✅ Displays formatted banner
+2. ✅ Lists active rules
+3. ✅ Shows matched methods grouped by class
+4. ✅ Provides verification summary
+5. ✅ Handles missing classes gracefully
+6. ✅ Handles missing rules with helpful guidance
+7. ✅ Uses proper Maven logging conventions
+
+The implementation is complete and ready for use!
