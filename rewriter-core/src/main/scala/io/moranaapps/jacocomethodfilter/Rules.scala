@@ -57,6 +57,10 @@ final case class MethodRule(
 
 object Rules {
 
+  // HTTP timeout settings for loading rules from URLs
+  private val UrlConnectTimeoutMs = 10000
+  private val UrlReadTimeoutMs = 10000
+
   // Normalize short/omitted descriptors.
   //  - ""  or "()"  -> "(*)*"
   //  - "(*)"        -> "(*)*"
@@ -225,8 +229,8 @@ object Rules {
     val conn = url.openConnection().asInstanceOf[HttpURLConnection]
     try {
       conn.setRequestMethod("GET")
-      conn.setConnectTimeout(10000)
-      conn.setReadTimeout(10000)
+      conn.setConnectTimeout(UrlConnectTimeoutMs)
+      conn.setReadTimeout(UrlReadTimeoutMs)
       
       val responseCode = conn.getResponseCode
       if (responseCode != 200) {

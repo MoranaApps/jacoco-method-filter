@@ -57,7 +57,7 @@ public class VerifyMojo extends AbstractMojo {
         StringBuilder errors = new StringBuilder();
         
         boolean hasRulesConfig = (rulesFile != null && rulesFile.exists()) || 
-                                 globalRules != null || 
+                                 (globalRules != null && !globalRules.trim().isEmpty()) || 
                                  (localRules != null && localRules.exists());
         
         if (!hasRulesConfig) {
