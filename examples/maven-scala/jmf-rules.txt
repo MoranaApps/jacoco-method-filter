@@ -1,0 +1,44 @@
+# JaCoCo Method Filter Rules
+# [jmf:1.0.0]
+#
+# This file defines patterns to exclude Scala boilerplate methods from coverage reports.
+# Methods matching these rules are annotated with @Generated, which JaCoCo ignores.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SCALA CASE CLASS BOILERPLATE
+# ─────────────────────────────────────────────────────────────────────────────
+
+# copy and copy$default$N
+example.*#copy(*)                       id:scala-copy
+example.*#copy$default$*(*)             id:scala-copy-default
+
+# Product methods
+example.*#productArity(*)               id:scala-product-arity
+example.*#productElement(*)             id:scala-product-element
+example.*#productPrefix(*)              id:scala-product-prefix
+example.*#productIterator(*)            id:scala-product-iterator
+
+# equals / hashCode / toString
+example.*#equals(*)                     id:scala-equals
+example.*#hashCode(*)                   id:scala-hashcode
+example.*#toString(*)                   id:scala-tostring
+
+# ─────────────────────────────────────────────────────────────────────────────
+# COMPILER GENERATED
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Synthetic and bridge methods
+*#*(*):synthetic                        id:synthetic
+*#*(*):bridge                           id:bridge
+
+# Anonymous functions
+*#$anonfun$*                            id:anonfun
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NOTES
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Syntax: <package.Class>#<methodName>(<descriptor>) [flags] [predicates]
+#
+# For a comprehensive set of Scala-specific rules, see:
+# https://github.com/MoranaApps/jacoco-method-filter/blob/main/jmf-rules.template.txt

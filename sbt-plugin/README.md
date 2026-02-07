@@ -40,7 +40,7 @@ Enable the plugin in your `build.sbt`:
 
 ```scala
 lazy val myModule = (project in file("my-module"))
-  .enablePlugins(JacocoFilterPlugin)
+  .enablePlugins(JacocoFilterPlugin)`
 ```
 
 Optional: define convenient command aliases (the plugin does not add `jacoco` automatically):

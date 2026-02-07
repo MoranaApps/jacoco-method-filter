@@ -133,7 +133,7 @@ mvn clean verify -Pcode-coverage
 ```
 
 See [`maven-plugin/README.md`](./maven-plugin/README.md) for installation, available goals, and parameters.
-Examples: [`examples/maven-basic/`](./examples/maven-basic/)
+Examples: [`examples/maven-basic/`](./examples/maven-basic/) (Java) | [`examples/maven-scala/`](./examples/maven-scala/) (Scala)
 
 ---
 
