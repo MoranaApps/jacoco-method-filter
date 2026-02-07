@@ -125,6 +125,19 @@ YOUR.PACKAGE.ROOT.*#*(*)  synthetic name-contains:$anonfun$  id:scala-anonfun
 YOUR.PACKAGE.ROOT.*#*(*)  synthetic                        id:synthetic-generic
 
 # ─────────────────────────────────────────────────────────────────────────────
+# SECTION: INCLUDE RULES (whitelist/rescue specific methods from exclusions)
+# Prefix a rule with "+" to mark it as an inclusion.
+# Include rules always win over exclude rules for the same method.
+# Use these to keep methods with custom business logic that would otherwise
+# be excluded by broad patterns above.
+#
+# Example: Keep Config companion apply (has custom validation logic)
+# +YOUR.PACKAGE.ROOT.model.Config$#apply(*)                id:keep-config-apply
+#
+# Example: Keep specific synthetic method with business logic
+# +YOUR.PACKAGE.ROOT.service.Handler#$anonfun$process$1(*)  id:keep-handler-fn
+#
+# ─────────────────────────────────────────────────────────────────────────────
 # SECTION: STANDARD (enable after verifying impact)
 
 # Scala product API beyond model (uncomment if polluting)

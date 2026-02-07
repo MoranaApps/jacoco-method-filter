@@ -151,5 +151,19 @@
 *#*  synthetic name-contains:$anonfun$                  id:scala-anonfun
 
 # ─────────────────────────────────────────────────────────────────────────────
+# INCLUDE RULES (whitelist/rescue specific methods from exclusions)
+# ─────────────────────────────────────────────────────────────────────────────
+# Prefix a rule with "+" to mark it as an inclusion.
+# Include rules always win over exclude rules for the same method.
+# Use these to keep methods with custom business logic that would otherwise
+# be excluded by broad patterns above.
+#
+# Example: Keep a specific companion apply method with custom validation
+# +com.example.model.Config$#apply(*)                    id:keep-config-apply
+#
+# Example: Keep a specific anonymous function with business logic
+# +com.example.service.Handler#$anonfun$process$1(*)    id:keep-handler-fn
+#
+# ─────────────────────────────────────────────────────────────────────────────
 # PROJECT RULES
 # ─────────────────────────────────────────────────────────────────────────────

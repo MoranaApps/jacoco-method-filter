@@ -11,6 +11,13 @@ consistent**.
 - [Goals](#goals)
 - [Non-goals](#non-goals)
 - [Rules file format](#rules-file-format)
+  - [Quick Syntax](#quick-syntax)
+  - [Quick Examples](#quick-examples)
+  - [Exclude and Include](#exclude-and-include)
+  - [Global and Local Rules](#global-and-local-rules)
+  - [How rules are merged](#how-rules-are-merged)
+  - [Verify: Preview What Gets Filtered](#verify-preview-what-gets-filtered)
+  - [Ready to Use Rules File](#ready-to-use-rules-file)
 - [Integration](#integration)
   - [With sbt plugin](#with-sbt-plugin)
   - [With Maven](#with-maven)
@@ -95,6 +102,111 @@ and optional **flags/predicates**.
 # Ignore anonymous functions and compiler bridges
 *#$anonfun$*
 *#*(*):bridge
+
+# Keep (rescue) specific methods from broad exclusions
++com.example.Config$#apply(*)  id:keep-config-apply
+```
+
+### Exclude and Include
+
+By default, all rules are **exclusion rules** — they mark methods to be filtered from coverage.
+
+**Include rules** (whitelist) can override exclusions for specific methods. Prefix a rule with `+` to mark it as an inclusion:
+
+```text
+# Exclude all companion object apply methods
+*$#apply(*)  id:comp-apply
+
+# But keep this one — it has custom business logic
++com.example.Config$#apply(*)  id:keep-config-apply
+```
+
+**Resolution logic:**
+- A method is **excluded** if any exclusion rule matches AND no inclusion rule matches
+- A method is **rescued** (kept in coverage) if both exclusion and inclusion rules match — **include always wins**
+- A method is **unaffected** if no exclusion rule matches
+
+### Global and Local Rules
+
+You can separate organization-wide shared rules from project-specific rules:
+
+| Type | Purpose | Source |
+|------|---------|--------|
+| **Global** | Org-wide defaults (e.g., always ignore Scala boilerplate) | Path or URL |
+| **Local** | Project-specific overrides and additions | Local file |
+
+**Configuration examples:**
+
+**sbt:**
+```scala
+jmfGlobalRules := Some("https://myorg.com/scala-defaults.txt")
+jmfLocalRules := Some(baseDirectory.value / "jmf-local-rules.txt")
+```
+
+**Maven:**
+```xml
+<configuration>
+  <globalRules>https://myorg.com/scala-defaults.txt</globalRules>
+  <localRules>${project.basedir}/jmf-local-rules.txt</localRules>
+</configuration>
+```
+
+**CLI:**
+```bash
+java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
+  --in target/classes \
+  --out target/classes-filtered \
+  --global-rules https://myorg.com/scala-defaults.txt \
+  --local-rules jmf-local-rules.txt
+```
+
+> **Backward compatibility:** The legacy single `--rules` / `jmfRulesFile` / `jmf.rulesFile` options continue to work exactly as before.
+
+### How rules are merged
+
+When using global and local rules:
+1. **Global rules** are loaded first (from URL or path)
+2. **Local rules** are appended
+3. During evaluation, **any include rule overrides any exclude rule** for the same method
+
+This lets you:
+- Define broad exclusions globally (e.g., `*#copy(*)`)
+- Override selectively in local rules (e.g., `+com.example.Config$#copy(*)`)
+
+### Verify: Preview What Gets Filtered
+
+Before running coverage, use the **verify** command to preview which methods will be excluded vs. rescued:
+
+**sbt:**
+```bash
+sbt jmfVerify
+```
+
+**Maven:**
+```bash
+mvn jacoco-method-filter:verify
+```
+
+**CLI:**
+```bash
+java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
+  --verify \
+  --in target/classes \
+  --rules jmf-rules.txt
+```
+
+**Example output:**
+```
+[verify] EXCLUDED (15 methods):
+[verify]   com.example.User
+[verify]     #copy(I)Lcom/example/User;    rule-id:case-copy
+[verify]     #apply(...)...                rule-id:comp-apply
+
+[verify] RESCUED by include rules (1 method):
+[verify]   com.example.Config$
+[verify]     #apply(Lcom/example/Config;)Lcom/...;  excl:comp-apply → incl:keep-config-apply
+
+[verify] Summary: 42 classes scanned, 15 methods excluded, 1 method rescued
 ```
 
 ### Ready to Use Rules File
