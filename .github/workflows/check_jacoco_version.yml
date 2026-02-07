@@ -88,32 +88,31 @@ jobs:
           
           MAVEN_CENTRAL_URL="https://repo1.maven.org/maven2/org/jacoco/org.jacoco.cli/$LATEST_VERSION/"
           
-          ISSUE_BODY=$(cat <<EOF
-## New JaCoCo Version Available
-
-A new version of JaCoCo has been released: **$LATEST_VERSION**
-
-### Current Status
-- **Latest JaCoCo version:** $LATEST_VERSION
-- **Current version in CI matrix:** $CURRENT_VERSION
-
-### Action Items
-- [ ] Update the \`jacoco-version\` matrix in \`.github/workflows/ci.yml\` to include \`$LATEST_VERSION\`
-- [ ] Update \`jacoco.version\` property in \`examples/maven-basic/pom.xml\` to \`$LATEST_VERSION\`
-- [ ] Run the integration tests locally to verify compatibility
-- [ ] Consider whether to keep older versions in the matrix or replace them
-
-### References
-- [JaCoCo $LATEST_VERSION on Maven Central]($MAVEN_CENTRAL_URL)
-- [JaCoCo Release Notes](https://www.jacoco.org/jacoco/trunk/doc/changes.html)
-
----
-*This issue was automatically created by the [check_jacoco_version](.github/workflows/check_jacoco_version.yml) workflow.*
-EOF
-)
+          # Build issue body using printf (avoids YAML parsing issues with asterisks)
+          printf -v ISSUE_BODY '%s\n' \
+            "## New JaCoCo Version Available" \
+            "" \
+            "A new version of JaCoCo has been released: **${LATEST_VERSION}**" \
+            "" \
+            "### Current Status" \
+            "- **Latest JaCoCo version:** ${LATEST_VERSION}" \
+            "- **Current version in CI matrix:** ${CURRENT_VERSION}" \
+            "" \
+            "### Action Items" \
+            "- [ ] Update the \`jacoco-version\` matrix in \`.github/workflows/ci.yml\` to include \`${LATEST_VERSION}\`" \
+            "- [ ] Update \`jacoco.version\` property in \`examples/maven-basic/pom.xml\` to \`${LATEST_VERSION}\`" \
+            "- [ ] Run the integration tests locally to verify compatibility" \
+            "- [ ] Consider whether to keep older versions in the matrix or replace them" \
+            "" \
+            "### References" \
+            "- [JaCoCo ${LATEST_VERSION} on Maven Central](${MAVEN_CENTRAL_URL})" \
+            "- [JaCoCo Release Notes](https://www.jacoco.org/jacoco/trunk/doc/changes.html)" \
+            "" \
+            "---" \
+            "*This issue was automatically created by the [check_jacoco_version](.github/workflows/check_jacoco_version.yml) workflow.*"
           
           gh issue create \
-            --title "$ISSUE_TITLE" \
+            --title "Update JaCoCo compatibility matrix to $LATEST_VERSION" \
             --body "$ISSUE_BODY" \
             --label "dependencies" \
             --label "enhancement"
