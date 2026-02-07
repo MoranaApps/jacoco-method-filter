@@ -59,11 +59,11 @@ public class ReportMojo extends AbstractMojo {
         }
 
         if (sourceDirectories == null || sourceDirectories.length == 0) {
-            List roots = project.getCompileSourceRoots();
+            @SuppressWarnings("unchecked")
+            List<String> roots = (List<String>) project.getCompileSourceRoots();
             List<File> dirs = new ArrayList<File>();
             if (roots != null) {
-                for (Object rootObj : roots) {
-                    String root = (String) rootObj;
+                for (String root : roots) {
                     if (root != null) {
                         File dir = new File(root);
                         if (dir.isDirectory()) {
