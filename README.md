@@ -111,188 +111,37 @@ to help you adapt the rules to your own project.
 
 ### With sbt plugin
 
-> **Quick Start**: See the [minimal working example](./examples/sbt-basic) for a complete setup.
-
-#### 1. Add the plugin to `project/plugins.sbt`
-
-```scala
-addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "1.2.0")
-```
-
-#### 2. Add the default rules file to your project root
-
-**Option A (Recommended):** Run the bootstrap task:
+Example usage:
 
 ```bash
 sbt jmfInitRules
-```
-
-This creates a `jmf-rules.txt` file with sensible defaults for Scala projects.
-
-**Option B (Manual):** Download [jmf-rules.template.txt](./jmf-rules.template.txt) and place it in your project
- root directory as `jmf-rules.txt`.
-
-#### 3. Enable the plugin in `build.sbt`
-
-Enable the plugin for each module where coverage filtering is required:
-
-```scala
-lazy val myModule = (project in file("my-module"))
-  .enablePlugins(JacocoFilterPlugin)
-  .settings(
-    // your other settings
-  )
-```
-
-#### 4. Configure Coverage Control (Optional)
-
-In your root `build.sbt`, add command aliases to control coverage across all modules:
-
-```scala
-// Run activate jacoco + clean + test + per-module reports across the whole build + deactivate jacoco
-addCommandAlias("jacoco", "; jacocoOn; clean; test; jacocoReportAll; jacocoOff")
-addCommandAlias("jacocoOff", "; set every jacocoPluginEnabled := false")
-addCommandAlias("jacocoOn", "; set every jacocoPluginEnabled := true")
-```
-
-Or add to `.sbtrc` for persistent aliases:
-
-```text
-# Jacoco Aliases
-alias jacoco=; jacocoOn; +clean; +test; jacocoReportAll; jacocoOff
-alias jacocoOff=; set every jacocoPluginEnabled := false
-alias jacocoOn=; set every jacocoPluginEnabled := true
-```
-
-#### 5. Run Coverage
-
-```bash
 sbt jacoco
 ```
 
-For a single module in isolation:
-
-```bash
-sbt "project myModule" jacoco
-```
-
-#### 6. View Reports
-
-After running coverage, reports are generated in each module's target directory:
-
-- **Filtered classes**: `target/jmf/classes-filtered`
-- **HTML report**: `target/jacoco/report/index.html`
-- **XML report**: `target/jacoco/report/jacoco.xml`
-- **CSV report**: `target/jacoco/report/jacoco.csv`
-
-> **Configuration Notes**
->
-> - The plugin is disabled by default. Enable it per-module with `.enablePlugins(JacocoFilterPlugin)` or globally with
- `set every jacocoPluginEnabled := true`.
-> - FQCN inputs in rules files should use dot-form (e.g., `com.example.Foo`).
-> - To run in dry mode (preview what would be filtered), set `jmfDryRun := true` in your build.
+See [`sbt-plugin/README.md`](./sbt-plugin/README.md) for installation, available tasks, and settings.
+Examples: [`examples/sbt-basic/`](./examples/sbt-basic/)
 
 ---
 
 ### With Maven
 
-> **Quick Start**: See the [minimal working example](./examples/maven-basic) for a complete setup.
-
-#### 1. Add a coverage profile to your `pom.xml`
-
-```xml
-<profiles>
-  <profile>
-    <id>code-coverage</id>
-    <build>
-      <plugins>
-        <!-- JaCoCo Maven Plugin -->
-        <plugin>
-          <groupId>org.jacoco</groupId>
-          <artifactId>jacoco-maven-plugin</artifactId>
-          <version>0.8.12</version>
-          <executions>
-            <execution>
-              <goals>
-                <goal>prepare-agent</goal>
-              </goals>
-            </execution>
-          </executions>
-        </plugin>
-
-        <!-- JaCoCo Method Filter Plugin -->
-        <plugin>
-          <groupId>io.github.moranaapps</groupId>
-          <artifactId>jacoco-method-filter-maven-plugin</artifactId>
-          <version>1.2.0</version>
-          <executions>
-            <execution>
-              <goals>
-                <goal>rewrite</goal>
-                <goal>report</goal>
-              </goals>
-            </execution>
-          </executions>
-        </plugin>
-
-        <!-- Configure Surefire to use filtered classes -->
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <configuration>
-            <additionalClasspathElements>
-              <additionalClasspathElement>${project.build.directory}/classes-filtered</additionalClasspathElement>
-            </additionalClasspathElements>
-          </configuration>
-        </plugin>
-      </plugins>
-    </build>
-  </profile>
-</profiles>
-```
-
-#### 2. Add the default rules file to your project root
-
-**Option A (Recommended):** Run the plugin's bootstrap goal:
+Example usage:
 
 ```bash
 mvn jacoco-method-filter:init-rules
+mvn clean verify -Pcode-coverage
 ```
 
-This creates a `jmf-rules.txt` file with sensible defaults.
-
-**Option B (Manual):** Download [jmf-rules.template.txt](./jmf-rules.template.txt) and place it in your project
- root directory as `jmf-rules.txt`.
-
-#### 3. Run Coverage (On-Demand)
-
-```bash
-mvn clean verify -Pcode-coverage    # activate profile to enable coverage
-```
-
-#### 4. View Reports
-
-After running coverage, reports are generated in:
-
-- **Filtered classes** → `target/classes-filtered`
-- **HTML report** → `target/jacoco-html/index.html`
-- **XML report** → `target/jacoco.xml`
-
-> **Configuration Notes**
->
-> - Coverage is **on-demand only** — activate the `code-coverage` profile to enable it.
-> - The plugin integrates seamlessly with the standard `jacoco-maven-plugin` for agent attachment.
-> - Default rules file location is `${project.basedir}/jmf-rules.txt`.
-> - To skip coverage processing when the profile is active, set `-Djacoco.skip=true`.
+See [`maven-plugin/README.md`](./maven-plugin/README.md) for installation, available goals, and parameters.
+Examples: [`examples/maven-basic/`](./examples/maven-basic/)
 
 ---
 
 ### Customization
 
-#### No Tests in Module
-
-If your module does not contain tests, JaCoCo will not generate the report.exec file.
-In this situation, the generation of the JaCoCo report will be skipped.
+See plugin documentation for rules file location, dry-run mode, and behavior when JaCoCo execution data is missing:
+- [`sbt-plugin/README.md`](./sbt-plugin/README.md)
+- [`maven-plugin/README.md`](./maven-plugin/README.md)
 
 ---
 
