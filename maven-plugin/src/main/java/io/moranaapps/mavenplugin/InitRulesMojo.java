@@ -39,14 +39,23 @@ public class InitRulesMojo extends AbstractMojo {
         getLog().info("Generating rules file: " + rulesFile.getAbsolutePath());
         
         try {
-            if (!templateRef.exists()) {
-                getLog().warn("Template unavailable at: " + templateRef.getAbsolutePath());
-                getLog().info("Creating basic rules file");
-                writeBasicRules();
-            } else {
+            if (templateRef.exists()) {
                 Files.copy(templateRef.toPath(), rulesFile.toPath(), 
                           StandardCopyOption.REPLACE_EXISTING);
-                getLog().info("Rules file created from template");
+                getLog().info("Rules file created from project template");
+            } else {
+                // Try bundled template from plugin resources
+                try (InputStream in = InitRulesMojo.class.getClassLoader()
+                        .getResourceAsStream("jmf-rules.template.txt")) {
+                    if (in != null) {
+                        Files.copy(in, rulesFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        getLog().info("Rules file created from bundled template");
+                    } else {
+                        getLog().warn("No rules template found in project or plugin resources");
+                        getLog().info("Creating basic rules file");
+                        writeBasicRules();
+                    }
+                }
             }
         } catch (IOException ex) {
             throw new MojoExecutionException("Rules file creation failed", ex);

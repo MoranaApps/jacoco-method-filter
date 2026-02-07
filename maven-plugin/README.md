@@ -69,6 +69,32 @@ Add to your `pom.xml` (recommended: inside a coverage profile):
             </execution>
           </executions>
         </plugin>
+
+        <!-- Overlay filtered classes before tests -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>3.3.1</version>
+          <executions>
+            <execution>
+              <id>overlay-filtered-classes</id>
+              <phase>process-test-classes</phase>
+              <goals>
+                <goal>copy-resources</goal>
+              </goals>
+              <configuration>
+                <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                <overwrite>true</overwrite>
+                <resources>
+                  <resource>
+                    <directory>${project.build.directory}/classes-filtered</directory>
+                    <filtering>false</filtering>
+                  </resource>
+                </resources>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
       </plugins>
     </build>
   </profile>
@@ -131,7 +157,7 @@ Generates JaCoCo HTML and XML reports using filtered classes.
 
 - `jmf.jacocoExecFile` - JaCoCo exec file (default: `${project.build.directory}/jacoco.exec`)
 - `jmf.classesDirectory` - Classes directory for report (default: `${project.build.directory}/classes-filtered`)
-- `jmf.sourceDirectories` - Source directories (default: `src/main/java`)
+- `jmf.sourceDirectories` - Source directories (default: derived from `project.getCompileSourceRoots()`, falls back to `src/main/java`)
 - `jmf.reportDirectory` - HTML report output (default: `${project.build.directory}/jacoco-html`)
 - `jmf.xmlOutputFile` - XML report output (default: `${project.build.directory}/jacoco.xml`)
 - `jmf.skip` - Skip execution (default: `false`)

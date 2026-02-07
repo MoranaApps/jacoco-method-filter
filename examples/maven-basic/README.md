@@ -73,12 +73,16 @@ cat target/jacoco.xml
    - Writes filtered classes to `target/classes-filtered/`
    - Methods matching rules get `@Generated` annotation
 
-3. **test** (maven-surefire-plugin)
-   - Configured with `additionalClasspathElements` pointing to `target/classes-filtered/`
-   - Tests run against filtered classes
+3. **overlay-filtered-classes** (maven-resources-plugin) - Phase: `process-test-classes`
+   - Copies filtered classes from `target/classes-filtered/` to `target/classes`
+   - Overwrites original classes with filtered versions
+   - Ensures tests execute against annotated classes
+
+4. **test** (maven-surefire-plugin)
+   - Tests run against overlaid filtered classes
    - JaCoCo ignores @Generated methods
 
-4. **report** (jacoco-method-filter-maven-plugin) - Phase: `verify`
+5. **report** (jacoco-method-filter-maven-plugin) - Phase: `verify`
    - Generates HTML report in `target/jacoco-html/`
    - Generates XML report at `target/jacoco.xml`
 
@@ -152,12 +156,31 @@ mvn clean test -Pcode-coverage    # Won't trigger report goal
 
 **Issue**: Coverage shows 0% for all classes
 
-**Solution**: Check that Surefire uses filtered classes:
+**Solution**: Verify that the overlay step is configured:
 
 ```xml
-<additionalClasspathElements>
-    <additionalClasspathElement>${project.build.directory}/classes-filtered</additionalClasspathElement>
-</additionalClasspathElements>
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-resources-plugin</artifactId>
+    <executions>
+        <execution>
+            <id>overlay-filtered-classes</id>
+            <phase>process-test-classes</phase>
+            <goals>
+                <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+                <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                <overwrite>true</overwrite>
+                <resources>
+                    <resource>
+                        <directory>${project.build.directory}/classes-filtered</directory>
+                    </resource>
+                </resources>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
 ```
 
 ## Next Steps

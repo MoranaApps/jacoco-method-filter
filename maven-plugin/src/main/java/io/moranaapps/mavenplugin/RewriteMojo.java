@@ -54,7 +54,13 @@ public class RewriteMojo extends AbstractMojo {
         if (rulesFile == null || !rulesFile.exists()) {
             errors.append("\n  - Rules configuration missing");
             if (rulesFile != null) errors.append(" at: ").append(rulesFile.getAbsolutePath());
-            errors.append("\n    Solution: execute 'mvn io.github.moranaapps:jacoco-method-filter-maven-plugin:1.2.0:init-rules'");
+            errors.append("\n    Solution: execute 'mvn ")
+                  .append(pluginDescriptor.getGroupId())
+                  .append(":")
+                  .append(pluginDescriptor.getArtifactId())
+                  .append(":")
+                  .append(pluginDescriptor.getVersion())
+                  .append(":init-rules'");
         }
         
         if (inputDirectory == null || !inputDirectory.isDirectory()) {

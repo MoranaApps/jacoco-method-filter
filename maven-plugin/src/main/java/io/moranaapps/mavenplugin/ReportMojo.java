@@ -4,6 +4,7 @@ import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
@@ -11,7 +12,7 @@ import org.apache.maven.project.MavenProject;
 import java.io.*;
 import java.util.*;
 
-@Mojo(name = "report", threadSafe = true)
+@Mojo(name = "report", defaultPhase = LifecyclePhase.VERIFY, threadSafe = true)
 public class ReportMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
@@ -58,7 +59,23 @@ public class ReportMojo extends AbstractMojo {
         }
 
         if (sourceDirectories == null || sourceDirectories.length == 0) {
-            sourceDirectories = new File[]{new File(project.getBasedir(), "src/main/java")};
+            List roots = project.getCompileSourceRoots();
+            List<File> dirs = new ArrayList<File>();
+            if (roots != null) {
+                for (Object rootObj : roots) {
+                    String root = (String) rootObj;
+                    if (root != null) {
+                        File dir = new File(root);
+                        if (dir.isDirectory()) {
+                            dirs.add(dir);
+                        }
+                    }
+                }
+            }
+            if (dirs.isEmpty()) {
+                dirs.add(new File(project.getBasedir(), "src/main/java"));
+            }
+            sourceDirectories = dirs.toArray(new File[0]);
         }
 
         produceReports();
