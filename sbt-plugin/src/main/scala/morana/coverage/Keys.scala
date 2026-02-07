@@ -43,5 +43,6 @@ object Keys {
     val jmfInitRules       = taskKey[File]("Create default jmf-rules.txt if it does not exist")
     val jmfInitRulesForce  = settingKey[Boolean]("Force overwrite existing jmf-rules.txt (default: false)")
     val jmfRulesTemplate   = settingKey[String]("Template type: 'scala' (default) or 'scala-java'")
+    val jmfVerify          = taskKey[Unit]("On-demand scan: show which methods would be excluded from coverage by current rules")
   }
 }

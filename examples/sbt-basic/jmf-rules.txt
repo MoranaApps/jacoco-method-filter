@@ -1,18 +1,45 @@
 # JaCoCo Method Filter Rules
-# This is a minimal example rules file for filtering coverage.
+# [jmf:1.0.0]
+#
+# This file defines patterns to exclude Scala boilerplate methods from coverage reports.
+# Methods matching these rules are annotated with @Generated, which JaCoCo ignores.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SCALA CASE CLASS BOILERPLATE
+# ─────────────────────────────────────────────────────────────────────────────
+
+# copy and copy$default$N
+*#copy(*)                               id:scala-copy
+*#copy$default$*(*)                     id:scala-copy-default
+
+# Product methods
+*#productArity(*)                       id:scala-product-arity
+*#productElement(*)                     id:scala-product-element
+*#productPrefix(*)                      id:scala-product-prefix
+*#productIterator(*)                    id:scala-product-iterator
+
+# equals / hashCode / toString / canEqual
+*#equals(*)                             id:scala-equals
+*#hashCode(*)                           id:scala-hashcode
+*#toString(*)                           id:scala-tostring
+*#canEqual(*)                           id:scala-canequal
+
+# ─────────────────────────────────────────────────────────────────────────────
+# COMPILER GENERATED
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Synthetic and bridge methods
+*#*(*):synthetic                        id:synthetic
+*#*(*):bridge                           id:bridge
+
+# Anonymous functions
+*#$anonfun$*                            id:anonfun
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NOTES
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Syntax: <package.Class>#<methodName>(<descriptor>) [flags] [predicates]
+#
 # For a comprehensive set of Scala-specific rules, see:
 # https://github.com/MoranaApps/jacoco-method-filter/blob/main/jmf-rules.template.txt
-
-# Example: Filter all synthetic methods (compiler-generated)
-*#*(*):synthetic
-
-# Example: Filter all bridge methods
-*#*(*):bridge
-
-# Example: Filter Scala case class boilerplate
-*.model.*#copy(*)
-*.model.*#productArity()
-*.model.*#productElement(*)
-
-# Example: Filter anonymous functions
-*#$anonfun$*

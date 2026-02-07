@@ -18,3 +18,5 @@ target/
 
 # OS cruft
 .DS_Store
+/sbt/
+cs

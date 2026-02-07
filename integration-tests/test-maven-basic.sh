@@ -13,14 +13,12 @@ cp -R "$REPO_ROOT/examples/maven-basic" "$WORK_DIR/project"
 cd "$WORK_DIR/project"
 
 # ── 1. Without filtering (plain verify) ────────────────────────────────────
-info "$TEST_NAME — running tests WITHOUT coverage filtering"
-mvn -B clean verify
+run_cmd "$TEST_NAME — mvn clean verify (no filtering)" mvn -B clean verify
 
 pass "$TEST_NAME — tests pass without filtering"
 
 # ── 2. With filtering (-Pcode-coverage) ────────────────────────────────────
-info "$TEST_NAME — running tests WITH coverage filtering (-Pcode-coverage)"
-mvn -B clean verify -Pcode-coverage
+run_cmd "$TEST_NAME — mvn clean verify -Pcode-coverage" mvn -B clean verify -Pcode-coverage
 
 assert_dir_not_empty "target/classes-filtered" \
   "$TEST_NAME — filtered classes directory exists"

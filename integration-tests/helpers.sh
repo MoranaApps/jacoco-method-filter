@@ -24,6 +24,28 @@ fail() { echo -e "${RED}FAIL${NC}: $1"; exit 1; }
 info() { echo -e "${YELLOW}INFO${NC}: $1"; }
 
 # ---------------------------------------------------------------------------
+# run_cmd <label> <cmd> [args...]
+# Runs a command, captures stdout+stderr, and always prints the output so it
+# is visible before the temp directory is cleaned up.
+# ---------------------------------------------------------------------------
+run_cmd() {
+  local label="$1"; shift
+  # Normalize label to safe filename: replace non-alphanumerics with underscores
+  local safe_label
+  safe_label="$(printf '%s' "$label" | LC_ALL=C tr -c 'A-Za-z0-9' '_')"
+  local log="$WORK_DIR/${safe_label}.log"
+  info "$label"
+  local rc=0
+  "$@" > "$log" 2>&1 || rc=$?
+  echo "─── output: $label ───"
+  cat "$log"
+  echo "─── end output (exit code $rc) ───"
+  if [[ $rc -ne 0 ]]; then
+    fail "$label"
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # assert_file_exists <path> <label>
 # ---------------------------------------------------------------------------
 assert_file_exists() {

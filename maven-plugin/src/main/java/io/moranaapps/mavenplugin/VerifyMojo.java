@@ -4,7 +4,6 @@ import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
@@ -14,9 +13,8 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-@Mojo(name = "rewrite", defaultPhase = LifecyclePhase.PROCESS_TEST_CLASSES, 
-      requiresDependencyResolution = ResolutionScope.RUNTIME, threadSafe = true)
-public class RewriteMojo extends AbstractMojo {
+@Mojo(name = "verify", requiresDependencyResolution = ResolutionScope.RUNTIME, threadSafe = true)
+public class VerifyMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
     private MavenProject project;
@@ -29,12 +27,6 @@ public class RewriteMojo extends AbstractMojo {
 
     @Parameter(property = "jmf.inputDirectory", defaultValue = "${project.build.outputDirectory}")
     private File inputDirectory;
-
-    @Parameter(property = "jmf.outputDirectory", defaultValue = "${project.build.directory}/classes-filtered")
-    private File outputDirectory;
-
-    @Parameter(property = "jmf.dryRun", defaultValue = "false")
-    private boolean dryRun;
 
     @Parameter(property = "jmf.skip", defaultValue = "false")
     private boolean skip;
@@ -52,7 +44,7 @@ public class RewriteMojo extends AbstractMojo {
         }
 
         checkInputs();
-        runTransformation();
+        runVerification();
     }
 
     private void checkInputs() throws MojoExecutionException {
@@ -80,16 +72,14 @@ public class RewriteMojo extends AbstractMojo {
         }
     }
 
-    private void runTransformation() throws MojoExecutionException {
+    private void runVerification() throws MojoExecutionException {
         String javaCmd = locateJavaExec();
         List<String> command = assembleCmdLine(javaCmd);
         
-        getLog().info("╔═══ JaCoCo Method Filter: Bytecode Rewrite ═══");
-        getLog().info("║ Source:      " + inputDirectory.getAbsolutePath());
-        getLog().info("║ Destination: " + outputDirectory.getAbsolutePath());
+        getLog().info("╔═══ JaCoCo Method Filter: Verify Rules Impact ═══");
+        getLog().info("║ Classes:     " + inputDirectory.getAbsolutePath());
         getLog().info("║ Rules:       " + rulesFile.getAbsolutePath());
-        getLog().info("║ Dry run:     " + (dryRun ? "YES (no writes)" : "NO"));
-        getLog().info("╚═══════════════════════════════════════════════");
+        getLog().info("╚══════════════════════════════════════════════════");
 
         launchSubprocess(command);
     }
@@ -100,13 +90,11 @@ public class RewriteMojo extends AbstractMojo {
         cmd.add("-cp");
         cmd.add(buildCp());
         cmd.add("io.moranaapps.jacocomethodfilter.CoverageRewriter");
+        cmd.add("--verify");
         cmd.add("--in");
         cmd.add(inputDirectory.getAbsolutePath());
-        cmd.add("--out");
-        cmd.add(outputDirectory.getAbsolutePath());
         cmd.add("--rules");
         cmd.add(rulesFile.getAbsolutePath());
-        if (dryRun) cmd.add("--dry-run");
         return cmd;
     }
 
@@ -169,7 +157,7 @@ public class RewriteMojo extends AbstractMojo {
                 throw new MojoExecutionException("Tool terminated abnormally: code " + result);
             }
             
-            getLog().info("Transformation completed");
+            getLog().info("Verification completed");
             
         } catch (IOException ex) {
             throw new MojoExecutionException("Failed starting subprocess", ex);
@@ -182,8 +170,8 @@ public class RewriteMojo extends AbstractMojo {
     private void routeLogLine(String content) {
         if (content.startsWith("[info]")) {
             getLog().info(content.substring(6).trim());
-        } else if (content.startsWith("[match]")) {
-            getLog().debug(content);
+        } else if (content.startsWith("[verify]")) {
+            getLog().info(content.substring(8).trim());
         } else if (content.startsWith("[warn]")) {
             getLog().warn(content.substring(6).trim());
         } else if (content.startsWith("[error]")) {

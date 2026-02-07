@@ -9,9 +9,10 @@ import scala.collection.JavaConverters._
 
 final case class CliConfig(
                             in: Path   = Paths.get("target/scala-2.13/classes"),
-                            out: Path  = Paths.get("target/scala-2.13/classes-filtered"),
+                            out: Option[Path]  = None,
                             rules: Path = Paths.get("rules/coverage-rules.sample.txt"),
-                            dryRun: Boolean = false
+                            dryRun: Boolean = false,
+                            verify: Boolean = false
                           )
 
 object CoverageRewriter {
@@ -25,9 +26,9 @@ object CoverageRewriter {
         .text("Input classes directory")
 
       opt[String]("out")
-        .required()
-        .action((v, c) => c.copy(out = Paths.get(v)))
-        .text("Output classes directory")
+        .optional()
+        .action((v, c) => c.copy(out = Some(Paths.get(v))))
+        .text("Output classes directory (required unless --verify is used)")
 
       opt[String]("rules")
         .required()
@@ -37,10 +38,27 @@ object CoverageRewriter {
       opt[Unit]("dry-run")
         .action((_, c) => c.copy(dryRun = true))
         .text("Only print matches; do not modify classes")
+
+      opt[Unit]("verify")
+        .action((_, c) => c.copy(verify = true))
+        .text("Read-only scan: list all methods that would be excluded by rules")
+
+      checkConfig { cfg =>
+        if (!cfg.verify && cfg.out.isEmpty) {
+          failure("--out is required when not in verify mode")
+        } else {
+          success
+        }
+      }
     }
 
     parser.parse(args, CliConfig()) match {
-      case Some(cfg) => run(cfg)
+      case Some(cfg) =>
+        if (cfg.verify) {
+          verify(cfg)
+        } else {
+          run(cfg)
+        }
       case None      => sys.exit(2)
     }
   }
@@ -49,7 +67,8 @@ object CoverageRewriter {
     val rules = Rules.load(cfg.rules)
     println(s"[info] Loaded ${rules.size} rule(s) from ${cfg.rules}")
 
-    Files.createDirectories(cfg.out)
+    val outPath = cfg.out.get // Safe because we validated it's present in main()
+    Files.createDirectories(outPath)
     var files = 0
     var marked = 0
 
@@ -61,8 +80,8 @@ object CoverageRewriter {
       } {
         files += 1
         val rel = cfg.in.relativize(p)
-        val outPath = cfg.out.resolve(rel)
-        Files.createDirectories(outPath.getParent)
+        val outFilePath = outPath.resolve(rel)
+        Files.createDirectories(outFilePath.getParent)
 
         val inBytes = Files.readAllBytes(p)
         val cr = new ClassReader(inBytes)
@@ -104,10 +123,36 @@ object CoverageRewriter {
 
         cr.accept(cv, 0)
         val outBytes = if (cfg.dryRun) inBytes else cw.toByteArray
-        Files.write(outPath, outBytes)
+        Files.write(outFilePath, outBytes)
       }
     }
 
     println(s"[info] Processed $files class file(s), marked $marked method(s). dry-run=${cfg.dryRun}")
+  }
+
+  private def verify(cfg: CliConfig): Unit = {
+    val rules = Rules.load(cfg.rules)
+    
+    // Load source lines for display
+    val ruleLines = if (Files.exists(cfg.rules)) {
+      Files.readAllLines(cfg.rules).asScala.toVector
+        .map(_.trim)
+        .filter(line => line.nonEmpty && !line.startsWith("#"))
+    } else {
+      Vector.empty
+    }
+    
+    println(s"[verify] Active rules (from ${cfg.rules}):")
+    rules.zipWithIndex.foreach { case (rule, idx) =>
+      val idStr = rule.id.map(id => s"id:$id").getOrElse("(no id)")
+      val flagsStr = if (rule.flags.nonEmpty) s" [${rule.flags.mkString(",")}]" else ""
+      val sourceLine = if (idx < ruleLines.size) s" => ${ruleLines(idx)}" else ""
+      println(s"[verify]   ${idx + 1}. $idStr$flagsStr$sourceLine")
+    }
+    
+    val result = VerifyScanner.scan(cfg.in, rules)
+    result.printReport()
+    
+    println(s"[info] Verification complete: scanned ${result.classesScanned} class file(s), found ${result.methodsMatched} method(s) matched by rules.")
   }
 }
