@@ -31,7 +31,7 @@ public class ReportMojo extends AbstractMojo {
     @Parameter(property = "jmf.sourceDirectories")
     private File[] sourceDirectories;
 
-    @Parameter(property = "jmf.reportDirectory", defaultValue = "${project.build.directory}/jacoco-html")
+    @Parameter(property = "jmf.reportDirectory", defaultValue = "${project.build.directory}/jacoco-report")
     private File reportDirectory;
 
     @Parameter(property = "jmf.xmlOutputFile", defaultValue = "${project.build.directory}/jacoco.xml")

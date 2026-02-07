@@ -23,16 +23,16 @@ info "$TEST_NAME — running tests WITH coverage filtering (sbt jacoco)"
 sbt jacoco
 
 # Verify reports were generated
-assert_dir_not_empty "target/jacoco/report" \
+assert_dir_not_empty "target/jacoco-report" \
   "$TEST_NAME — JaCoCo report directory exists and is not empty"
 
-assert_file_exists "target/jacoco/report/index.html" \
+assert_file_exists "target/jacoco-report/index.html" \
   "$TEST_NAME — HTML report generated"
 
-assert_file_exists "target/jacoco/report/jacoco.xml" \
+assert_file_exists "target/jacoco-report/jacoco.xml" \
   "$TEST_NAME — XML report generated"
 
-assert_file_exists "target/jacoco/report/jacoco.csv" \
+assert_file_exists "target/jacoco-report/jacoco.csv" \
   "$TEST_NAME — CSV report generated"
 
 pass "$TEST_NAME — coverage with filtering"

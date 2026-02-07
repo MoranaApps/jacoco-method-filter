@@ -158,7 +158,7 @@ Generates JaCoCo HTML and XML reports using filtered classes.
 - `jmf.jacocoExecFile` - JaCoCo exec file (default: `${project.build.directory}/jacoco.exec`)
 - `jmf.classesDirectory` - Classes directory for report (default: `${project.build.directory}/classes-filtered`)
 - `jmf.sourceDirectories` - Source directories (default: derived from `project.getCompileSourceRoots()`, falls back to `src/main/java`)
-- `jmf.reportDirectory` - HTML report output (default: `${project.build.directory}/jacoco-html`)
+- `jmf.reportDirectory` - HTML report output (default: `${project.build.directory}/jacoco-report`)
 - `jmf.xmlOutputFile` - XML report output (default: `${project.build.directory}/jacoco.xml`)
 - `jmf.skip` - Skip execution (default: `false`)
 - `jmf.skipIfExecMissing` - Skip if exec file missing (default: `true`)

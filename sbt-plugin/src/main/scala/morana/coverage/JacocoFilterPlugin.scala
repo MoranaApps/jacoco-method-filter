@@ -116,7 +116,7 @@ object JacocoFilterPlugin extends AutoPlugin {
     jacocoSetUserDirToBuildRoot := true,
 
     jacocoExecFile := target.value / "jacoco" / "jacoco.exec",
-    jacocoReportDir := target.value / "jacoco" / "report",
+    jacocoReportDir := target.value / "jacoco-report",
     jacocoIncludes := defaultIncludes,
     jacocoExcludes := defaultExcludes,
     jacocoAppend := false,
@@ -130,7 +130,7 @@ object JacocoFilterPlugin extends AutoPlugin {
     // --- JMF tool wiring
     ivyConfigurations += Jmf,
 
-    jmfOutDir := target.value / "jmf",
+    jmfOutDir := target.value,
     jmfRulesFile := (ThisBuild / baseDirectory).value / "jmf-rules.txt",
     jmfCliMain := "io.moranaapps.jacocomethodfilter.CoverageRewriter",
     jmfDryRun := false,
@@ -280,12 +280,18 @@ object JacocoFilterPlugin extends AutoPlugin {
 
     // ---- per-module clean
     jacocoClean := {
-      val log    = streams.value.log
-      val outDir = target.value / "jacoco"
-      IO.delete(outDir)
-      IO.createDirectory(outDir)
-      IO.delete(jmfOutDir.value)
-      log.info(s"[jacoco] cleaned: ${outDir.getAbsolutePath}")
+      val log = streams.value.log
+      val reportDir = jacocoReportDir.value
+      val filteredClassesDir = jmfOutDir.value / "classes-filtered"
+      val jacocoDir = target.value / "jacoco"
+      
+      IO.delete(reportDir)
+      IO.delete(filteredClassesDir)
+      IO.delete(jacocoDir)
+      
+      log.info(s"[jacoco] cleaned: ${reportDir.getAbsolutePath}")
+      log.info(s"[jacoco] cleaned: ${filteredClassesDir.getAbsolutePath}")
+      log.info(s"[jacoco] cleaned: ${jacocoDir.getAbsolutePath}")
     },
 
     // ---- per-module report
