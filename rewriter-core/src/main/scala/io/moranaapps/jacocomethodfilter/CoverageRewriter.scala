@@ -42,6 +42,14 @@ object CoverageRewriter {
       opt[Unit]("verify")
         .action((_, c) => c.copy(verify = true))
         .text("Read-only scan: list all methods that would be excluded by rules")
+
+      checkConfig { cfg =>
+        if (!cfg.verify && cfg.out.isEmpty) {
+          failure("--out is required when not in verify mode")
+        } else {
+          success
+        }
+      }
     }
 
     parser.parse(args, CliConfig()) match {
@@ -49,10 +57,6 @@ object CoverageRewriter {
         if (cfg.verify) {
           verify(cfg)
         } else {
-          if (cfg.out.isEmpty) {
-            println("[error] --out is required when not in verify mode")
-            sys.exit(2)
-          }
           run(cfg)
         }
       case None      => sys.exit(2)
@@ -129,11 +133,21 @@ object CoverageRewriter {
   private def verify(cfg: CliConfig): Unit = {
     val rules = Rules.load(cfg.rules)
     
+    // Load source lines for display
+    val ruleLines = if (Files.exists(cfg.rules)) {
+      Files.readAllLines(cfg.rules).asScala.toVector
+        .map(_.trim)
+        .filter(line => line.nonEmpty && !line.startsWith("#"))
+    } else {
+      Vector.empty
+    }
+    
     println(s"[verify] Active rules (from ${cfg.rules}):")
     rules.zipWithIndex.foreach { case (rule, idx) =>
       val idStr = rule.id.map(id => s"id:$id").getOrElse("(no id)")
       val flagsStr = if (rule.flags.nonEmpty) s" [${rule.flags.mkString(",")}]" else ""
-      println(s"[verify]   ${idx + 1}. $idStr$flagsStr")
+      val sourceLine = if (idx < ruleLines.size) s" => ${ruleLines(idx)}" else ""
+      println(s"[verify]   ${idx + 1}. $idStr$flagsStr$sourceLine")
     }
     
     val result = VerifyScanner.scan(cfg.in, rules)

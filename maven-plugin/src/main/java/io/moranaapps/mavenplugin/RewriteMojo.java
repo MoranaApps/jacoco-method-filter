@@ -113,6 +113,12 @@ public class RewriteMojo extends AbstractMojo {
     private String buildCp() throws MojoExecutionException {
         List<String> paths = new ArrayList<>();
         
+        // Add the plugin's own artifact JAR if available
+        Artifact pluginArtifact = pluginDescriptor.getPluginArtifact();
+        if (pluginArtifact != null && pluginArtifact.getFile() != null && pluginArtifact.getFile().exists()) {
+            paths.add(pluginArtifact.getFile().getAbsolutePath());
+        }
+        
         // Get dependencies from plugin descriptor
         List<Artifact> deps = pluginDescriptor.getArtifacts();
         for (Artifact dep : deps) {

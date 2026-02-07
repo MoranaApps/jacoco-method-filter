@@ -19,15 +19,26 @@ final case class ScanResult(
                               methodsMatched: Int,
                               matches: Seq[MatchedMethod]
                             ) {
-  def printReport(): Unit = {
+  /**
+   * Emit a human-readable report of matched methods.
+   * Default behavior: print to standard output.
+   */
+  def printReport(): Unit = printReport(println)
+
+  /**
+   * Emit a human-readable report of matched methods.
+   *
+   * @param out sink for each formatted output line
+   */
+  def printReport(out: String => Unit): Unit = {
     // Group by class
     val byClass = matches.groupBy(_.fqcn).toSeq.sortBy(_._1)
     
     byClass.foreach { case (fqcn, methods) =>
-      println(s"[verify] $fqcn")
+      out(s"[verify] $fqcn")
       methods.sortBy(m => (m.methodName, m.descriptor)).foreach { m =>
         val ruleIdStr = m.ruleId.map(id => s"  rule-id:$id").getOrElse("")
-        println(s"[verify]   #${m.methodName}${m.descriptor}$ruleIdStr")
+        out(s"[verify]   #${m.methodName}${m.descriptor}$ruleIdStr")
       }
     }
   }
