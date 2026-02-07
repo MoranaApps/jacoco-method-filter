@@ -9,7 +9,7 @@ import scala.collection.JavaConverters._
 
 final case class CliConfig(
                             in: Path   = Paths.get("target/scala-2.13/classes"),
-                            out: Path  = Paths.get("target/scala-2.13/classes-filtered"),
+                            out: Option[Path]  = None,
                             rules: Path = Paths.get("rules/coverage-rules.sample.txt"),
                             dryRun: Boolean = false,
                             verify: Boolean = false
@@ -27,7 +27,7 @@ object CoverageRewriter {
 
       opt[String]("out")
         .optional()
-        .action((v, c) => c.copy(out = Paths.get(v)))
+        .action((v, c) => c.copy(out = Some(Paths.get(v))))
         .text("Output classes directory")
 
       opt[String]("rules")
@@ -49,7 +49,7 @@ object CoverageRewriter {
         if (cfg.verify) {
           verify(cfg)
         } else {
-          if (cfg.out == Paths.get("target/scala-2.13/classes-filtered")) {
+          if (cfg.out.isEmpty) {
             println("[error] --out is required when not in verify mode")
             sys.exit(2)
           }
@@ -63,7 +63,8 @@ object CoverageRewriter {
     val rules = Rules.load(cfg.rules)
     println(s"[info] Loaded ${rules.size} rule(s) from ${cfg.rules}")
 
-    Files.createDirectories(cfg.out)
+    val outPath = cfg.out.get // Safe because we validated it's present in main()
+    Files.createDirectories(outPath)
     var files = 0
     var marked = 0
 
@@ -75,8 +76,8 @@ object CoverageRewriter {
       } {
         files += 1
         val rel = cfg.in.relativize(p)
-        val outPath = cfg.out.resolve(rel)
-        Files.createDirectories(outPath.getParent)
+        val outFilePath = outPath.resolve(rel)
+        Files.createDirectories(outFilePath.getParent)
 
         val inBytes = Files.readAllBytes(p)
         val cr = new ClassReader(inBytes)
@@ -118,7 +119,7 @@ object CoverageRewriter {
 
         cr.accept(cv, 0)
         val outBytes = if (cfg.dryRun) inBytes else cw.toByteArray
-        Files.write(outPath, outBytes)
+        Files.write(outFilePath, outBytes)
       }
     }
 
@@ -130,12 +131,9 @@ object CoverageRewriter {
     
     println(s"[verify] Active rules (from ${cfg.rules}):")
     rules.zipWithIndex.foreach { case (rule, idx) =>
-      val idStr = rule.id.map(id => s"  id:$id").getOrElse("")
-      // Reconstruct a simplified pattern representation
-      val clsPattern = "*" // simplified for display
-      val methodPattern = "*" // simplified for display
-      val descPattern = "*" // simplified for display
-      println(s"[verify]   ${idx + 1}. $clsPattern#$methodPattern($descPattern)$idStr")
+      val idStr = rule.id.map(id => s"id:$id").getOrElse("(no id)")
+      val flagsStr = if (rule.flags.nonEmpty) s" [${rule.flags.mkString(",")}]" else ""
+      println(s"[verify]   ${idx + 1}. $idStr$flagsStr")
     }
     
     val result = VerifyScanner.scan(cfg.in, rules)

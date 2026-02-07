@@ -56,7 +56,9 @@ object VerifyScanner {
           }
 
           override def visitMethod(access: Int, name: String, desc: String, signature: String, exceptions: Array[String]): MethodVisitor = {
-            // Check all rules for a match
+            // Check all rules for a match.
+            // Note: A method can match multiple rules, and we record each match separately.
+            // This helps users understand rule overlap and prioritize/refine their rules.
             rules.foreach { rule =>
               if (Rules.matches(rule, fqcnDots, name, desc, access)) {
                 matchedMethods += MatchedMethod(fqcnDots, name, desc, rule.id)
