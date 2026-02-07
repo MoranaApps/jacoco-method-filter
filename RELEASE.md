@@ -72,8 +72,8 @@ git push origin master
 
 Notes:
 
-- The workflow publishes **Scala 2.11** under **JDK 8**, then publishes **Scala 2.12/2.13** and the **sbt plugin**
-  under **JDK 17** (this reduces Scala 2.11 release failures).
+- The workflow publishes **Scala 2.12** under **JDK 17**.
+- The core library is published as a **fat JAR** with all dependencies bundled (ASM, scopt, scala-library) and zero transitive dependencies.
 - The **Maven plugin** is built and deployed via `mvn deploy` using the
   `central-publishing-maven-plugin` in the same workflow.
 - `release_draft.yml` validates tags against branch `master`.
@@ -92,10 +92,10 @@ Notes:
 
 Expected coordinates:
 
-- Core library:
+- Core library (Scala 2.12 fat JAR with zero dependencies):
 
 ```scala
-io.github.moranaapps:jacoco-method-filter-core_2.13:<version>
+io.github.moranaapps:jacoco-method-filter-core_2.12:<version>
 ```
 
 - sbt plugin:

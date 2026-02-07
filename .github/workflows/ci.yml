@@ -20,7 +20,7 @@ jobs:
           curl -fsSL https://raw.githubusercontent.com/dwijnand/sbt-extras/master/sbt -o sbt
           chmod +x sbt
           sudo mv sbt /usr/local/bin/
-      - run: sbt "+test"
+      - run: sbt test
 
   integration:
     needs: build

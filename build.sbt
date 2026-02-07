@@ -1,9 +1,10 @@
 import xerial.sbt.Sonatype._
+import sbtassembly.AssemblyPlugin.autoImport._
 
 // ---- global ---------------------------------------------------------------
 ThisBuild / organization   := "io.github.moranaapps"
-ThisBuild / scalaVersion   := "2.13.14"             // default
-ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.21", "2.13.18")
+ThisBuild / scalaVersion   := "2.12.21"             // default
+ThisBuild / crossScalaVersions := Seq("2.12.21")
 ThisBuild / version        := "1.2.0"
 ThisBuild / versionScheme  := Some("early-semver")
 
@@ -41,6 +42,37 @@ lazy val rewriterCore = (project in file("rewriter-core"))
       "com.github.scopt"       %% "scopt"                    % "3.7.1",
       "org.scalatest"          %% "scalatest"                % "3.1.4" % Test
     ),
+
+    // ---- Fat JAR: bundle all runtime deps so consumers have zero transitive dependencies ----
+    // Replace the default packageBin JAR with the assembly fat JAR
+    Compile / packageBin := assembly.value,
+
+    assembly / assemblyJarName := s"${name.value}_${scalaBinaryVersion.value}-${version.value}.jar",
+
+    // Shade/relocate dependencies to avoid classpath conflicts (e.g. ASM version clash with JaCoCo)
+    assembly / assemblyShadeRules := Seq(
+      ShadeRule.rename("org.objectweb.asm.**" -> "jmf.shaded.asm.@1").inAll,
+      ShadeRule.rename("scopt.**"             -> "jmf.shaded.scopt.@1").inAll
+    ),
+
+    // Merge strategy for duplicates
+    assembly / assemblyMergeStrategy := {
+      case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+      case "module-info.class"           => MergeStrategy.discard
+      case x                             => MergeStrategy.first
+    },
+
+    // Strip transitive dependencies from the published POM so consumers get a zero-dependency artifact
+    pomPostProcess := { (node: scala.xml.Node) =>
+      import scala.xml._
+      import scala.xml.transform._
+      new RuleTransformer(new RewriteRule {
+        override def transform(n: Node): Seq[Node] = n match {
+          case e: Elem if e.label == "dependencies" => NodeSeq.Empty
+          case other => other
+        }
+      }).transform(node).head
+    },
 
     Compile / doc / scalacOptions ++= Seq("-no-link-warnings")
   )
