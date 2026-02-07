@@ -107,14 +107,14 @@ sbt jacocoCleanAll    # all enabled modules
 | `jacocoPluginEnabled` | `Boolean` | `false` | Enable/disable the plugin for this module |
 | `jmfRulesFile` | `File` | `jmf-rules.txt` | Path to the rules file |
 | `jmfDryRun` | `Boolean` | `false` | Dry run mode - logs matches without modifying classes |
-| `jmfOutputDirectory` | `File` | `target/jmf/classes-filtered` | Output directory for filtered classes |
-| `jacocoReportDirectory` | `File` | `target/jacoco/report` | Output directory for JaCoCo reports |
+| `jmfOutputDirectory` | `File` | `target/classes-filtered` | Output directory for filtered classes |
+| `jacocoReportDirectory` | `File` | `target/jacoco-report` | Output directory for JaCoCo reports |
 
 ## Output Locations
 
 After running `jacocoReport`:
 
-- **Filtered classes**: `target/jmf/classes-filtered`
-- **HTML report**: `target/jacoco/report/index.html`
-- **XML report**: `target/jacoco/report/jacoco.xml`
-- **CSV report**: `target/jacoco/report/jacoco.csv`
+- **Filtered classes**: `target/classes-filtered`
+- **HTML report**: `target/jacoco-report/index.html`
+- **XML report**: `target/jacoco-report/jacoco.xml`
+- **CSV report**: `target/jacoco-report/jacoco.csv`

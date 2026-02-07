@@ -25,7 +25,7 @@ mvn -B clean verify -Pcode-coverage
 assert_dir_not_empty "target/classes-filtered" \
   "$TEST_NAME — filtered classes directory exists"
 
-assert_file_exists "target/jacoco-html/index.html" \
+assert_file_exists "target/jacoco-report/index.html" \
   "$TEST_NAME — HTML report generated"
 
 assert_file_exists "target/jacoco.xml" \

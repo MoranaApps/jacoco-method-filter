@@ -144,6 +144,19 @@ Examples: [`examples/maven-basic/`](./examples/maven-basic/) (Java), [`examples/
 
 ---
 
+### Output Locations
+
+Both sbt and Maven integrations produce coverage artifacts in a standardized layout under your project's `target/` directory:
+
+- **Filtered classes**: `target/classes-filtered` — Compiled classes with `@CoverageGenerated` annotations applied
+- **JaCoCo HTML report**: `target/jacoco-report/index.html` — Interactive HTML coverage report
+- **JaCoCo XML report**: `target/jacoco.xml` — Machine-readable coverage data (for CI/CD)
+- **JaCoCo CSV report**: `target/jacoco-report/jacoco.csv` — Coverage data in CSV format (sbt only)
+
+These paths are configurable. See plugin documentation for customization options.
+
+---
+
 ### Customization
 
 See plugin documentation for rules file location, dry-run mode, and behavior when JaCoCo execution data is missing:
