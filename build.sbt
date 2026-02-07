@@ -28,7 +28,7 @@ ThisBuild / developers := List(
 
 // CORE LIB (publish this)
 lazy val rewriterCore = (project in file("rewriter-core"))
-  .enablePlugins(sbtassembly.AssemblyPlugin)
+  .enablePlugins(AssemblyPlugin)
   .settings(
     name := "jacoco-method-filter-core",
     publish / skip := false,
@@ -63,15 +63,11 @@ lazy val rewriterCore = (project in file("rewriter-core"))
       case PathList("META-INF", "services", xs @ _*) => MergeStrategy.concat
       case PathList("META-INF", xs @ _*) => MergeStrategy.discard
       case "module-info.class" => MergeStrategy.discard
-      case x if x.endsWith(".proto") => MergeStrategy.first
-      case x => MergeStrategy.first
+      // Use deduplicate for remaining files to ensure identical files are handled safely
+      case _ => MergeStrategy.deduplicate
     },
 
     // Add assembly JAR as a classified artifact so both thin and fat JARs are published
-    Compile / packageBin / artifact := {
-      val prev = (Compile / packageBin / artifact).value
-      prev.withClassifier(None)
-    },
     assembly / artifact := {
       val art = (assembly / artifact).value
       art.withClassifier(Some("assembly"))
