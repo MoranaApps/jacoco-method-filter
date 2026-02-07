@@ -60,8 +60,7 @@ public class ReportMojo extends AbstractMojo {
         }
 
         if (sourceDirectories == null || sourceDirectories.length == 0) {
-            @SuppressWarnings("unchecked")
-            List<String> roots = (List<String>) project.getCompileSourceRoots();
+            List<String> roots = project.getCompileSourceRoots();
             List<File> dirs = new ArrayList<File>();
             if (roots != null) {
                 for (String root : roots) {
@@ -160,9 +159,8 @@ public class ReportMojo extends AbstractMojo {
 
     private File findJacocoCliJar() throws MojoExecutionException {
         // Search plugin dependencies for JaCoCo CLI
-        List<?> deps = pluginDescriptor.getArtifacts();
-        for (Object depObj : deps) {
-            Artifact dep = (Artifact) depObj;
+        List<Artifact> deps = pluginDescriptor.getArtifacts();
+        for (Artifact dep : deps) {
             if ("org.jacoco".equals(dep.getGroupId()) && 
                 "org.jacoco.cli".equals(dep.getArtifactId())) {
                 File jarLocation = dep.getFile();
