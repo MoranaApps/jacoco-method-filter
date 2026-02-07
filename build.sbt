@@ -28,6 +28,7 @@ ThisBuild / developers := List(
 
 // CORE LIB (publish this)
 lazy val rewriterCore = (project in file("rewriter-core"))
+  .enablePlugins(sbtassembly.AssemblyPlugin)
   .settings(
     name := "jacoco-method-filter-core",
     publish / skip := false,
@@ -42,7 +43,40 @@ lazy val rewriterCore = (project in file("rewriter-core"))
       "org.scalatest"          %% "scalatest"                % "3.1.4" % Test
     ),
 
-    Compile / doc / scalacOptions ++= Seq("-no-link-warnings")
+    Compile / doc / scalacOptions ++= Seq("-no-link-warnings"),
+
+    // Assembly (fat JAR) configuration
+    assembly / mainClass := Some("io.moranaapps.jacocomethodfilter.CoverageRewriter"),
+    assembly / assemblyJarName := s"jacoco-method-filter-core-assembly-${version.value}.jar",
+
+    // Shade ASM to avoid conflicts with other ASM versions on the classpath
+    assembly / assemblyShadeRules := Seq(
+      ShadeRule.rename("org.objectweb.asm.**" -> "io.moranaapps.jacocomethodfilter.shaded.asm.@1").inAll
+    ),
+
+    // Merge strategy for handling duplicate files
+    assembly / assemblyMergeStrategy := {
+      case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
+      case PathList("META-INF", xs @ _*) if xs.lastOption.exists(_.endsWith(".SF")) => MergeStrategy.discard
+      case PathList("META-INF", xs @ _*) if xs.lastOption.exists(_.endsWith(".DSA")) => MergeStrategy.discard
+      case PathList("META-INF", xs @ _*) if xs.lastOption.exists(_.endsWith(".RSA")) => MergeStrategy.discard
+      case PathList("META-INF", "services", xs @ _*) => MergeStrategy.concat
+      case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+      case "module-info.class" => MergeStrategy.discard
+      case x if x.endsWith(".proto") => MergeStrategy.first
+      case x => MergeStrategy.first
+    },
+
+    // Add assembly JAR as a classified artifact so both thin and fat JARs are published
+    Compile / packageBin / artifact := {
+      val prev = (Compile / packageBin / artifact).value
+      prev.withClassifier(None)
+    },
+    assembly / artifact := {
+      val art = (assembly / artifact).value
+      art.withClassifier(Some("assembly"))
+    },
+    addArtifact(assembly / artifact, assembly)
   )
 
 // SBT PLUGIN (publish this)

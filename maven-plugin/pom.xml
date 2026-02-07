@@ -71,6 +71,7 @@
             <groupId>io.github.moranaapps</groupId>
             <artifactId>jacoco-method-filter-core_2.12</artifactId>
             <version>1.2.0</version>
+            <classifier>assembly</classifier>
         </dependency>
 
         <dependency>
