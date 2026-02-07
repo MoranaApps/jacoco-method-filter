@@ -11,7 +11,8 @@ final case class CliConfig(
                             in: Path   = Paths.get("target/scala-2.13/classes"),
                             out: Path  = Paths.get("target/scala-2.13/classes-filtered"),
                             rules: Path = Paths.get("rules/coverage-rules.sample.txt"),
-                            dryRun: Boolean = false
+                            dryRun: Boolean = false,
+                            verify: Boolean = false
                           )
 
 object CoverageRewriter {
@@ -25,7 +26,7 @@ object CoverageRewriter {
         .text("Input classes directory")
 
       opt[String]("out")
-        .required()
+        .optional()
         .action((v, c) => c.copy(out = Paths.get(v)))
         .text("Output classes directory")
 
@@ -37,10 +38,23 @@ object CoverageRewriter {
       opt[Unit]("dry-run")
         .action((_, c) => c.copy(dryRun = true))
         .text("Only print matches; do not modify classes")
+
+      opt[Unit]("verify")
+        .action((_, c) => c.copy(verify = true))
+        .text("Read-only scan: list all methods that would be excluded by rules")
     }
 
     parser.parse(args, CliConfig()) match {
-      case Some(cfg) => run(cfg)
+      case Some(cfg) =>
+        if (cfg.verify) {
+          verify(cfg)
+        } else {
+          if (cfg.out == Paths.get("target/scala-2.13/classes-filtered")) {
+            println("[error] --out is required when not in verify mode")
+            sys.exit(2)
+          }
+          run(cfg)
+        }
       case None      => sys.exit(2)
     }
   }
@@ -109,5 +123,24 @@ object CoverageRewriter {
     }
 
     println(s"[info] Processed $files class file(s), marked $marked method(s). dry-run=${cfg.dryRun}")
+  }
+
+  private def verify(cfg: CliConfig): Unit = {
+    val rules = Rules.load(cfg.rules)
+    
+    println(s"[verify] Active rules (from ${cfg.rules}):")
+    rules.zipWithIndex.foreach { case (rule, idx) =>
+      val idStr = rule.id.map(id => s"  id:$id").getOrElse("")
+      // Reconstruct a simplified pattern representation
+      val clsPattern = "*" // simplified for display
+      val methodPattern = "*" // simplified for display
+      val descPattern = "*" // simplified for display
+      println(s"[verify]   ${idx + 1}. $clsPattern#$methodPattern($descPattern)$idStr")
+    }
+    
+    val result = VerifyScanner.scan(cfg.in, rules)
+    result.printReport()
+    
+    println(s"[info] Verification complete: scanned ${result.classesScanned} class file(s), found ${result.methodsMatched} method(s) matched by rules.")
   }
 }
