@@ -33,6 +33,10 @@ If you want to try the plugin and core library locally before release, publish t
 # from jacoco-method-filter repo root
 sbt "project rewriterCore" +publishLocal   # publishes jacoco-method-filter-core for all Scala versions
 sbt "project sbtPlugin"    publishLocal    # publishes jacoco-method-filter-sbt sbt plugin
+
+# Maven plugin (requires core in local M2 first)
+sbt "project rewriterCore" ++2.12.21 publishM2   # publish core to ~/.m2/repository
+cd maven-plugin && mvn install && cd ..           # build and install Maven plugin locally
 ```
 
 Artifacts will appear in:

@@ -6,7 +6,7 @@
 #
 # ─────────────────────────────────────────────────────────────────────────────
 # HOW TO USE (quick)
-# 1) Replace YOUR.PACKAGE.ROOT with your project’s package root (e.g., com.example.app).
+# 1) Review the global rules below and add project-specific patterns in the PROJECT RULES section if needed.
 # 2) Start with the CONSERVATIVE section only.
 # 3) If clean, enable STANDARD. Use AGGRESSIVE only inside DTO/auto‑generated packages.
 # 4) Keep rules narrow (by package), prefer flags (synthetic/bridge) for compiler artifacts,

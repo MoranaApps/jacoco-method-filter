@@ -75,6 +75,37 @@ jobs:
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           PGP_PASSPHRASE:    ${{ secrets.PGP_PASSPHRASE }}
 
+      # Maven plugin: publish core to local M2 first (dependency), then deploy plugin
+      - name: Publish core to local M2 (for Maven plugin dependency)
+        run: sbt "; project rewriterCore; ++2.12.21 publishM2"
+
+      - name: Configure Maven Central credentials
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/settings.xml <<EOF
+          <settings>
+            <servers>
+              <server>
+                <id>central</id>
+                <username>${CENTRAL_USERNAME}</username>
+                <password>${CENTRAL_PASSWORD}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
+        env:
+          CENTRAL_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          CENTRAL_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+
+      - name: Build + deploy Maven plugin
+        run: |
+          cd maven-plugin
+          mvn -B clean deploy -Prelease \
+            -Dgpg.passphrase="${GPG_PASSPHRASE}" \
+            -Dcentral.publishing.autoPublish=${{ inputs.doRelease == 'yes' && 'true' || 'false' }}
+        env:
+          GPG_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+
       - name: Upload staged bundle (debug artifact)
         run: |
           set -euo pipefail

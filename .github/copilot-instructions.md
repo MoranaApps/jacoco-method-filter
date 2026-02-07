@@ -9,7 +9,6 @@ Structure
 - `build.sbt` – root sbt build
 - `rewriter-core/` – core library and CLI rewriter module
 - `sbt-plugin/` – sbt plugin module
-- `integration/` – integration docs (sbt, Maven)
 - `rules/` – sample rules files
 
 Context
@@ -85,3 +84,4 @@ Repo additions
   - Publish locally:
     - `sbt "project rewriterCore" +publishLocal`
     - `sbt "project sbtPlugin" publishLocal`
+    - Maven plugin: `sbt "project rewriterCore" ++2.12.21 publishM2` then `cd maven-plugin && mvn install`
