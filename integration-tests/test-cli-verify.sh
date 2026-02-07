@@ -36,13 +36,13 @@ CORE_JAR=$(
     timestamp=$(stat -c %Y "$f" 2>/dev/null || stat -f %m "$f" 2>/dev/null)
     printf '%s\t%s\n' "$timestamp" "$f"
   done | \
-  sort -rn | head -1 | cut -f2-
+  sort -rn | head -1 | cut -f2- || true
 )
 
-SCALA_LIB=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "scala-library-2.13*.jar" 2>/dev/null | head -1)
-ASM_JAR=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "asm-9.6.jar" 2>/dev/null | head -1)
-ASM_COMMONS_JAR=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "asm-commons-9.6.jar" 2>/dev/null | head -1)
-SCOPT_JAR=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "scopt_2.13-*.jar" 2>/dev/null | head -1)
+SCALA_LIB=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "scala-library-2.13*.jar" 2>/dev/null | head -1 || true)
+ASM_JAR=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "asm-9.6.jar" 2>/dev/null | head -1 || true)
+ASM_COMMONS_JAR=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "asm-commons-9.6.jar" 2>/dev/null | head -1 || true)
+SCOPT_JAR=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "scopt_2.13-*.jar" 2>/dev/null | head -1 || true)
 
 if [[ -z "$CORE_JAR" || ! -f "$CORE_JAR" ]]; then
   fail "$TEST_NAME — core JAR not found in ~/.ivy2/local (run 'sbt publishLocal' first)"
