@@ -7,7 +7,7 @@ import sbt.Keys._
 /**
  * JacocoFilterPlugin
  * -----------------
- * A bundled sbt plugin version of the integration snippets under `integration/sbt/`.
+ * The bundled sbt plugin for jacoco-method-filter.
  */
 object JacocoFilterPlugin extends AutoPlugin {
 

@@ -100,7 +100,7 @@ and optional **flags/predicates**.
 ### Ready to Use Rules File
 
 - **Scala project** : the ready to use rules file is at
-[jmf_rules.txt](./integration/jmf-rules_for_scala_project.txt).
+[jmf-rules.template.txt](./jmf-rules.template.txt).
 
 This file contains both ready-to-use defaults and a detailed syntax guide
 to help you adapt the rules to your own project.
@@ -193,34 +193,6 @@ After running coverage, reports are generated in each module's target directory:
  `set every jacocoPluginEnabled := true`.
 > - FQCN inputs in rules files should use dot-form (e.g., `com.example.Foo`).
 > - To run in dry mode (preview what would be filtered), set `jmfDryRun := true` in your build.
-
----
-
-#### Legacy/Manual Integration (Advanced Users Only)
-
-For users who need fine-grained control or are working with custom build setups, you can manually copy the plugin
- source files.
-
-**See [integration/sbt/README.md](./integration/sbt/README.md) for detailed instructions and important maintenance
-warnings.**
-
-Quick summary:
-
-1. Copy these files into your `{root}/project` directory:
-   - [JacocoBaseKeysPlugin.scala](./integration/sbt/JacocoBaseKeysPlugin.scala)
-   - [FilteredJacocoAgentPlugin.scala](./integration/sbt/FilteredJacocoAgentPlugin.scala)
-
-2. Add the default rules file to your project root:
-   - [jmf-rules for Scala projects](./integration/jmf-rules_for_scala_project.txt)
-
-3. Enable the plugin in `build.sbt`:
-
-   ```scala
-   .enablePlugins(FilteredJacocoAgentPlugin)
-   ```
-
-**⚠️ Warning:** This approach is harder to maintain and keep in sync with releases. The published plugin
- (described above) is strongly recommended for most users.
 
 ---
 
@@ -318,17 +290,6 @@ After running coverage, reports are generated in:
 > - To skip coverage processing when the profile is active, set `-Djacoco.skip=true`.
 
 ---
-
-#### Legacy/Manual Integration (Advanced Users Only)
-
-For users who need fine-grained control or are working with custom build setups, you can manually configure a Maven
- profile.
-
-**See [integration/mvn/profile_integration.md](./integration/mvn/profile_integration.md) for detailed instructions and important maintenance
-warnings.**
-
-**⚠️ Warning:** This approach is harder to maintain and keep in sync with releases. The published plugin
- (described above) is strongly recommended for most users.
 
 ### Customization
 

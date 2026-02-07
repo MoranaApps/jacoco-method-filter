@@ -9,7 +9,6 @@ Structure
 - `build.sbt` – root sbt build
 - `rewriter-core/` – core library and CLI rewriter module
 - `sbt-plugin/` – sbt plugin module
-- `integration/` – integration docs (sbt, Maven)
 - `rules/` – sample rules files
 
 Context
