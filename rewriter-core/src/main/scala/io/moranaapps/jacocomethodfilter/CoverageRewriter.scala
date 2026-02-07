@@ -28,7 +28,7 @@ object CoverageRewriter {
       opt[String]("out")
         .optional()
         .action((v, c) => c.copy(out = Some(Paths.get(v))))
-        .text("Output classes directory")
+        .text("Output classes directory (required unless --verify is used)")
 
       opt[String]("rules")
         .required()

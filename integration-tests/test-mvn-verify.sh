@@ -15,10 +15,19 @@ cd "$WORK_DIR/project"
 # Compile first to ensure classes exist
 info "$TEST_NAME — compiling project"
 mvn -B clean compile
+compile_status=$?
+if [[ $compile_status -ne 0 ]]; then
+  fail "$TEST_NAME — mvn clean compile failed with status $compile_status"
+fi
 
 # Run verify goal
 info "$TEST_NAME — running mvn verify goal"
 OUTPUT=$(mvn -B io.github.moranaapps:jacoco-method-filter-maven-plugin:verify 2>&1)
+verify_status=$?
+if [[ $verify_status -ne 0 ]]; then
+  echo "$OUTPUT"
+  fail "$TEST_NAME — mvn verify goal failed with status $verify_status"
+fi
 
 # Check that output contains expected markers
 echo "$OUTPUT" | grep -q "JaCoCo Method Filter: Verify Rules Impact" || \

@@ -30,7 +30,10 @@ info() { echo -e "${YELLOW}INFO${NC}: $1"; }
 # ---------------------------------------------------------------------------
 run_cmd() {
   local label="$1"; shift
-  local log="$WORK_DIR/${label// /_}.log"
+  # Normalize label to safe filename: replace non-alphanumerics with underscores
+  local safe_label
+  safe_label="$(printf '%s' "$label" | LC_ALL=C tr -c 'A-Za-z0-9' '_')"
+  local log="$WORK_DIR/${safe_label}.log"
   info "$label"
   local rc=0
   "$@" > "$log" 2>&1 || rc=$?

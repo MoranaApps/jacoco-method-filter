@@ -25,17 +25,24 @@ assert_dir_not_empty "target/scala-2.13/classes" \
 
 # Get the classpath for the CLI
 # Use Coursier cache (modern sbt default) + macOS location fallback
-CORE_JAR=$(find ~/.ivy2/local/io.github.moranaapps/jacoco-method-filter-core_2.13/1.2.0/jars -name "jacoco-method-filter-core_2.13.jar" 2>/dev/null | head -1 || true)
-SCALA_LIB=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "scala-library-2.13*.jar" 2>/dev/null | head -1 || true)
-ASM_JAR=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "asm-9.6.jar" 2>/dev/null | head -1 || true)
-ASM_COMMONS_JAR=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "asm-commons-9.6.jar" 2>/dev/null | head -1 || true)
-SCOPT_JAR=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "scopt_2.13-*.jar" 2>/dev/null | head -1 || true)
+# Dynamically find latest version instead of hardcoding
 
-info "CORE_JAR=$CORE_JAR"
-info "SCALA_LIB=$SCALA_LIB"
-info "ASM_JAR=$ASM_JAR"
-info "ASM_COMMONS_JAR=$ASM_COMMONS_JAR"
-info "SCOPT_JAR=$SCOPT_JAR"
+# Find core JAR - use stat for cross-platform timestamp comparison
+CORE_JAR=$(
+  find ~/.ivy2/local/io.github.moranaapps/jacoco-method-filter-core_2.13 \
+    -name "jacoco-method-filter-core_2.13.jar" 2>/dev/null | \
+  while IFS= read -r f; do
+    # stat -c %Y for GNU, stat -f %m for BSD/macOS
+    timestamp=$(stat -c %Y "$f" 2>/dev/null || stat -f %m "$f" 2>/dev/null)
+    printf '%s\t%s\n' "$timestamp" "$f"
+  done | \
+  sort -rn | head -1 | cut -f2-
+)
+
+SCALA_LIB=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "scala-library-2.13*.jar" 2>/dev/null | head -1)
+ASM_JAR=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "asm-9.6.jar" 2>/dev/null | head -1)
+ASM_COMMONS_JAR=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "asm-commons-9.6.jar" 2>/dev/null | head -1)
+SCOPT_JAR=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "scopt_2.13-*.jar" 2>/dev/null | head -1)
 
 if [[ -z "$CORE_JAR" || ! -f "$CORE_JAR" ]]; then
   fail "$TEST_NAME — core JAR not found in ~/.ivy2/local (run 'sbt publishLocal' first)"
@@ -50,18 +57,27 @@ if [[ -z "$SCOPT_JAR" || ! -f "$SCOPT_JAR" ]]; then
   fail "$TEST_NAME — scopt JAR not found in Coursier cache"
 fi
 
-CP="$CORE_JAR:$SCALA_LIB:$ASM_JAR:${ASM_COMMONS_JAR:-}:$SCOPT_JAR"
+# Build classpath, only include ASM_COMMONS if it exists
+CP="$CORE_JAR:$SCALA_LIB:$ASM_JAR:$SCOPT_JAR"
+if [[ -n "$ASM_COMMONS_JAR" && -f "$ASM_COMMONS_JAR" ]]; then
+  CP="$CP:$ASM_COMMONS_JAR"
+fi
 
 # Run CLI verify mode
 info "$TEST_NAME — running CLI verify"
 OUTPUT=$(java -cp "$CP" io.moranaapps.jacocomethodfilter.CoverageRewriter \
   --verify \
   --in target/scala-2.13/classes \
-  --rules jmf-rules.txt 2>&1) || true
+  --rules jmf-rules.txt 2>&1)
+CLI_STATUS=$?
 
 echo "─── CLI verify output ───"
 echo "$OUTPUT"
 echo "─── end CLI verify output ───"
+
+if [[ $CLI_STATUS -ne 0 ]]; then
+  fail "$TEST_NAME — CLI verify exited with status $CLI_STATUS"
+fi
 
 # Check that output contains expected markers
 echo "$OUTPUT" | grep -q "\[verify\]" || \

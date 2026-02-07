@@ -25,8 +25,35 @@ class VerifyScannerSpec extends AnyFunSuite {
     methods.foreach { case (name, desc, access) =>
       val m = cw.visitMethod(access, name, desc, null, null)
       m.visitCode()
-      m.visitInsn(Opcodes.RETURN)
-      m.visitMaxs(0, 1)
+      
+      // Generate correct return opcode based on descriptor's return type
+      val returnTypeDesc = desc.substring(desc.lastIndexOf(')') + 1)
+      returnTypeDesc.charAt(0) match {
+        case 'V' =>
+          m.visitInsn(Opcodes.RETURN)
+        case 'L' | '[' =>
+          m.visitInsn(Opcodes.ACONST_NULL)
+          m.visitInsn(Opcodes.ARETURN)
+        case 'Z' | 'B' | 'C' | 'S' | 'I' =>
+          m.visitInsn(Opcodes.ICONST_0)
+          m.visitInsn(Opcodes.IRETURN)
+        case 'J' =>
+          m.visitInsn(Opcodes.LCONST_0)
+          m.visitInsn(Opcodes.LRETURN)
+        case 'F' =>
+          m.visitInsn(Opcodes.FCONST_0)
+          m.visitInsn(Opcodes.FRETURN)
+        case 'D' =>
+          m.visitInsn(Opcodes.DCONST_0)
+          m.visitInsn(Opcodes.DRETURN)
+        case _ =>
+          // Fallback: treat as reference type
+          m.visitInsn(Opcodes.ACONST_NULL)
+          m.visitInsn(Opcodes.ARETURN)
+      }
+      // ClassWriter.COMPUTE_MAXS will recalculate correct maxStack/maxLocals
+      // (e.g., 2 for long/double which occupy 2 stack slots)
+      m.visitMaxs(0, 0)
       m.visitEnd()
     }
     
