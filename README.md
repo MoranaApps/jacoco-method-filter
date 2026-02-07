@@ -230,29 +230,57 @@ Quick summary:
 
 > **Quick Start**: See the [minimal working example](./examples/maven-basic) for a complete setup.
 
-#### 1. Add the plugin to your `pom.xml`
+#### 1. Add a coverage profile to your `pom.xml`
 
 ```xml
-<build>
-  <plugins>
-    <plugin>
-      <groupId>io.github.moranaapps</groupId>
-      <artifactId>jacoco-method-filter-maven-plugin</artifactId>
-      <version>1.2.0</version>
-      <configuration>
-        <rulesFile>${project.basedir}/jmf-rules.txt</rulesFile>
-      </configuration>
-      <executions>
-        <execution>
-          <goals>
-            <goal>rewrite</goal>
-            <goal>report</goal>
-          </goals>
-        </execution>
-      </executions>
-    </plugin>
-  </plugins>
-</build>
+<profiles>
+  <profile>
+    <id>code-coverage</id>
+    <build>
+      <plugins>
+        <!-- JaCoCo Maven Plugin -->
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>0.8.12</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>prepare-agent</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+
+        <!-- JaCoCo Method Filter Plugin -->
+        <plugin>
+          <groupId>io.github.moranaapps</groupId>
+          <artifactId>jacoco-method-filter-maven-plugin</artifactId>
+          <version>1.2.0</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>rewrite</goal>
+                <goal>report</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+
+        <!-- Configure Surefire to use filtered classes -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <configuration>
+            <additionalClasspathElements>
+              <additionalClasspathElement>${project.build.directory}/classes-filtered</additionalClasspathElement>
+            </additionalClasspathElements>
+          </configuration>
+        </plugin>
+      </plugins>
+    </build>
+  </profile>
+</profiles>
 ```
 
 #### 2. Add the default rules file to your project root
@@ -268,10 +296,10 @@ This creates a `jmf-rules.txt` file with sensible defaults.
 **Option B (Manual):** Download [jmf-rules.template.txt](./jmf-rules.template.txt) and place it in your project
  root directory as `jmf-rules.txt`.
 
-#### 3. Run Coverage
+#### 3. Run Coverage (On-Demand)
 
 ```bash
-mvn clean verify                # full pipeline: test → rewrite → report
+mvn clean verify -Pcode-coverage    # activate profile to enable coverage
 ```
 
 #### 4. View Reports
@@ -284,9 +312,10 @@ After running coverage, reports are generated in:
 
 > **Configuration Notes**
 >
+> - Coverage is **on-demand only** — activate the `code-coverage` profile to enable it.
 > - The plugin integrates seamlessly with the standard `jacoco-maven-plugin` for agent attachment.
 > - Default rules file location is `${project.basedir}/jmf-rules.txt`.
-> - To skip coverage processing, set `-Djacoco.skip=true` or configure `<skip>true</skip>` in the plugin.
+> - To skip coverage processing when the profile is active, set `-Djacoco.skip=true`.
 
 ---
 

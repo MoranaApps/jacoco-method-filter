@@ -28,10 +28,10 @@ maven-basic/
 
 ## Running Coverage Analysis
 
-Execute the full test cycle with coverage:
+Execute tests with coverage by activating the `code-coverage` profile:
 
 ```bash
-mvn clean verify
+mvn clean verify -Pcode-coverage
 ```
 
 This runs:
@@ -41,9 +41,11 @@ This runs:
 4. `maven-surefire-plugin` - Runs tests using filtered classes
 5. `jacoco-method-filter-maven-plugin:report` - Generates coverage reports
 
+**Note**: Without `-Pcode-coverage`, tests run normally without coverage instrumentation.
+
 ## Viewing Results
 
-After running `mvn clean verify`, open the coverage report:
+After running `mvn clean verify -Pcode-coverage`, open the coverage report:
 
 ```bash
 # HTML report
@@ -137,10 +139,10 @@ mvn jacoco-method-filter:rewrite -Djmf.dryRun=true
 
 **Issue**: Tests run but no coverage report generated
 
-**Solution**: Ensure `verify` phase runs (not just `test`):
+**Solution**: Ensure you activate the profile and run the `verify` phase:
 ```bash
-mvn clean verify  # Correct
-mvn clean test    # Won't trigger report goal
+mvn clean verify -Pcode-coverage  # Correct
+mvn clean test -Pcode-coverage    # Won't trigger report goal
 ```
 
 **Issue**: Coverage shows 0% for all classes
