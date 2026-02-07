@@ -105,6 +105,37 @@ and optional **flags/predicates**.
 This file contains both ready-to-use defaults and a detailed syntax guide
 to help you adapt the rules to your own project.
 
+### Verify Rules Impact
+
+An **optional verification scan** is available to preview which classes and methods
+will be excluded from coverage measurement by the current rules — without modifying
+any files.
+
+This is especially useful:
+
+- **During initial setup** — to confirm the impact of the default global rules
+  (from [`jmf-rules.template.txt`](./jmf-rules.template.txt)) on your project's
+  actual compiled classes.
+- **After customizing rules** — to verify that your final rule definitions produce
+  the expected filtering before committing to CI.
+
+The scan lists every matched method grouped by fully qualified class name, along with
+the rule ID that caused the match.
+
+| Build tool | Command |
+|------------|---------|
+| **sbt** | `sbt jmfVerify` |
+| **Maven** | `mvn jacoco-method-filter:verify` |
+| **CLI** | `--verify --in <classesDir> --rules <rulesFile>` |
+
+> **Tip:** Run the verify scan right after `jmfInitRules` / `init-rules` to see
+> what the default template rules would filter in your project, then adjust the
+> rules file accordingly.
+
+See the plugin-specific documentation for full details:
+[`sbt-plugin/README.md`](./sbt-plugin/README.md) ·
+[`maven-plugin/README.md`](./maven-plugin/README.md)
+
 ---
 
 ## Integration
