@@ -111,8 +111,6 @@ to help you adapt the rules to your own project.
 
 ### With sbt plugin
 
-**Recommended approach:** Use the published sbt plugin from Maven Central.
-
 > **Quick Start**: See the [minimal working example](./examples/sbt-basic) for a complete setup.
 
 #### 1. Add the plugin to `project/plugins.sbt`
@@ -197,8 +195,6 @@ After running coverage, reports are generated in each module's target directory:
 ---
 
 ### With Maven
-
-**Recommended approach:** Use the published Maven plugin from Maven Central.
 
 > **Quick Start**: See the [minimal working example](./examples/maven-basic) for a complete setup.
 
