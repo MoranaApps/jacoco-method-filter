@@ -1,7 +1,7 @@
 package morana.coverage
 
 import morana.coverage.Keys.autoImport._
-import sbt._
+import sbt.{Keys => _, _}
 import sbt.Keys._
 
 /**
@@ -10,6 +10,9 @@ import sbt.Keys._
  * The bundled sbt plugin for jacoco-method-filter.
  */
 object JacocoFilterPlugin extends AutoPlugin {
+
+  // Re-export keys so sbt auto-imports them into build.sbt and `set` commands
+  val autoImport = morana.coverage.Keys.autoImport
 
   override def requires: Plugins = plugins.JvmPlugin
   override def trigger: PluginTrigger = noTrigger
@@ -49,7 +52,9 @@ object JacocoFilterPlugin extends AutoPlugin {
       println("[jacoco] nothing to clean (no enabled modules under this aggregate).")
       state
     } else {
-      targets.foldLeft(state) { (st, ref) => Command.process(s"${ref.project}/jacocoClean", st) }
+      targets.foldLeft(state) { (st, ref) =>
+        Command.process(s"${ref.project}/jacocoClean", st, msg => sys.error(msg))
+      }
     }
   }
 
@@ -66,7 +71,7 @@ object JacocoFilterPlugin extends AutoPlugin {
       state
     } else {
       targets.foldLeft(state) { (st, ref) =>
-        Command.process(s"${ref.project}/jacocoReport", st)
+        Command.process(s"${ref.project}/jacocoReport", st, msg => sys.error(msg))
       }
     }
   }
@@ -289,22 +294,23 @@ object JacocoFilterPlugin extends AutoPlugin {
       val reportDir  = jacocoReportDir.value
       val execFile   = jacocoExecFile.value
       val name       = jacocoReportName.value
+      val enabled    = jacocoPluginEnabled.value
+      val failOnMissing = jacocoFailOnMissingExec.value
+      val cp         = (Test / dependencyClasspath).value
+      val classesDir = (Compile / classDirectory).value
+      val sourcesDir = (Compile / sourceDirectory).value
 
-      if (!jacocoPluginEnabled.value) {
+      if (!enabled) {
         IO.createDirectory(reportDir)
         log.info("[jacoco] disabled (jacocoPluginEnabled=false); report no-op")
         reportDir
       } else if (!execFile.exists) {
         val msg = s"[jacoco] exec file missing, skipping report: ${execFile.getAbsolutePath}"
-        if (jacocoFailOnMissingExec.value) sys.error(msg) else log.warn(msg)
+        if (failOnMissing) sys.error(msg) else log.warn(msg)
         IO.createDirectory(reportDir)
         reportDir
       } else {
-        val cp = (Test / dependencyClasspath).value
         val cli = cliJar(cp)
-
-        val classesDir = (Compile / classDirectory).value
-        val sourcesDir = (Compile / sourceDirectory).value
 
         IO.createDirectory(reportDir)
 
@@ -320,6 +326,10 @@ object JacocoFilterPlugin extends AutoPlugin {
           sourcesDir.getAbsolutePath,
           "--html",
           reportDir.getAbsolutePath,
+          "--xml",
+          (reportDir / "jacoco.xml").getAbsolutePath,
+          "--csv",
+          (reportDir / "jacoco.csv").getAbsolutePath,
           "--name",
           name
         )
