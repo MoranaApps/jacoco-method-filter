@@ -17,7 +17,6 @@ Maven plugin for filtering JaCoCo coverage by annotating methods based on config
 
 - Java 8 or higher
 - Maven 3.6 or higher
-- `jacoco-method-filter-core_2.12:1.2.0` dependency (automatically included)
 - JaCoCo CLI 0.8.14 (automatically included)
 
 ## Implementation Details
