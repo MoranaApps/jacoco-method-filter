@@ -32,18 +32,29 @@ addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.3.1")
 
 ## 2. Prepare the release
 
-- **Bump the version** in `build.sbt` (top-level):
+- **Bump the version** in two places:
+  1. `build.sbt` (top-level) — sbt core library + sbt plugin:
+
+     ```scala
+     ThisBuild / version := "0.2.0"
+     ```
+
+  2. `maven-plugin/pom.xml` — Maven plugin (both its own version and the core dependency):
+
+     ```xml
+     <version>0.2.0</version>
+     ...
+     <artifactId>jacoco-method-filter-core_2.12</artifactId>
+     <version>0.2.0</version>
+     ```
+
   - Use [semantic versioning](https://semver.org/).
   - Do **not** include `-SNAPSHOT`.
-
-```scala
-ThisBuild / version := "0.2.0"
-```
 
 - Commit and push:
 
 ```bash
-git add build.sbt
+git add build.sbt maven-plugin/pom.xml
 git commit -m "Release 0.2.0"
 git push origin master
 ```
@@ -62,7 +73,9 @@ git push origin master
 Notes:
 
 - The workflow publishes **Scala 2.11** under **JDK 8**, then publishes **Scala 2.12/2.13** and the **sbt plugin**
- under **JDK 17** (this reduces Scala 2.11 release failures).
+  under **JDK 17** (this reduces Scala 2.11 release failures).
+- The **Maven plugin** is built and deployed via `mvn deploy` using the
+  `central-publishing-maven-plugin` in the same workflow.
 - `release_draft.yml` validates tags against branch `master`.
 
 ---
@@ -91,11 +104,20 @@ io.github.moranaapps:jacoco-method-filter-core_2.13:<version>
 addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "<version>")
 ```
 
+- Maven plugin:
+
+```xml
+<groupId>io.github.moranaapps</groupId>
+<artifactId>jacoco-method-filter-maven-plugin</artifactId>
+<version><!-- version --></version>
+```
+
 ---
 
 ## 5. Post-release
 
-- Bump `version` in `build.sbt` to the next **`-SNAPSHOT`** (e.g., `0.3.0-SNAPSHOT`) for ongoing dev.
+- Bump `version` in `build.sbt` and `maven-plugin/pom.xml` to the next **`-SNAPSHOT`**
+  (e.g., `0.3.0-SNAPSHOT`) for ongoing dev.
 - Commit and push.
 
 ```bash
@@ -107,8 +129,8 @@ git push origin master
 
 ## 6. Quick checklist
 
-- [ ] Version updated in `build.sbt`
+- [ ] Version updated in `build.sbt` **and** `maven-plugin/pom.xml`
 - [ ] Commit pushed to `master`
 - [ ] Workflow triggered via GitHub Actions
-- [ ] Artifacts staged or released successfully
+- [ ] Artifacts staged or released successfully (sbt + Maven plugin)
 - [ ] Verified on [search.maven.org](https://search.maven.org)
