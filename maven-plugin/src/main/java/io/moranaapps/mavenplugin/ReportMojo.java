@@ -10,6 +10,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @Mojo(name = "report", defaultPhase = LifecyclePhase.VERIFY, threadSafe = true)
@@ -107,7 +108,7 @@ public class ReportMojo extends AbstractMojo {
         cmd.add(classesDirectory.getAbsolutePath());
         
         for (File src : sourceDirectories) {
-            if (src.exists()) {
+            if (src.isDirectory()) {
                 cmd.add("--sourcefiles");
                 cmd.add(src.getAbsolutePath());
             }
@@ -127,7 +128,7 @@ public class ReportMojo extends AbstractMojo {
             
             Thread logCapture = new Thread(() -> {
                 try (BufferedReader rdr = new BufferedReader(
-                        new InputStreamReader(p.getInputStream(), "UTF-8"))) {
+                        new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
                     String line;
                     while ((line = rdr.readLine()) != null) {
                         if (!line.trim().isEmpty()) {

@@ -8,6 +8,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
@@ -37,6 +38,16 @@ public class InitRulesMojo extends AbstractMojo {
         File templateRef = new File(project.getBasedir(), "jmf-rules.template.txt");
         
         getLog().info("Generating rules file: " + rulesFile.getAbsolutePath());
+        
+        // Ensure parent directory exists
+        File parentDir = rulesFile.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            try {
+                Files.createDirectories(parentDir.toPath());
+            } catch (IOException ex) {
+                throw new MojoExecutionException("Failed to create parent directory: " + parentDir, ex);
+            }
+        }
         
         try {
             if (templateRef.exists()) {
@@ -78,7 +89,7 @@ public class InitRulesMojo extends AbstractMojo {
                            "# Project-specific rules:\n\n";
         
         try (FileOutputStream out = new FileOutputStream(rulesFile)) {
-            out.write(basicRules.getBytes("UTF-8"));
+            out.write(basicRules.getBytes(StandardCharsets.UTF_8));
         }
     }
 }

@@ -11,6 +11,7 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @Mojo(name = "rewrite", defaultPhase = LifecyclePhase.PROCESS_TEST_CLASSES, 
@@ -107,9 +108,8 @@ public class RewriteMojo extends AbstractMojo {
         List<String> paths = new ArrayList<>();
         
         // Get dependencies from plugin descriptor
-        List<?> deps = pluginDescriptor.getArtifacts();
-        for (Object depObj : deps) {
-            Artifact dep = (Artifact) depObj;
+        List<Artifact> deps = pluginDescriptor.getArtifacts();
+        for (Artifact dep : deps) {
             File jarFile = dep.getFile();
             if (jarFile != null && jarFile.exists()) {
                 paths.add(jarFile.getAbsolutePath());
@@ -139,7 +139,7 @@ public class RewriteMojo extends AbstractMojo {
             
             Thread outputCollector = new Thread(() -> {
                 try (BufferedReader rdr = new BufferedReader(
-                        new InputStreamReader(p.getInputStream(), "UTF-8"))) {
+                        new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
                     String line;
                     while ((line = rdr.readLine()) != null) {
                         routeLogLine(line);
