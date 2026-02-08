@@ -7,6 +7,8 @@ annotated with an annotation whose simple name contains `Generated` (with retent
 You **filter coverage at the method level** without touching your source code — and keep **HTML and XML numbers
 consistent**.
 
+Minimum tested JaCoCo version: **0.8.7** (JaCoCo must be **≥ 0.8.2** to ignore `@Generated`).
+
 - [Why this exists](#why-this-exists)
 - [Goals](#goals)
 - [Non-goals](#non-goals)
@@ -39,7 +41,7 @@ Typical needs include removing **compiler noise** from Scala/Java coverage (e.g.
 - Method-level filtering using a simple **rules file** (globs + flags).
 - **No source changes**: the tool annotates bytecode (`.class`) after compilation.
 - Works locally and in CI with **sbt**, **Maven**, and **GitHub Actions**.
-- Cross-built for **Scala 2.11**, **2.12**, and **2.13**.
+- Built for **Scala 2.12** (fat JAR with shaded ASM; runtime deps: `scala-library`, `scopt`).
 - Supports **Scala and Java** (JVM bytecode).
 - Simple flow: `test → rewriter → jacococli report`.
 

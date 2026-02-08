@@ -3,7 +3,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "sbt-basic-example",
     organization := "io.github.moranaapps",
-    scalaVersion := "2.13.14",
+    scalaVersion := "2.12.21",
     version := "0.1.0-SNAPSHOT",
     
     libraryDependencies ++= Seq(

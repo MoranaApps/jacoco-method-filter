@@ -48,8 +48,8 @@ if [[ "$SKIP_PUBLISH" == false ]]; then
   echo -e "${BOLD}═══ Publishing plugins locally ═══${NC}"
 
   if [[ "$HAS_SBT" == true ]]; then
-    echo -e "${YELLOW}Publishing rewriter-core (all Scala versions) to Ivy local…${NC}"
-    (cd "$REPO_ROOT" && sbt "project rewriterCore" +publishLocal)
+    echo -e "${YELLOW}Publishing rewriter-core (Scala 2.12) to Ivy local…${NC}"
+    (cd "$REPO_ROOT" && sbt "project rewriterCore" publishLocal)
 
     # Also publish to Maven local (~/.m2/repository) so the Maven plugin can resolve it.
     # Remove any previous non-SNAPSHOT artifacts first – sbt publishM2 refuses to overwrite.
@@ -109,11 +109,26 @@ for test_script in "$SCRIPT_DIR"/test-*.sh; do
   echo ""
   echo -e "${BOLD}─── $test_name ───${NC}"
 
-  if bash "$test_script"; then
-    PASSED=$((PASSED + 1))
+  # For jacoco-compat test, pass JaCoCo version as argument
+  # Test both versions to match CI matrix behavior
+  if [[ "$test_name" == "test-jacoco-compat" ]]; then
+    for version in 0.8.7 0.8.14; do
+      echo -e "${YELLOW}Testing with JaCoCo $version${NC}"
+      if bash "$test_script" "$version"; then
+        PASSED=$((PASSED + 1))
+      else
+        FAILED=$((FAILED + 1))
+        FAILURES+=("$test_name (JaCoCo $version)")
+      fi
+      TOTAL=$((TOTAL + 1))
+    done
   else
-    FAILED=$((FAILED + 1))
-    FAILURES+=("$test_name")
+    if bash "$test_script"; then
+      PASSED=$((PASSED + 1))
+    else
+      FAILED=$((FAILED + 1))
+      FAILURES+=("$test_name")
+    fi
   fi
 done
 
