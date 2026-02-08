@@ -49,10 +49,18 @@ lazy val rewriterCore = (project in file("rewriter-core"))
 
     assembly / assemblyJarName := s"${name.value}_${scalaBinaryVersion.value}-${version.value}.jar",
 
+    // Exclude scala-library and scopt from the fat JAR to avoid version conflicts
+    assembly / assemblyExcludedJars := {
+      val cp = (assembly / fullClasspath).value
+      cp.filter { f =>
+        val name = f.data.getName
+        name.startsWith("scala-library") || name.startsWith("scala-reflect") || name.contains("scopt")
+      }
+    },
+
     // Shade/relocate dependencies to avoid classpath conflicts (e.g. ASM version clash with JaCoCo)
     assembly / assemblyShadeRules := Seq(
-      ShadeRule.rename("org.objectweb.asm.**" -> "jmf.shaded.asm.@1").inAll,
-      ShadeRule.rename("scopt.**"             -> "jmf.shaded.scopt.@1").inAll
+      ShadeRule.rename("org.objectweb.asm.**" -> "jmf.shaded.asm.@1").inAll
     ),
 
     // Merge strategy for duplicates
@@ -62,13 +70,21 @@ lazy val rewriterCore = (project in file("rewriter-core"))
       case x                             => MergeStrategy.first
     },
 
-    // Strip transitive dependencies from the published POM so consumers get a zero-dependency artifact
+    // Strip ASM dependencies from the published POM (they're shaded/bundled)
+    // but keep scala-library and scopt as dependencies
     pomPostProcess := { (node: scala.xml.Node) =>
       import scala.xml._
       import scala.xml.transform._
       new RuleTransformer(new RewriteRule {
         override def transform(n: Node): Seq[Node] = n match {
-          case e: Elem if e.label == "dependencies" => NodeSeq.Empty
+          case e: Elem if e.label == "dependencies" =>
+            // Keep scala-library and scopt, remove ASM
+            val filtered = e.child.filter { dep =>
+              val artifactId = (dep \ "artifactId").text
+              artifactId.startsWith("scala-library") || artifactId.contains("scopt")
+            }
+            if (filtered.isEmpty) NodeSeq.Empty
+            else Elem(e.prefix, e.label, e.attributes, e.scope, e.minimizeEmpty, filtered: _*)
           case other => other
         }
       }).transform(node).head
