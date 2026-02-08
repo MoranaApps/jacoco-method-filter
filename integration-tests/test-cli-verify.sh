@@ -20,7 +20,7 @@ run_cmd "$TEST_NAME — compiling project" sbt compile
 run_cmd "$TEST_NAME — exporting classpath" sbt "export runtime:dependencyClasspath"
 
 # Verify classes directory exists
-assert_dir_not_empty "target/scala-2.13/classes" \
+assert_dir_not_empty "target/scala-2.12/classes" \
   "$TEST_NAME — compiled classes exist"
 
 # Get the classpath for the CLI
@@ -29,8 +29,8 @@ assert_dir_not_empty "target/scala-2.13/classes" \
 
 # Find core JAR - use stat for cross-platform timestamp comparison
 CORE_JAR=$(
-  find ~/.ivy2/local/io.github.moranaapps/jacoco-method-filter-core_2.13 \
-    -name "jacoco-method-filter-core_2.13.jar" 2>/dev/null | \
+  find ~/.ivy2/local/io.github.moranaapps/jacoco-method-filter-core_2.12 \
+    -name "jacoco-method-filter-core_2.12.jar" 2>/dev/null | \
   while IFS= read -r f; do
     # stat -c %Y for GNU, stat -f %m for BSD/macOS
     timestamp=$(stat -c %Y "$f" 2>/dev/null || stat -f %m "$f" 2>/dev/null)
@@ -39,10 +39,10 @@ CORE_JAR=$(
   sort -rn | head -1 | cut -f2- || true
 )
 
-SCALA_LIB=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "scala-library-2.13*.jar" 2>/dev/null | head -1 || true)
+SCALA_LIB=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "scala-library-2.12*.jar" 2>/dev/null | head -1 || true)
 ASM_JAR=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "asm-9.6.jar" 2>/dev/null | head -1 || true)
 ASM_COMMONS_JAR=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "asm-commons-9.6.jar" 2>/dev/null | head -1 || true)
-SCOPT_JAR=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "scopt_2.13-*.jar" 2>/dev/null | head -1 || true)
+SCOPT_JAR=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "scopt_2.12-*.jar" 2>/dev/null | head -1 || true)
 
 if [[ -z "$CORE_JAR" || ! -f "$CORE_JAR" ]]; then
   fail "$TEST_NAME — core JAR not found in ~/.ivy2/local (run 'sbt publishLocal' first)"
@@ -67,7 +67,7 @@ fi
 info "$TEST_NAME — running CLI verify"
 OUTPUT=$(java -cp "$CP" io.moranaapps.jacocomethodfilter.CoverageRewriter \
   --verify \
-  --in target/scala-2.13/classes \
+  --in target/scala-2.12/classes \
   --rules jmf-rules.txt 2>&1)
 CLI_STATUS=$?
 
