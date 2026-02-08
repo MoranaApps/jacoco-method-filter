@@ -73,8 +73,8 @@ git push origin master
 Notes:
 
 - The workflow publishes **Scala 2.12** under **JDK 17**.
-- The core library is published as a **fat JAR** with all dependencies bundled (ASM, scopt, scala-library) and zero
- transitive dependencies.
+- The core library is published as a **fat JAR** with ASM shaded (relocated to `jmf.shaded.asm`).
+  The published POM declares exactly 2 runtime dependencies: `scala-library` and `scopt`.
 - The **Maven plugin** is built and deployed via `mvn deploy` using the
   `central-publishing-maven-plugin` in the same workflow.
 - `release_draft.yml` validates tags against branch `master`.

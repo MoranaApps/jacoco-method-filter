@@ -65,9 +65,21 @@ lazy val rewriterCore = (project in file("rewriter-core"))
 
     // Merge strategy for duplicates
     assembly / assemblyMergeStrategy := {
-      case PathList("META-INF", xs @ _*) => MergeStrategy.discard
-      case "module-info.class"           => MergeStrategy.discard
-      case x                             => MergeStrategy.first
+      val log = sLog.value
+      val warnFirst: String => sbtassembly.MergeStrategy = (path: String) =>
+        sbtassembly.CustomMergeStrategy("warn-first", 1) {
+          (deps: Vector[sbtassembly.Assembly.Dependency]) =>
+            if (deps.size > 1) {
+              log.warn(s"assembly merge conflict for '$path' (${deps.size} entries); keeping the first one")
+            }
+            sbtassembly.MergeStrategy.first(deps)
+        }
+
+      {
+        case PathList("META-INF", xs @ _*) => sbtassembly.MergeStrategy.discard
+        case "module-info.class"           => sbtassembly.MergeStrategy.discard
+        case x                             => warnFirst(x)
+      }
     },
 
     // Strip ASM dependencies from the published POM (they're shaded/bundled)
@@ -75,7 +87,7 @@ lazy val rewriterCore = (project in file("rewriter-core"))
     pomPostProcess := { (node: scala.xml.Node) =>
       import scala.xml._
       import scala.xml.transform._
-      new RuleTransformer(new RewriteRule {
+      val transformed = new RuleTransformer(new RewriteRule {
         override def transform(n: Node): Seq[Node] = n match {
           case e: Elem if e.label == "dependencies" =>
             // Keep scala-library and scopt, remove ASM
@@ -88,6 +100,28 @@ lazy val rewriterCore = (project in file("rewriter-core"))
           case other => other
         }
       }).transform(node).head
+
+      // Validate: the published POM must have exactly scala-library and scopt
+      val pomDeps = (transformed \\ "dependency").map { dep =>
+        (dep \ "groupId").text + ":" + (dep \ "artifactId").text
+      }
+      val expectedPrefixes = Set("org.scala-lang:scala-library", "com.github.scopt:scopt_")
+      val missing = expectedPrefixes.filterNot(prefix => pomDeps.exists(_.startsWith(prefix)))
+      if (missing.nonEmpty) {
+        sys.error(
+          s"pomPostProcess validation failed: expected dependencies matching $expectedPrefixes " +
+            s"but these are missing: $missing. Actual POM deps: $pomDeps"
+        )
+      }
+      val unexpected = pomDeps.filterNot(d => expectedPrefixes.exists(d.startsWith))
+      if (unexpected.nonEmpty) {
+        sys.error(
+          s"pomPostProcess validation failed: unexpected dependencies in published POM: $unexpected. " +
+            s"Only $expectedPrefixes should remain after filtering."
+        )
+      }
+
+      transformed
     },
 
     Compile / doc / scalacOptions ++= Seq("-no-link-warnings")
