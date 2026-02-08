@@ -1,4 +1,19 @@
 # Rules for JaCoCo compatibility test
+
+# --- basic glob rules (existing) ---
 example.*#equals(*)       id:compat-equals
 example.*#hashCode(*)     id:compat-hashcode
 example.*#toString(*)     id:compat-tostring
+
+# --- flag-based rules ---
+# Match the synthetic bridge method javac generates in StringContainer
+example.StringContainer#get(*) bridge synthetic  id:compat-bridge
+
+# --- predicate-based rules ---
+# Void-returning methods whose name starts with "init"
+example.StringContainer#*(*) ret:V name-starts:init  id:compat-ret-void-init
+# Any method whose name contains "Data"
+example.StringContainer#*(*) name-contains:Data  id:compat-name-data
+
+# --- include (rescue) rule: getData is rescued despite name-contains:Data ---
++example.StringContainer#getData(*)  id:compat-keep-getData

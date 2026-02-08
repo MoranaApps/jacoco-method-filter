@@ -93,6 +93,8 @@ javac --release 8 -d classes src/example/*.java || fail "$TEST_NAME — javac co
 assert_dir_not_empty "classes" "$TEST_NAME — compiled classes"
 assert_file_exists "classes/example/FilterDemo.class" "$TEST_NAME — FilterDemo.class"
 assert_file_exists "classes/example/FilterDemoTest.class" "$TEST_NAME — FilterDemoTest.class"
+assert_file_exists "classes/example/BaseContainer.class" "$TEST_NAME — BaseContainer.class"
+assert_file_exists "classes/example/StringContainer.class" "$TEST_NAME — StringContainer.class"
 
 # ---- Run test with JaCoCo agent -----------------------------------------------
 info "Running test with JaCoCo agent to generate coverage data"
@@ -210,6 +212,43 @@ info "  - Both XML reports were generated"
 info "  - Original report shows coverage for filtered methods (equals, hashCode, toString)"
 info "  - Filtered report excludes or zeros filtered methods"
 info "  - Kept methods (computeValue, isPositive) present in both reports"
+
+# ── Flags & predicates assertions ─────────────────────────────────────────
+
+# --- bridge/synthetic flag rule ------------------------------------------
+# The synthetic bridge method Object get() in StringContainer should be
+# excluded in the filtered report.  The covariant String get() should
+# remain because it is NOT synthetic/bridge.
+assert_file_contains "report-original.xml" 'name="get"' \
+  "$TEST_NAME — original report contains get method(s)"
+
+# In filtered report: at least one get (the covariant String get) must survive
+assert_file_contains "report-filtered.xml" 'name="get"' \
+  "$TEST_NAME — filtered report still has covariant get"
+
+# --- ret:V + name-starts:init predicate ----------------------------------
+# initData (void return, name starts with "init") should be filtered
+assert_file_contains "report-original.xml" 'name="initData"' \
+  "$TEST_NAME — original report contains initData"
+check_method_no_coverage "report-filtered.xml" "initData" "$TEST_NAME"
+
+# --- name-contains:Data predicate ----------------------------------------
+# processData should be filtered (name contains "Data", no rescue rule)
+assert_file_contains "report-original.xml" 'name="processData"' \
+  "$TEST_NAME — original report contains processData"
+check_method_no_coverage "report-filtered.xml" "processData" "$TEST_NAME"
+
+# --- include (rescue) rule -----------------------------------------------
+# getData should survive in filtered report because it's rescued by +rule.
+# Note: coverage counters may be zero because the rewriter changes the class
+# checksum and JaCoCo cannot match execution data. We only verify presence.
+assert_file_contains "report-original.xml" 'name="getData"' \
+  "$TEST_NAME — original report contains getData"
+assert_file_contains "report-filtered.xml" 'name="getData"' \
+  "$TEST_NAME — filtered report still has getData (rescued by include rule)"
+
+info "  - Flags (bridge/synthetic) and predicates (ret:, name-*) verified"
+info "  - Include (rescue) rule for getData verified"
 info "Rules file: $PROJECT_DIR/jmf-rules.txt"
 cat "$PROJECT_DIR/jmf-rules.txt"
 

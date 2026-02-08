@@ -12,7 +12,7 @@ Minimum tested JaCoCo version: **0.8.7** (JaCoCo must be **≥ 0.8.2** to ignore
 - [Why this exists](#why-this-exists)
 - [Goals](#goals)
 - [Non-goals](#non-goals)
-- [Rules file format](#rules-file-format)
+- [Rules](#rules)
   - [Quick Syntax](#quick-syntax)
   - [Quick Examples](#quick-examples)
   - [Exclude and Include](#exclude-and-include)
@@ -23,6 +23,7 @@ Minimum tested JaCoCo version: **0.8.7** (JaCoCo must be **≥ 0.8.2** to ignore
 - [Integration](#integration)
   - [With sbt plugin](#with-sbt-plugin)
   - [With Maven](#with-maven)
+  - [Output Locations](#output-locations)
   - [Customization](#customization)
 - [License](#license)
 
@@ -103,7 +104,11 @@ and optional **flags/predicates**.
 
 # Ignore anonymous functions and compiler bridges
 *#$anonfun$*
-*#*(*):bridge
+*#*(*) bridge
+
+# Ignore synthetic methods and all void-returning setters
+*#*(*) synthetic
+*#set*(*) ret:V
 
 # Keep (rescue) specific methods from broad exclusions
 +com.example.Config$#apply(*)  id:keep-config-apply
@@ -162,8 +167,6 @@ java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
   --local-rules jmf-local-rules.txt
 ```
 
-> **Backward compatibility:** The legacy single `--rules` / `jmfRulesFile` / `jmf.rulesFile` options continue to work exactly as before.
-
 ### How rules are merged
 
 When using global and local rules:
@@ -176,6 +179,10 @@ This lets you:
 - Override selectively in local rules (e.g., `+com.example.Config$#copy(*)`)
 
 ### Verify: Preview What Gets Filtered
+
+`verify` runs against the **compiled class files** (bytecode) in the given `--in` directory (e.g. `target/classes`),
+not against raw source code — so it only reports exclusions/rescues for methods that **actually exist after
+compilation**.
 
 Before running coverage, use the **verify** command to preview which methods will be excluded vs. rescued:
 
