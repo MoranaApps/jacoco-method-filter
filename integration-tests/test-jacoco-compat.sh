@@ -68,7 +68,11 @@ cd "$PROJECT_DIR"
 # ---- Compile Java classes -----------------------------------------------------
 info "Compiling Java classes"
 mkdir -p classes
-javac -d classes src/example/*.java || fail "$TEST_NAME — javac compilation failed"
+# Compile to an older bytecode level for broad compatibility:
+# - JaCoCo 0.8.7 cannot instrument newer classfile versions.
+# - CoverageRewriter uses ASM which also has a max supported classfile version.
+# Running the test on a newer JDK is fine as long as the compiled classes are compatible.
+javac --release 8 -d classes src/example/*.java || fail "$TEST_NAME — javac compilation failed"
 
 assert_dir_not_empty "classes" "$TEST_NAME — compiled classes"
 assert_file_exists "classes/example/FilterDemo.class" "$TEST_NAME — FilterDemo.class"
