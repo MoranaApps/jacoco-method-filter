@@ -109,11 +109,26 @@ for test_script in "$SCRIPT_DIR"/test-*.sh; do
   echo ""
   echo -e "${BOLD}─── $test_name ───${NC}"
 
-  if bash "$test_script"; then
-    PASSED=$((PASSED + 1))
+  # For jacoco-compat test, pass JaCoCo version as argument
+  # Test both versions to match CI matrix behavior
+  if [[ "$test_name" == "test-jacoco-compat" ]]; then
+    for version in 0.8.7 0.8.14; do
+      echo -e "${YELLOW}Testing with JaCoCo $version${NC}"
+      if bash "$test_script" "$version"; then
+        PASSED=$((PASSED + 1))
+      else
+        FAILED=$((FAILED + 1))
+        FAILURES+=("$test_name (JaCoCo $version)")
+      fi
+      TOTAL=$((TOTAL + 1))
+    done
   else
-    FAILED=$((FAILED + 1))
-    FAILURES+=("$test_name")
+    if bash "$test_script"; then
+      PASSED=$((PASSED + 1))
+    else
+      FAILED=$((FAILED + 1))
+      FAILURES+=("$test_name")
+    fi
   fi
 done
 

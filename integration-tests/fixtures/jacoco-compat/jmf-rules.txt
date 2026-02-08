@@ -1,0 +1,4 @@
+# Rules for JaCoCo compatibility test
+example.*#equals(*)       id:compat-equals
+example.*#hashCode(*)     id:compat-hashcode
+example.*#toString(*)     id:compat-tostring
