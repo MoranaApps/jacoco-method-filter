@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ---------------------------------------------------------------------------
 # Test: JaCoCo E2E compatibility — verify jacoco-method-filter works correctly
 # with specified JaCoCo versions.
@@ -7,21 +8,29 @@
 #   bash integration-tests/test-jacoco-compat.sh <jacoco-version>
 #   e.g., bash integration-tests/test-jacoco-compat.sh 0.8.14
 #
-# Tested versions: 0.8.7, 0.8.14
-#
 # Prerequisite: rewriter-core published locally.
 # ---------------------------------------------------------------------------
-source "$(dirname "$0")/helpers.sh"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+JACOCO_VERSIONS_FILE="$SCRIPT_DIR/jacoco-versions.txt"
+
+source "$SCRIPT_DIR/helpers.sh"
 
 TEST_NAME="jacoco-compat"
 
 # ---- Parse arguments --------------------------------------------------------
 if [[ $# -lt 1 ]]; then
+  TESTED_VERSIONS=""
+  if [[ -f "$JACOCO_VERSIONS_FILE" ]]; then
+    TESTED_VERSIONS="$(sed -e 's/#.*$//' -e '/^[[:space:]]*$/d' "$JACOCO_VERSIONS_FILE" | paste -sd ', ' -)"
+  fi
+
   echo "ERROR: Missing JaCoCo version argument"
   echo "Usage: $0 <jacoco-version>"
   echo "Example: $0 0.8.14"
   echo ""
-  echo "Tested versions: 0.8.7, 0.8.14"
+  if [[ -n "$TESTED_VERSIONS" ]]; then
+    echo "Tested versions: $TESTED_VERSIONS"
+  fi
   exit 1
 fi
 
@@ -31,7 +40,7 @@ info "Running: $TEST_NAME for JaCoCo version $JACOCO_VERSION"
 # ---- Setup directories -------------------------------------------------------
 FIXTURE_DIR="$REPO_ROOT/integration-tests/fixtures/jacoco-compat"
 PROJECT_DIR="$WORK_DIR/project"
-CACHE_DIR="$WORK_DIR/jacoco-cache"
+CACHE_DIR="${JACOCO_CACHE_DIR:-$REPO_ROOT/target/jacoco-cache}"
 
 mkdir -p "$PROJECT_DIR" "$CACHE_DIR"
 

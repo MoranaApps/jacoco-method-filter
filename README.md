@@ -7,6 +7,8 @@ annotated with an annotation whose simple name contains `Generated` (with retent
 You **filter coverage at the method level** without touching your source code — and keep **HTML and XML numbers
 consistent**.
 
+Minimum tested JaCoCo version: **0.8.7** (JaCoCo must be **≥ 0.8.2** to ignore `@Generated`).
+
 - [Why this exists](#why-this-exists)
 - [Goals](#goals)
 - [Non-goals](#non-goals)
