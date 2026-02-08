@@ -48,8 +48,8 @@ if [[ "$SKIP_PUBLISH" == false ]]; then
   echo -e "${BOLD}═══ Publishing plugins locally ═══${NC}"
 
   if [[ "$HAS_SBT" == true ]]; then
-    echo -e "${YELLOW}Publishing rewriter-core (all Scala versions) to Ivy local…${NC}"
-    (cd "$REPO_ROOT" && sbt "project rewriterCore" +publishLocal)
+    echo -e "${YELLOW}Publishing rewriter-core (Scala 2.12) to Ivy local…${NC}"
+    (cd "$REPO_ROOT" && sbt "project rewriterCore" publishLocal)
 
     # Also publish to Maven local (~/.m2/repository) so the Maven plugin can resolve it.
     # Remove any previous non-SNAPSHOT artifacts first – sbt publishM2 refuses to overwrite.
