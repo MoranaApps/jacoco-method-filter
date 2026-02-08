@@ -129,6 +129,7 @@ By default, all rules are **exclusion rules** — they mark methods to be filter
 ```
 
 **Resolution logic:**
+
 - A method is **excluded** if any exclusion rule matches AND no inclusion rule matches
 - A method is **rescued** (kept in coverage) if both exclusion and inclusion rules match — **include always wins**
 - A method is **unaffected** if no exclusion rule matches
@@ -140,7 +141,8 @@ Most users can start with a **single local rules file**.
 - **Simple (single file)**: use `--rules jmf-rules.txt` (CLI) or the plugin default `jmf-rules.txt`
 - **Advanced (two-layer)**: use **global** rules (shared defaults) + **local** rules (project overrides)
 
-**Rule sources**
+#### Rule sources
+
 - **Global** rules can be a **local path or an HTTP/HTTPS URL**
 - **Local** rules are a **local file path**
 - The legacy `--rules` flag is also a **local file path**
@@ -155,12 +157,14 @@ You can separate organization-wide shared rules from project-specific rules:
 **Configuration examples:**
 
 **sbt:**
+
 ```scala
 jmfGlobalRules := Some("https://myorg.com/scala-defaults.txt")
 jmfLocalRules := Some(baseDirectory.value / "jmf-local-rules.txt")
 ```
 
 **Maven:**
+
 ```xml
 <configuration>
   <globalRules>https://myorg.com/scala-defaults.txt</globalRules>
@@ -169,6 +173,7 @@ jmfLocalRules := Some(baseDirectory.value / "jmf-local-rules.txt")
 ```
 
 **CLI:**
+
 ```bash
 java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
   --in target/classes \
@@ -178,6 +183,7 @@ java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
 ```
 
 **Backward compatible CLI (single file):**
+
 ```bash
 java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
   --in target/classes \
@@ -188,12 +194,14 @@ java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
 ### How rules are merged
 
 When using global and local rules:
+
 1. **Global rules** are loaded first (from URL or path)
 2. **Local rules** are appended
 3. If the legacy `--rules` file is also provided, it is appended last
 4. During evaluation, **any include rule overrides any exclude rule** for the same method
 
 This lets you:
+
 - Define broad exclusions globally (e.g., `*#copy(*)`)
 - Override selectively in local rules (e.g., `+com.example.Config$#copy(*)`)
 
@@ -206,16 +214,19 @@ compilation**.
 Before running coverage, use the **verify** command to preview which methods will be excluded vs. rescued:
 
 **sbt:**
+
 ```bash
 sbt jmfVerify
 ```
 
 **Maven:**
+
 ```bash
 mvn jacoco-method-filter:verify
 ```
 
 **CLI:**
+
 ```bash
 java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
   --verify \
@@ -224,7 +235,8 @@ java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
 ```
 
 **Example output:**
-```
+
+```text
 [verify] EXCLUDED (15 methods):
 [verify]   com.example.User
 [verify]     #copy(I)Lcom/example/User;    rule-id:case-copy
