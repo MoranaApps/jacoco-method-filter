@@ -54,7 +54,7 @@ lazy val rewriterCore = (project in file("rewriter-core"))
       val cp = (assembly / fullClasspath).value
       cp.filter { f =>
         val name = f.data.getName
-        name.startsWith("scala-library") || name.startsWith("scala-reflect") || name.contains("scopt")
+        name.startsWith("scala-library") || name.startsWith("scala-reflect") || name.startsWith("scopt_")
       }
     },
 
@@ -81,7 +81,7 @@ lazy val rewriterCore = (project in file("rewriter-core"))
             // Keep scala-library and scopt, remove ASM
             val filtered = e.child.filter { dep =>
               val artifactId = (dep \ "artifactId").text
-              artifactId.startsWith("scala-library") || artifactId.contains("scopt")
+              artifactId.startsWith("scala-library") || artifactId.startsWith("scopt_")
             }
             if (filtered.isEmpty) NodeSeq.Empty
             else Elem(e.prefix, e.label, e.attributes, e.scope, e.minimizeEmpty, filtered: _*)
