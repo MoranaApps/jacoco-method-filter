@@ -7,6 +7,8 @@
 #   bash integration-tests/test-jacoco-compat.sh <jacoco-version>
 #   e.g., bash integration-tests/test-jacoco-compat.sh 0.8.14
 #
+# Tested versions: 0.8.7, 0.8.14
+#
 # Prerequisite: rewriter-core published locally.
 # ---------------------------------------------------------------------------
 source "$(dirname "$0")/helpers.sh"
@@ -15,7 +17,12 @@ TEST_NAME="jacoco-compat"
 
 # ---- Parse arguments --------------------------------------------------------
 if [[ $# -lt 1 ]]; then
-  fail "$TEST_NAME — usage: $0 <jacoco-version>"
+  echo "ERROR: Missing JaCoCo version argument"
+  echo "Usage: $0 <jacoco-version>"
+  echo "Example: $0 0.8.14"
+  echo ""
+  echo "Tested versions: 0.8.7, 0.8.14"
+  exit 1
 fi
 
 JACOCO_VERSION="$1"
@@ -63,7 +70,7 @@ assert_file_exists "$CLI_JAR" "$TEST_NAME — JaCoCo CLI JAR"
 # ---- Copy fixture project -----------------------------------------------------
 info "Copying fixture project"
 cp -R "$FIXTURE_DIR"/* "$PROJECT_DIR/"
-cd "$PROJECT_DIR"
+cd "$PROJECT_DIR" || fail "$TEST_NAME — failed to enter project directory"
 
 # ---- Compile Java classes -----------------------------------------------------
 info "Compiling Java classes"
@@ -125,6 +132,38 @@ assert_file_exists "report-filtered.xml" "$TEST_NAME — filtered XML report"
 # ---- Assertions on reports ----------------------------------------------------
 info "Verifying report contents"
 
+# Helper function to check if a method has coverage
+check_method_has_coverage() {
+  local report="$1"
+  local method="$2"
+  local label="$3"
+  
+  # Check if covered > 0 OR missed == 0 (both indicate execution)
+  if ! grep -A2 "name=\"$method\"" "$report" | grep -q 'covered="[1-9]'; then
+    if ! grep -A2 "name=\"$method\"" "$report" | grep -q 'missed="0"'; then
+      fail "$label — method '$method' should have coverage in $report"
+    fi
+  fi
+}
+
+# Helper function to check if a method has zero or no coverage
+check_method_no_coverage() {
+  local report="$1"
+  local method="$2"
+  local label="$3"
+  
+  if grep -q "name=\"$method\"" "$report"; then
+    # Method exists - verify it has zero coverage
+    if grep -A2 "name=\"$method\"" "$report" | grep -q 'covered="[1-9]'; then
+      echo "─── Filtered report excerpt ($method) ───"
+      grep -A5 "name=\"$method\"" "$report" || true
+      echo "─── End excerpt ───"
+      fail "$label — method '$method' should have zero coverage in filtered report (JaCoCo $JACOCO_VERSION)"
+    fi
+  fi
+  # If method doesn't exist, that's also acceptable (filtered out completely)
+}
+
 # In original report: equals, hashCode, toString should be present with coverage
 assert_file_contains "report-original.xml" 'name="equals"' \
   "$TEST_NAME — original report contains equals method"
@@ -135,14 +174,7 @@ assert_file_contains "report-original.xml" 'name="hashCode"' \
 assert_file_contains "report-original.xml" 'name="toString"' \
   "$TEST_NAME — original report contains toString method"
 
-# Check that equals/hashCode/toString have non-zero coverage in original
-# Look for method counters - if covered > 0 or missed == 0 then method was executed
-if ! grep -A2 'name="equals"' report-original.xml | grep -q 'covered="[1-9]'; then
-  # Also check if missed="0" (meaning fully covered)
-  if ! grep -A2 'name="equals"' report-original.xml | grep -q 'missed="0"'; then
-    fail "$TEST_NAME — equals method should have coverage in original report"
-  fi
-fi
+check_method_has_coverage "report-original.xml" "equals" "$TEST_NAME"
 
 # In both reports: computeValue and isPositive should be present with coverage
 assert_file_contains "report-original.xml" 'name="computeValue"' \
@@ -158,43 +190,9 @@ assert_file_contains "report-filtered.xml" 'name="isPositive"' \
   "$TEST_NAME — filtered report contains isPositive method"
 
 # In filtered report: equals, hashCode, toString should be ABSENT or have zero counters
-# Check if the methods exist in the filtered report - they should not
-FILTERED_HAS_EQUALS=false
-FILTERED_HAS_HASHCODE=false
-FILTERED_HAS_TOSTRING=false
-
-grep -q 'name="equals"' report-filtered.xml && FILTERED_HAS_EQUALS=true
-grep -q 'name="hashCode"' report-filtered.xml && FILTERED_HAS_HASHCODE=true
-grep -q 'name="toString"' report-filtered.xml && FILTERED_HAS_TOSTRING=true
-
-# If they exist, verify they have zero coverage
-if [[ "$FILTERED_HAS_EQUALS" == true ]]; then
-  # Method exists - check it has zero counters
-  if grep -A2 'name="equals"' report-filtered.xml | grep -q 'covered="[1-9]'; then
-    echo "─── Filtered report excerpt (equals) ───"
-    grep -A5 'name="equals"' report-filtered.xml || true
-    echo "─── End excerpt ───"
-    fail "$TEST_NAME — equals method should have zero coverage in filtered report (JaCoCo $JACOCO_VERSION)"
-  fi
-fi
-
-if [[ "$FILTERED_HAS_HASHCODE" == true ]]; then
-  if grep -A2 'name="hashCode"' report-filtered.xml | grep -q 'covered="[1-9]'; then
-    echo "─── Filtered report excerpt (hashCode) ───"
-    grep -A5 'name="hashCode"' report-filtered.xml || true
-    echo "─── End excerpt ───"
-    fail "$TEST_NAME — hashCode method should have zero coverage in filtered report (JaCoCo $JACOCO_VERSION)"
-  fi
-fi
-
-if [[ "$FILTERED_HAS_TOSTRING" == true ]]; then
-  if grep -A2 'name="toString"' report-filtered.xml | grep -q 'covered="[1-9]'; then
-    echo "─── Filtered report excerpt (toString) ───"
-    grep -A5 'name="toString"' report-filtered.xml || true
-    echo "─── End excerpt ───"
-    fail "$TEST_NAME — toString method should have zero coverage in filtered report (JaCoCo $JACOCO_VERSION)"
-  fi
-fi
+check_method_no_coverage "report-filtered.xml" "equals" "$TEST_NAME"
+check_method_no_coverage "report-filtered.xml" "hashCode" "$TEST_NAME"
+check_method_no_coverage "report-filtered.xml" "toString" "$TEST_NAME"
 
 # Summary logging on success
 info "SUCCESS with JaCoCo $JACOCO_VERSION:"

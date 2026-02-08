@@ -38,10 +38,18 @@ jobs:
         run: |
           set -euo pipefail
           
-          # Extract the latest version from the matrix in ci.yml
-          # This assumes the matrix lists versions in order, with latest last
-          CURRENT_VERSION=$(grep -A5 'jacoco-version:' .github/workflows/ci.yml | \
-            grep -oP "'\K[0-9]+\.[0-9]+\.[0-9]+" | tail -1)
+          # Extract the latest version from the jacoco-version matrix in ci.yml
+          # More robust regex that handles the YAML array format
+          CURRENT_VERSION=$(grep -oP "jacoco-version: \['[0-9.]+', '\K[0-9]+\.[0-9]+\.[0-9]+(?='\])" \
+            .github/workflows/ci.yml)
+          
+          if [[ -z "$CURRENT_VERSION" ]]; then
+            echo "ERROR: Failed to extract current JaCoCo version from ci.yml"
+            echo "Trying fallback extraction method..."
+            # Fallback: extract all versions and take the last one
+            CURRENT_VERSION=$(grep -oP "'[0-9]+\.[0-9]+\.[0-9]+'" .github/workflows/ci.yml | \
+              grep -oP "[0-9]+\.[0-9]+\.[0-9]+" | tail -1)
+          fi
           
           if [[ -z "$CURRENT_VERSION" ]]; then
             echo "ERROR: Failed to extract current JaCoCo version from ci.yml"
@@ -69,14 +77,13 @@ jobs:
           
           echo "🔔 New JaCoCo version available: $LATEST_VERSION (current: $CURRENT_VERSION)"
           
-          # Check if an issue already exists
+          # Check if an issue already exists for this specific version
           ISSUE_TITLE="Update JaCoCo compatibility matrix to $LATEST_VERSION"
           
           EXISTING_ISSUE=$(gh issue list \
             --state open \
-            --search "Update JaCoCo compatibility matrix in:title" \
             --json number,title \
-            --jq ".[0].number" || echo "")
+            --jq ".[] | select(.title == \"$ISSUE_TITLE\") | .number" | head -1 || echo "")
           
           if [[ -n "$EXISTING_ISSUE" ]]; then
             echo "ℹ️  Issue already exists: #$EXISTING_ISSUE"
