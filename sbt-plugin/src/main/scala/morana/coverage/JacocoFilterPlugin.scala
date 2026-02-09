@@ -132,6 +132,8 @@ object JacocoFilterPlugin extends AutoPlugin {
 
     jmfOutDir := target.value,
     jmfRulesFile := (ThisBuild / baseDirectory).value / "jmf-rules.txt",
+    jmfGlobalRules := None,
+    jmfLocalRules := None,
     jmfCliMain := "io.moranaapps.jacocomethodfilter.CoverageRewriter",
     jmfDryRun := false,
     jmfEnabled := true,
@@ -166,10 +168,12 @@ object JacocoFilterPlugin extends AutoPlugin {
     jmfVerify := {
       val _ = (Compile / compile).value
 
-      val rules     = jmfRulesFile.value
-      val log       = streams.value.log
-      val workDir   = baseDirectory.value
-      val classesIn = (Compile / classDirectory).value
+      val rulesFile   = jmfRulesFile.value
+      val globalRules = jmfGlobalRules.value
+      val localRules  = jmfLocalRules.value
+      val log         = streams.value.log
+      val workDir     = baseDirectory.value
+      val classesIn   = (Compile / classDirectory).value
 
       val compileCp: Seq[File] = Attributed.data((Compile / fullClasspath).value)
       val jmfJars: Seq[File] = (Jmf / update).value.matching(artifactFilter(`type` = "jar")).distinct
@@ -187,25 +191,35 @@ object JacocoFilterPlugin extends AutoPlugin {
         val hasClasses = (classesIn ** sbt.GlobFilter("*.class")).get.nonEmpty
         if (!hasClasses) {
           log.warn(s"[jmf] no .class files under ${classesIn.getAbsolutePath}; skipping.")
-        } else if (!rules.exists) {
-          log.warn(s"[jmf] rules file missing: ${rules.getAbsolutePath}; skipping.")
-          log.info(s"[jmf] Run 'jmfInitRules' to create a rules file.")
         } else {
-          val args = Seq(
-            javaBin,
-            "-cp",
-            cpStr,
-            jmfCliMain.value,
-            "--verify",
-            "--in",
-            classesIn.getAbsolutePath,
-            "--rules",
-            rules.getAbsolutePath
-          )
+          val hasRulesConfig = (globalRules.isDefined || localRules.exists(_.exists) || rulesFile.exists)
+          if (!hasRulesConfig) {
+            log.warn(s"[jmf] rules file missing: ${rulesFile.getAbsolutePath}; skipping.")
+            log.info(s"[jmf] Run 'jmfInitRules' to create a rules file.")
+          } else {
+            val baseArgs = Seq(
+              javaBin,
+              "-cp",
+              cpStr,
+              jmfCliMain.value,
+              "--verify",
+              "--in",
+              classesIn.getAbsolutePath
+            )
+            
+            val rulesArgs = if (globalRules.isDefined || localRules.isDefined) {
+              globalRules.toSeq.flatMap(g => Seq("--global-rules", g)) ++
+              localRules.toSeq.flatMap(l => Seq("--local-rules", l.getAbsolutePath))
+            } else {
+              Seq("--rules", rulesFile.getAbsolutePath)
+            }
+            
+            val args = baseArgs ++ rulesArgs
 
-          log.info(s"[jmf] verify: ${args.mkString(" ")}")
-          val code = scala.sys.process.Process(args, workDir).!
-          if (code != 0) sys.error(s"[jmf] verify failed ($code)")
+            log.info(s"[jmf] verify: ${args.mkString(" ")}")
+            val code = scala.sys.process.Process(args, workDir).!
+            if (code != 0) sys.error(s"[jmf] verify failed ($code)")
+          }
         }
       }
     },
@@ -213,11 +227,13 @@ object JacocoFilterPlugin extends AutoPlugin {
     jmfRewrite := {
       val _ = (Compile / compile).value
 
-      val rules     = jmfRulesFile.value
-      val log       = streams.value.log
-      val workDir   = baseDirectory.value
-      val classesIn = (Compile / classDirectory).value
-      val enabled   = jacocoPluginEnabled.value
+      val rulesFile   = jmfRulesFile.value
+      val globalRules = jmfGlobalRules.value
+      val localRules  = jmfLocalRules.value
+      val log         = streams.value.log
+      val workDir     = baseDirectory.value
+      val classesIn   = (Compile / classDirectory).value
+      val enabled     = jacocoPluginEnabled.value
 
       val compileCp: Seq[File] = Attributed.data((Compile / fullClasspath).value)
       val jmfJars: Seq[File] = (Jmf / update).value.matching(artifactFilter(`type` = "jar")).distinct
@@ -238,31 +254,42 @@ object JacocoFilterPlugin extends AutoPlugin {
         if (!hasClasses) {
           log.warn(s"[jmf] no .class files under ${classesIn.getAbsolutePath}; skipping.")
           classesIn
-        } else if (!rules.exists) {
-          log.warn(s"[jmf] rules file missing: ${rules.getAbsolutePath}; skipping.")
-          classesIn
         } else {
-          val outDir = jmfOutDir.value / "classes-filtered"
-          IO.delete(outDir)
-          IO.createDirectory(outDir)
+          val hasRulesConfig = (globalRules.isDefined || localRules.exists(_.exists) || rulesFile.exists)
+          if (!hasRulesConfig) {
+            log.warn(s"[jmf] rules file missing: ${rulesFile.getAbsolutePath}; skipping.")
+            classesIn
+          } else {
+            val outDir = jmfOutDir.value / "classes-filtered"
+            IO.delete(outDir)
+            IO.createDirectory(outDir)
 
-          val args = Seq(
-            javaBin,
-            "-cp",
-            cpStr,
-            jmfCliMain.value,
-            "--in",
-            classesIn.getAbsolutePath,
-            "--out",
-            outDir.getAbsolutePath,
-            "--rules",
-            rules.getAbsolutePath
-          ) ++ (if (jmfDryRun.value) Seq("--dry-run") else Seq())
+            val baseArgs = Seq(
+              javaBin,
+              "-cp",
+              cpStr,
+              jmfCliMain.value,
+              "--in",
+              classesIn.getAbsolutePath,
+              "--out",
+              outDir.getAbsolutePath
+            )
+            
+            val rulesArgs = if (globalRules.isDefined || localRules.isDefined) {
+              globalRules.toSeq.flatMap(g => Seq("--global-rules", g)) ++
+              localRules.toSeq.flatMap(l => Seq("--local-rules", l.getAbsolutePath))
+            } else {
+              Seq("--rules", rulesFile.getAbsolutePath)
+            }
+            
+            val dryRunArgs = if (jmfDryRun.value) Seq("--dry-run") else Seq.empty
+            val args = baseArgs ++ rulesArgs ++ dryRunArgs
 
-          log.info(s"[jmf] rewrite: ${args.mkString(" ")}")
-          val code = scala.sys.process.Process(args, workDir).!
-          if (code != 0) sys.error(s"[jmf] rewriter failed ($code)")
-          outDir
+            log.info(s"[jmf] rewrite: ${args.mkString(" ")}")
+            val code = scala.sys.process.Process(args, workDir).!
+            if (code != 0) sys.error(s"[jmf] rewriter failed ($code)")
+            outDir
+          }
         }
       }
     },

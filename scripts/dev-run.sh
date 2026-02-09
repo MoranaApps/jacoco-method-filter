@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-RULES=${1:-rules/coverage-rules.sample.txt}
+RULES=${1:-scripts/coverage-rules.sample.txt}
 IN_DIR=${2:-target/scala-2.13/classes}
 OUT_DIR=${3:-target/scala-2.13/classes-filtered}
 

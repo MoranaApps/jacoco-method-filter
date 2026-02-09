@@ -74,14 +74,14 @@ class VerifyScannerSpec extends AnyFunSuite {
       val result = VerifyScanner.scan(dir, rules)
       
       assert(result.classesScanned == 2)
-      assert(result.methodsMatched == 0)
+      assert(result.totalMatched == 0)
       assert(result.matches.isEmpty)
     } finally {
       deleteRecursively(dir)
     }
   }
 
-  test("scan matches methods against rules") {
+  test("scan matches methods against exclusion rules") {
     val dir = Files.createTempDirectory("verify-test-")
     try {
       createTestClass(dir, "test.Example", Seq(
@@ -97,17 +97,45 @@ class VerifyScannerSpec extends AnyFunSuite {
       val result = VerifyScanner.scan(dir, rules)
       
       assert(result.classesScanned == 1)
-      assert(result.methodsMatched == 1)
+      assert(result.totalMatched == 1)
       assert(result.matches.size == 1)
       assert(result.matches.head.methodName == "copy")
       assert(result.matches.head.fqcn == "test.Example")
-      assert(result.matches.head.ruleId.contains("case-copy"))
+      assert(result.matches.head.outcome == Excluded)
+      assert(result.matches.head.exclusionIds.contains("case-copy"))
     } finally {
       deleteRecursively(dir)
     }
   }
 
-  test("scan records multiple matches when method matches multiple rules") {
+  test("scan records rescued methods when both exclusion and inclusion rules match") {
+    val dir = Files.createTempDirectory("verify-test-")
+    try {
+      createTestClass(dir, "test.Config$", Seq(
+        ("apply", "(Ljava/lang/Object;)Ltest/Config;", Opcodes.ACC_PUBLIC)
+      ))
+      
+      val rulesFile = tmpFile()
+      write(rulesFile, Seq(
+        "test.*$#apply(*) id:comp-apply",
+        "+test.Config$#apply(*) id:keep-config-apply"
+      ))
+      val rules = Rules.load(rulesFile)
+      
+      val result = VerifyScanner.scan(dir, rules)
+      
+      assert(result.classesScanned == 1)
+      assert(result.totalMatched == 1)
+      assert(result.matches.size == 1)
+      assert(result.matches.head.outcome == Rescued)
+      assert(result.matches.head.exclusionIds.contains("comp-apply"))
+      assert(result.matches.head.inclusionIds.contains("keep-config-apply"))
+    } finally {
+      deleteRecursively(dir)
+    }
+  }
+
+  test("scan excludes methods matched only by exclusion rules") {
     val dir = Files.createTempDirectory("verify-test-")
     try {
       createTestClass(dir, "test.Foo", Seq(
@@ -124,58 +152,71 @@ class VerifyScannerSpec extends AnyFunSuite {
       val result = VerifyScanner.scan(dir, rules)
       
       assert(result.classesScanned == 1)
-      assert(result.methodsMatched == 2) // Same method matched twice
-      assert(result.matches.size == 2)
-      assert(result.matches.map(_.ruleId).flatten.toSet == Set("synthetic-methods", "bridge-methods"))
+      assert(result.totalMatched == 1)
+      assert(result.matches.head.outcome == Excluded)
+      // Both rules match
+      assert(result.matches.head.exclusionIds.toSet == Set("synthetic-methods", "bridge-methods"))
     } finally {
       deleteRecursively(dir)
     }
   }
 
-  test("printReport groups methods by class") {
+  test("printReport shows EXCLUDED section") {
     val matches = Seq(
-      MatchedMethod("com.example.User", "copy", "(I)Lcom/example/User;", Some("case-copy")),
-      MatchedMethod("com.example.User", "equals", "(Ljava/lang/Object;)Z", Some("case-equals")),
-      MatchedMethod("com.example.Address", "hashCode", "()I", Some("case-hash"))
+      MatchedMethod("com.example.User", "copy", "(I)Lcom/example/User;", Excluded, Seq("case-copy"), Seq.empty),
+      MatchedMethod("com.example.User", "equals", "(Ljava/lang/Object;)Z", Excluded, Seq("case-equals"), Seq.empty)
     )
-    val result = ScanResult(2, 3, matches)
+    val result = ScanResult(2, 2, matches)
     
     val lines = scala.collection.mutable.ArrayBuffer[String]()
     result.printReport(line => lines += line)
     
-    // Should group by FQCN
-    assert(lines.exists(_.contains("com.example.Address")))
+    // Should have EXCLUDED section
+    assert(lines.exists(_.contains("EXCLUDED")))
     assert(lines.exists(_.contains("com.example.User")))
-    
-    // Should show method signatures
     assert(lines.exists(_.contains("#copy")))
-    assert(lines.exists(_.contains("#equals")))
-    assert(lines.exists(_.contains("#hashCode")))
-    
-    // Should show rule IDs
     assert(lines.exists(_.contains("rule-id:case-copy")))
-    assert(lines.exists(_.contains("rule-id:case-equals")))
-    assert(lines.exists(_.contains("rule-id:case-hash")))
   }
 
-  test("printReport does not include non-matching classes") {
+  test("printReport shows RESCUED section") {
     val matches = Seq(
-      MatchedMethod("com.example.User", "copy", "(I)Lcom/example/User;", Some("case-copy"))
+      MatchedMethod("com.example.Config$", "apply", "(Lcom/example/Config;)Lcom/...;", Rescued, 
+        Seq("comp-apply"), Seq("keep-config-apply"))
     )
-    val result = ScanResult(5, 1, matches) // 5 scanned but only 1 match
+    val result = ScanResult(1, 1, matches)
     
     val lines = scala.collection.mutable.ArrayBuffer[String]()
     result.printReport(line => lines += line)
     
-    // Should only mention the class with matches
-    val classLines = lines.filter(_.startsWith("[verify] com."))
-    assert(classLines.size == 1)
-    assert(classLines.head.contains("com.example.User"))
+    // Should have RESCUED section
+    assert(lines.exists(_.contains("RESCUED")))
+    assert(lines.exists(_.contains("com.example.Config$")))
+    assert(lines.exists(_.contains("#apply")))
+    assert(lines.exists(_.contains("excl:comp-apply")))
+    assert(lines.exists(_.contains("incl:keep-config-apply")))
   }
 
-  test("printReport handles methods with no rule ID") {
+  test("printReport shows both EXCLUDED and RESCUED sections") {
     val matches = Seq(
-      MatchedMethod("test.Foo", "bar", "()V", None)
+      MatchedMethod("com.example.User", "copy", "(I)Lcom/example/User;", Excluded, Seq("case-copy"), Seq.empty),
+      MatchedMethod("com.example.Config$", "apply", "(Lcom/example/Config;)Lcom/...;", Rescued, 
+        Seq("comp-apply"), Seq("keep-config-apply"))
+    )
+    val result = ScanResult(2, 2, matches)
+    
+    val lines = scala.collection.mutable.ArrayBuffer[String]()
+    result.printReport(line => lines += line)
+    
+    // Should have both sections
+    assert(lines.exists(_.contains("EXCLUDED")))
+    assert(lines.exists(_.contains("RESCUED")))
+    assert(lines.exists(_.contains("Summary")))
+    assert(lines.exists(_.contains("1 methods excluded, 1 methods rescued")))
+  }
+
+  test("printReport handles methods with no rule IDs") {
+    val matches = Seq(
+      MatchedMethod("test.Foo", "bar", "()V", Excluded, Seq.empty, Seq.empty)
     )
     val result = ScanResult(1, 1, matches)
     

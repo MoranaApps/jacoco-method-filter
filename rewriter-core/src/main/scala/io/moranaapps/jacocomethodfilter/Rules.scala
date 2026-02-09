@@ -1,9 +1,23 @@
 package io.moranaapps.jacocomethodfilter
 
-import java.nio.file.{Files, Path}
+import java.io.{BufferedReader, InputStreamReader}
+import java.net.{HttpURLConnection, URL}
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Path, Paths}
 import java.util.regex.Pattern
 import scala.collection.JavaConverters._
 import org.objectweb.asm.Opcodes
+
+// --- Rule mode and source ---------------------------------------------------
+
+sealed trait RuleMode
+case object Exclude extends RuleMode
+case object Include extends RuleMode
+
+sealed trait RuleSource
+final case class GlobalSource(origin: String) extends RuleSource
+final case class LocalSource(path: String) extends RuleSource
+final case class LegacySource(path: String) extends RuleSource
 
 // --- Selector helpers -------------------------------------------------------
 
@@ -36,10 +50,16 @@ final case class MethodRule(
                              id: Option[String],           // id:<string> for logs/reports
                              nameContains: Option[String], // name-contains:<s>
                              nameStarts: Option[String],   // name-starts:<s>
-                             nameEnds: Option[String]      // name-ends:<s>
+                             nameEnds: Option[String],     // name-ends:<s>
+                             mode: RuleMode = Exclude,     // exclude or include
+                             source: RuleSource = LegacySource("") // where this rule came from
                            )
 
 object Rules {
+
+  // HTTP timeout settings for loading rules from URLs
+  private val UrlConnectTimeoutMs = 10000
+  private val UrlReadTimeoutMs = 10000
 
   // Normalize short/omitted descriptors.
   //  - ""  or "()"  -> "(*)*"
@@ -53,21 +73,29 @@ object Rules {
   def load(path: Path): Seq[MethodRule] = {
     if (!Files.exists(path)) return Seq.empty
     val lines = Files.readAllLines(path).asScala.toVector
-    lines.flatMap(parseLine)
+    val source = LegacySource(path.toString)
+    lines.flatMap(line => parseLine(line, source))
   }
 
-  private def parseLine(raw: String): Option[MethodRule] = {
+  private[jacocomethodfilter] def parseLine(raw: String, source: RuleSource = LegacySource("")): Option[MethodRule] = {
     val line = raw.trim
     if (line.isEmpty || line.startsWith("#")) return None
 
+    // Check for include mode (+ prefix)
+    val (mode, lineWithoutPrefix) = if (line.startsWith("+")) {
+      (Include, line.substring(1).trim)
+    } else {
+      (Exclude, line)
+    }
+
     // Split into <main> and the trailing tokens (flags/predicates)
-    val firstWs = line.indexWhere(_.isWhitespace)
+    val firstWs = lineWithoutPrefix.indexWhere(_.isWhitespace)
     val (main, restTokens) =
-      if (firstWs < 0) (line, "")
-      else (line.substring(0, firstWs), line.substring(firstWs).trim)
+      if (firstWs < 0) (lineWithoutPrefix, "")
+      else (lineWithoutPrefix.substring(0, firstWs), lineWithoutPrefix.substring(firstWs).trim)
 
     val Array(clsSel, rest) = main.split("#", 2)
-    require(rest.nonEmpty, s"Missing method name after '#': $line")
+    require(rest.nonEmpty, s"Missing method name after '#': $raw")
 
     val idx = rest.indexOf('(')
 
@@ -122,7 +150,9 @@ object Rules {
       id           = id,
       nameContains = nameContains,
       nameStarts   = nameStarts,
-      nameEnds     = nameEnds
+      nameEnds     = nameEnds,
+      mode         = mode,
+      source       = source
     ))
   }
 
@@ -178,5 +208,97 @@ object Rules {
     val retOk    = r.retGlob.forall(_.matcher(retType).matches())
 
     clsOk && methodOk && descOk && flagsOk && retOk
+  }
+
+  /**
+   * Load rules from a source that can be either a local path or an HTTP/HTTPS URL.
+   * @param source path or URL
+   * @param ruleSource metadata about where this rule came from
+   * @return sequence of method rules
+   */
+  def loadFromSource(source: String, ruleSource: RuleSource): Seq[MethodRule] = {
+    if (source.startsWith("http://") || source.startsWith("https://")) {
+      loadFromUrl(source, ruleSource)
+    } else {
+      loadFromPath(Paths.get(source), ruleSource)
+    }
+  }
+
+  private def loadFromUrl(urlStr: String, ruleSource: RuleSource): Seq[MethodRule] = {
+    val url = new URL(urlStr)
+    val conn = url.openConnection().asInstanceOf[HttpURLConnection]
+    try {
+      conn.setRequestMethod("GET")
+      conn.setConnectTimeout(UrlConnectTimeoutMs)
+      conn.setReadTimeout(UrlReadTimeoutMs)
+      
+      val responseCode = conn.getResponseCode
+      if (responseCode != 200) {
+        throw new RuntimeException(s"Failed to fetch rules from $urlStr: HTTP $responseCode")
+      }
+      
+      val reader = new BufferedReader(new InputStreamReader(conn.getInputStream, StandardCharsets.UTF_8))
+      try {
+        val lines = scala.collection.mutable.ListBuffer[String]()
+        var line = reader.readLine()
+        while (line != null) {
+          lines += line
+          line = reader.readLine()
+        }
+        lines.toVector.flatMap(line => parseLine(line, ruleSource))
+      } finally {
+        reader.close()
+      }
+    } finally {
+      conn.disconnect()
+    }
+  }
+
+  private def loadFromPath(path: Path, ruleSource: RuleSource): Seq[MethodRule] = {
+    if (!Files.exists(path)) return Seq.empty
+    val lines = Files.readAllLines(path).asScala.toVector
+    lines.flatMap(line => parseLine(line, ruleSource))
+  }
+
+  /**
+   * Load and merge rules from global, local, and legacy sources.
+   * @param globalSource optional global rules (path or URL)
+   * @param localPath optional local rules file
+   * @param legacyPath optional legacy rules file (for backward compatibility)
+   * @return merged sequence of all rules
+   */
+  def loadAll(globalSource: Option[String], localPath: Option[Path], legacyPath: Option[Path]): Seq[MethodRule] = {
+    val globalRules = globalSource match {
+      case Some(src) => loadFromSource(src, GlobalSource(src))
+      case None => Seq.empty
+    }
+    
+    val localRules = localPath match {
+      case Some(path) => loadFromPath(path, LocalSource(path.toString))
+      case None => Seq.empty
+    }
+    
+    val legacyRules = legacyPath match {
+      case Some(path) => load(path)
+      case None => Seq.empty
+    }
+    
+    globalRules ++ localRules ++ legacyRules
+  }
+}
+
+// --- Rule Resolution --------------------------------------------------------
+
+final case class Resolution(exclusions: Seq[MethodRule], inclusions: Seq[MethodRule]) {
+  def shouldExclude: Boolean = exclusions.nonEmpty && inclusions.isEmpty
+  def isRescued: Boolean = exclusions.nonEmpty && inclusions.nonEmpty
+}
+
+object RuleResolver {
+  def resolve(rules: Seq[MethodRule], fqcn: String, methodName: String, desc: String, access: Int): Resolution = {
+    val matchingRules = rules.filter(r => Rules.matches(r, fqcn, methodName, desc, access))
+    val exclusions = matchingRules.filter(_.mode == Exclude)
+    val inclusions = matchingRules.filter(_.mode == Include)
+    Resolution(exclusions, inclusions)
   }
 }

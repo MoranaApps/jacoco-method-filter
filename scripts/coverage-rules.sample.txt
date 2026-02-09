@@ -49,10 +49,10 @@
 # QUICK EXAMPLES
 #
 # Simple wildcards
-#   *#*(*)
+#   *#*(* )
 #     → Match EVERY method in EVERY class (any package). Useful only for diagnostics.
 #       "(*)" normalizes to "(*)*" ⇒ any args, any return.
-#   *.dto.*#*(*)
+#   *.dto.*#*(* )
 #     → Match every method on any class under any package segment named "dto".
 #       Good when you treat DTOs as generated/boilerplate.
 
@@ -81,10 +81,10 @@
 #   *#$anonfun$*
 #     → Matches any method whose name contains `$anonfun$` (Scala lambdas).
 #       Consider adding `synthetic` and/or a package scope in real configs.
-#   *#*(*):synthetic            # any synthetic
+#   *#*(*) synthetic            # any synthetic
 #     → Matches ANY method marked `synthetic` (compiler-generated).
 #       Powerful; scope by package to avoid hiding intentional glue code.
-#   *#*(*):bridge               # any bridge
+#   *#*(*) bridge               # any bridge
 #     → Matches Java generic bridge methods the compiler inserts.
 #       Usually safe globally, but scoping is still recommended.
 
@@ -100,11 +100,11 @@
 #       The `ret:` predicate protects real logic that returns other types.
 
 # Return-type constraints
-#   *.jobs.*#*(*):ret:V
+#   *.jobs.*#*(*) ret:V
 #     → Any method under `*.jobs.*` returning `void` (`V`). Often orchestration.
-#   *.math.*#*(*):ret:I
+#   *.math.*#*(*) ret:I
 #     → Any method under `*.math.*` returning primitive int (`I`).
-#   *.model.*#*(*):ret:Lcom/example/model/*
+#   *.model.*#*(*) ret:Lcom/example/model/*
 #     → Any method under `*.model.*` that returns a type in `com.example.model`.
 #       Handy when the *return type* uniquely identifies boilerplate.
 
@@ -124,6 +124,19 @@ YOUR.PACKAGE.ROOT.dto.*#*_$eq(*)                          id:scala-setter
 YOUR.PACKAGE.ROOT.*#*(*)  synthetic name-contains:$anonfun$  id:scala-anonfun
 YOUR.PACKAGE.ROOT.*#*(*)  synthetic                        id:synthetic-generic
 
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION: INCLUDE RULES (whitelist/rescue specific methods from exclusions)
+# Prefix a rule with "+" to mark it as an inclusion.
+# Include rules always win over exclude rules for the same method.
+# Use these to keep methods with custom business logic that would otherwise
+# be excluded by broad patterns above.
+#
+# Example: Keep Config companion apply (has custom validation logic)
+# +YOUR.PACKAGE.ROOT.model.Config$#apply(*)                id:keep-config-apply
+#
+# Example: Keep specific synthetic method with business logic
+# +YOUR.PACKAGE.ROOT.service.Handler#$anonfun$process$1(*)  id:keep-handler-fn
+#
 # ─────────────────────────────────────────────────────────────────────────────
 # SECTION: STANDARD (enable after verifying impact)
 

@@ -207,4 +207,71 @@ class RulesMatchSpec extends AnyFunSuite {
     assert(ex.getMessage.contains("dot form"))
   }
 
+  test("RuleResolver: exclusion only → shouldExclude = true") {
+    val p = write(tmpFile(), Seq("com.example.*#copy"))
+    val rules = Rules.load(p)
+    val acc = access()
+    
+    val resolution = RuleResolver.resolve(rules, "com.example.User", "copy", desc("", "V"), acc)
+    assert(resolution.shouldExclude)
+    assert(!resolution.isRescued)
+    assert(resolution.exclusions.size == 1)
+    assert(resolution.inclusions.isEmpty)
+  }
+
+  test("RuleResolver: inclusion only → shouldExclude = false") {
+    val p = write(tmpFile(), Seq("+com.example.*#copy"))
+    val rules = Rules.load(p)
+    val acc = access()
+    
+    val resolution = RuleResolver.resolve(rules, "com.example.User", "copy", desc("", "V"), acc)
+    assert(!resolution.shouldExclude)
+    assert(!resolution.isRescued)
+    assert(resolution.exclusions.isEmpty)
+    assert(resolution.inclusions.size == 1)
+  }
+
+  test("RuleResolver: both exclusion and inclusion → shouldExclude = false, isRescued = true") {
+    val p = write(tmpFile(), Seq(
+      "com.example.*#copy",
+      "+com.example.Config$#copy"
+    ))
+    val rules = Rules.load(p)
+    val acc = access()
+    
+    val resolution = RuleResolver.resolve(rules, "com.example.Config$", "copy", desc("", "V"), acc)
+    assert(!resolution.shouldExclude)
+    assert(resolution.isRescued)
+    assert(resolution.exclusions.size == 1)
+    assert(resolution.inclusions.size == 1)
+  }
+
+  test("RuleResolver: no match → shouldExclude = false, isRescued = false") {
+    val p = write(tmpFile(), Seq("com.example.*#copy"))
+    val rules = Rules.load(p)
+    val acc = access()
+    
+    val resolution = RuleResolver.resolve(rules, "org.other.User", "copy", desc("", "V"), acc)
+    assert(!resolution.shouldExclude)
+    assert(!resolution.isRescued)
+    assert(resolution.exclusions.isEmpty)
+    assert(resolution.inclusions.isEmpty)
+  }
+
+  test("RuleResolver: multiple exclusions matched but one inclusion rescues") {
+    val p = write(tmpFile(), Seq(
+      "com.example.*#copy",
+      "*.Config$#*",
+      "+com.example.Config$#copy"
+    ))
+    val rules = Rules.load(p)
+    val acc = access()
+    
+    val resolution = RuleResolver.resolve(rules, "com.example.Config$", "copy", desc("", "V"), acc)
+    assert(!resolution.shouldExclude)
+    assert(resolution.isRescued)
+    assert(resolution.exclusions.size == 2) // both exclusion rules match
+    assert(resolution.inclusions.size == 1)
+  }
+
 }

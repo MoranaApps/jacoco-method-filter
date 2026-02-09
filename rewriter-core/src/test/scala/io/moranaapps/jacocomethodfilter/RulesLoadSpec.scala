@@ -83,4 +83,54 @@ class RulesLoadSpec extends AnyFunSuite {
       assert(r3.desc.matcher(d).matches(), s"m3 should match $d")
     }
   }
+
+  test("+ prefix parses as Include mode") {
+    val file = write(tmpFile(), Seq(
+      "com.example.*#copy(*) id:copy-excl",
+      "+com.example.Config$#copy(*) id:copy-incl"
+    ))
+    val rules = Rules.load(file)
+    assert(rules.size == 2)
+    
+    val r1 = rules(0)
+    assert(r1.mode == Exclude)
+    assert(r1.id.contains("copy-excl"))
+    
+    val r2 = rules(1)
+    assert(r2.mode == Include)
+    assert(r2.id.contains("copy-incl"))
+  }
+
+  test("+ prefix works with all syntax forms") {
+    val file = write(tmpFile(), Seq(
+      "+com.example.*#foo public synthetic id:inc1",
+      "+a.b.C#bar(I)I protected,bridge name-starts:ba id:inc2",
+      "+x.y.Z#baz(*) ret:V id:inc3"
+    ))
+    val rules = Rules.load(file)
+    assert(rules.size == 3)
+    
+    rules.foreach { r =>
+      assert(r.mode == Include)
+    }
+    
+    // Verify flags and predicates still work
+    assert(rules(0).flags == Set("public", "synthetic"))
+    assert(rules(1).flags == Set("protected", "bridge"))
+    assert(rules(1).nameStarts.contains("ba"))
+    assert(rules(2).retGlob.exists(_.matcher("V").matches()))
+  }
+
+  test("unprefixed rules default to Exclude mode") {
+    val file = write(tmpFile(), Seq(
+      "com.example.*#copy(*)",
+      "a.b.C#foo"
+    ))
+    val rules = Rules.load(file)
+    assert(rules.size == 2)
+    
+    rules.foreach { r =>
+      assert(r.mode == Exclude)
+    }
+  }
 }
