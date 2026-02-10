@@ -211,6 +211,11 @@ This lets you:
 not against raw source code — so it only reports exclusions/rescues for methods that **actually exist after
 compilation**.
 
+> **Important**: Because `verify` scans bytecode, it sees all methods the JVM compiler generated
+> (synthetic bridges, anonymous function bodies, default parameter accessors, etc.) alongside your
+> hand-written code. Some broad exclusion rules may accidentally match methods you wrote yourself
+> (e.g., `apply`). Use include rules (`+...`) to rescue those methods — see below.
+
 Before running coverage, use the **verify** command to preview which methods will be excluded vs. rescued:
 
 **sbt:**
@@ -248,6 +253,37 @@ java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
 
 [verify] Summary: 42 classes scanned, 15 methods excluded, 1 method rescued
 ```
+
+#### Suggest Include Rules
+
+When using broad exclusion rules, you might accidentally exclude hand-written methods.
+Use `--verify-suggest-includes` to get heuristic suggestions for include (rescue) rules:
+
+**CLI:**
+
+```bash
+java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
+  --verify \
+  --verify-suggest-includes \
+  --in target/classes \
+  --rules jmf-rules.txt
+```
+
+**Example additional output:**
+
+```text
+[verify] Suggested include rules (heuristic — review before use):
+[verify]   +com.example.Foo#apply(*)
+[verify]   +com.example.Config#process(*)
+
+[verify] NOTE: These suggestions are best-effort heuristics based on bytecode analysis.
+[verify]       "Human vs generated" cannot be determined perfectly from bytecode.
+```
+
+> **Limitations**: The heuristic classifies a method as "likely human" if it is **not**
+> synthetic/bridge and its name doesn't match common compiler-generated patterns
+> (e.g., `$anonfun$*`, `lambda$*`, `access$*`). Scala macros, compiler plugins,
+> and stripped debug info can fool the heuristic. Always review suggestions before adding them.
 
 ### Ready to Use Rules File
 

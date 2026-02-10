@@ -17,7 +17,8 @@ final case class MatchedMethod(
                                  descriptor: String,
                                  outcome: MethodOutcome,
                                  exclusionIds: Seq[String],
-                                 inclusionIds: Seq[String]
+                                 inclusionIds: Seq[String],
+                                 access: Int
                                )
 
 final case class ScanResult(
@@ -30,16 +31,24 @@ final case class ScanResult(
   
   /**
    * Emit a human-readable report of matched methods.
-   * Default behavior: print to standard output.
+   * Default behavior: print to standard output, no suggestions.
    */
-  def printReport(): Unit = printReport(println)
+  def printReport(): Unit = printReport(println, suggestIncludes = false)
 
   /**
    * Emit a human-readable report of matched methods.
    *
    * @param out sink for each formatted output line
    */
-  def printReport(out: String => Unit): Unit = {
+  def printReport(out: String => Unit): Unit = printReport(out, suggestIncludes = false)
+
+  /**
+   * Emit a human-readable report of matched methods.
+   *
+   * @param out sink for each formatted output line
+   * @param suggestIncludes whether to suggest include rules for likely human-written excluded methods
+   */
+  def printReport(out: String => Unit, suggestIncludes: Boolean): Unit = {
     // Print excluded methods
     val excluded = excludedMethods
     if (excluded.nonEmpty) {
@@ -75,6 +84,24 @@ final case class ScanResult(
       out("")
     }
     
+    // Print suggested include rules for possibly-human excluded methods
+    if (suggestIncludes && excluded.nonEmpty) {
+      val possiblyHuman = excluded.filter { m =>
+        MethodClassifier.classify(m.methodName, m.access) == PossiblyHuman
+      }
+      
+      if (possiblyHuman.nonEmpty) {
+        out(s"[verify] Suggested include rules (heuristic — review before use):")
+        possiblyHuman.sortBy(m => (m.fqcn, m.methodName)).foreach { m =>
+          out(s"[verify]   +${m.fqcn}#${m.methodName}(*)")
+        }
+        out("")
+        out(s"[verify] NOTE: These suggestions are best-effort heuristics based on bytecode analysis.")
+        out("""[verify]       "Human vs generated" cannot be determined perfectly from bytecode.""")
+        out("")
+      }
+    }
+    
     out(s"[verify] Summary: $classesScanned classes scanned, ${excluded.size} methods excluded, ${rescued.size} methods rescued")
   }
 }
@@ -107,11 +134,11 @@ object VerifyScanner {
             
             if (resolution.shouldExclude) {
               val exclusionIds = resolution.exclusions.flatMap(_.id)
-              matchedMethods += MatchedMethod(fqcnDots, name, desc, Excluded, exclusionIds, Seq.empty)
+              matchedMethods += MatchedMethod(fqcnDots, name, desc, Excluded, exclusionIds, Seq.empty, access)
             } else if (resolution.isRescued) {
               val exclusionIds = resolution.exclusions.flatMap(_.id)
               val inclusionIds = resolution.inclusions.flatMap(_.id)
-              matchedMethods += MatchedMethod(fqcnDots, name, desc, Rescued, exclusionIds, inclusionIds)
+              matchedMethods += MatchedMethod(fqcnDots, name, desc, Rescued, exclusionIds, inclusionIds, access)
             }
             null // We don't need to visit method body
           }

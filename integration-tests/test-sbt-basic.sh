@@ -12,6 +12,11 @@ info "Running: $TEST_NAME"
 cp -R "$REPO_ROOT/examples/sbt-basic" "$WORK_DIR/project"
 cd "$WORK_DIR/project"
 
+# Enable the plugin and command aliases (they are commented out in the example by default).
+sed -i.bak 's|^// addSbtPlugin|addSbtPlugin|' project/plugins.sbt
+sed -i.bak 's|^  // \.enablePlugins|  .enablePlugins|' build.sbt
+sed -i.bak 's|^// addCommandAlias|addCommandAlias|' build.sbt
+
 # ── 1. Without filtering (plain test) ──────────────────────────────────────
 run_cmd "$TEST_NAME — sbt clean test (no filtering)" sbt clean test
 
