@@ -1,5 +1,4 @@
-lazy val root = (project in file("."))
-  .enablePlugins(JacocoFilterPlugin)
+lazy val root = (project in file(""))
   .settings(
     name := "sbt-basic-example",
     organization := "io.github.moranaapps",
@@ -11,7 +10,7 @@ lazy val root = (project in file("."))
     )
   )
 
-// Optional: Command aliases for convenience
-addCommandAlias("jacoco", "; jacocoOn; clean; test; jacocoReportAll; jacocoOff")
-addCommandAlias("jacocoOff", "; set every jacocoPluginEnabled := false")
-addCommandAlias("jacocoOn", "; set every jacocoPluginEnabled := true")
+// Optional: Command aliases for convenience - disabled
+// addCommandAlias("jacoco", "; jacocoOn; clean; test; jacocoReportAll; jacocoOff")
+// addCommandAlias("jacocoOff", "; set every jacocoPluginEnabled := false")
+// addCommandAlias("jacocoOn", "; set every jacocoPluginEnabled := true")
