@@ -260,6 +260,7 @@ When using broad exclusion rules, you might accidentally exclude hand-written me
 Use `--verify-suggest-includes` to get heuristic suggestions for include (rescue) rules:
 
 **CLI:**
+
 ```bash
 java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
   --verify \
@@ -269,6 +270,7 @@ java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
 ```
 
 **Example additional output:**
+
 ```text
 [verify] Suggested include rules (heuristic — review before use):
 [verify]   +com.example.Foo#apply(*)
