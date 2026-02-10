@@ -14,7 +14,8 @@ final case class CliConfig(
                             globalRules: Option[String] = None,
                             localRules: Option[Path] = None,
                             dryRun: Boolean = false,
-                            verify: Boolean = false
+                            verify: Boolean = false,
+                            verifySuggestIncludes: Boolean = false
                           )
 
 object CoverageRewriter {
@@ -54,6 +55,10 @@ object CoverageRewriter {
       opt[Unit]("verify")
         .action((_, c) => c.copy(verify = true))
         .text("Read-only scan: list all methods that would be excluded by rules")
+
+      opt[Unit]("verify-suggest-includes")
+        .action((_, c) => c.copy(verifySuggestIncludes = true))
+        .text("When used with --verify, suggest include rules for likely human-written excluded methods")
 
       checkConfig { cfg =>
         if (!cfg.verify && cfg.out.isEmpty) {
@@ -181,7 +186,7 @@ object CoverageRewriter {
     }
     
     val result = VerifyScanner.scan(cfg.in, rules)
-    result.printReport()
+    result.printReport(println, suggestIncludes = cfg.verifySuggestIncludes)
     
     println(s"[info] Verification complete: scanned ${result.classesScanned} class file(s), found ${result.totalMatched} method(s) matched by rules.")
   }
