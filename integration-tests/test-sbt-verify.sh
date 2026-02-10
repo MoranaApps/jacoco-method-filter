@@ -12,6 +12,10 @@ info "Running: $TEST_NAME"
 cp -R "$REPO_ROOT/examples/sbt-basic" "$WORK_DIR/project"
 cd "$WORK_DIR/project"
 
+# Enable the plugin (commented out in the example by default).
+sed -i.bak 's|^// addSbtPlugin|addSbtPlugin|' project/plugins.sbt
+sed -i.bak 's|^  // \.enablePlugins|  .enablePlugins|' build.sbt
+
 # Run jmfVerify task — capture output for assertions
 info "$TEST_NAME — running sbt jmfVerify"
 LOG="$WORK_DIR/jmfVerify.log"

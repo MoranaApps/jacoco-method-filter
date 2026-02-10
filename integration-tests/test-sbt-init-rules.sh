@@ -15,6 +15,10 @@ rm -f "$WORK_DIR/project/jmf-rules.txt"
 
 cd "$WORK_DIR/project"
 
+# Enable the plugin (commented out in the example by default).
+sed -i.bak 's|^// addSbtPlugin|addSbtPlugin|' project/plugins.sbt
+sed -i.bak 's|^  // \.enablePlugins|  .enablePlugins|' build.sbt
+
 # Run jmfInitRules — should create jmf-rules.txt
 run_cmd "$TEST_NAME — sbt jmfInitRules" sbt jmfInitRules
 
