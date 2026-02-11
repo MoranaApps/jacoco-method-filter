@@ -10,7 +10,6 @@ import scala.collection.JavaConverters._
 final case class CliConfig(
                             in: Path   = Paths.get("target/scala-2.13/classes"),
                             out: Option[Path]  = None,
-                            rules: Option[Path] = None,
                             globalRules: Option[String] = None,
                             localRules: Option[Path] = None,
                             dryRun: Boolean = false,
@@ -32,11 +31,6 @@ object CoverageRewriter {
         .optional()
         .action((v, c) => c.copy(out = Some(Paths.get(v))))
         .text("Output classes directory (required unless --verify is used)")
-
-      opt[String]("rules")
-        .optional()
-        .action((v, c) => c.copy(rules = Some(Paths.get(v))))
-        .text("Rules file path (legacy, use --global-rules or --local-rules instead)")
 
       opt[String]("global-rules")
         .optional()
@@ -63,8 +57,8 @@ object CoverageRewriter {
       checkConfig { cfg =>
         if (!cfg.verify && cfg.out.isEmpty) {
           failure("--out is required when not in verify mode")
-        } else if (cfg.rules.isEmpty && cfg.globalRules.isEmpty && cfg.localRules.isEmpty) {
-          failure("At least one of --rules, --global-rules, or --local-rules must be specified")
+        } else if (cfg.globalRules.isEmpty && cfg.localRules.isEmpty) {
+          failure("At least one of --global-rules or --local-rules must be specified")
         } else {
           success
         }
@@ -83,14 +77,13 @@ object CoverageRewriter {
   }
 
   private def run(cfg: CliConfig): Unit = {
-    val rules = Rules.loadAll(cfg.globalRules, cfg.localRules, cfg.rules)
+    val rules = Rules.loadAll(cfg.globalRules, cfg.localRules)
     
-    val rulesSummary = (cfg.globalRules, cfg.localRules, cfg.rules) match {
-      case (Some(g), Some(l), _) => s"global: $g, local: $l"
-      case (Some(g), None, _) => s"global: $g"
-      case (None, Some(l), _) => s"local: $l"
-      case (None, None, Some(r)) => s"legacy: $r"
-      case _ => "none"
+    val rulesSummary = (cfg.globalRules, cfg.localRules) match {
+      case (Some(g), Some(l)) => s"global: $g, local: $l"
+      case (Some(g), None)    => s"global: $g"
+      case (None, Some(l))    => s"local: $l"
+      case _                  => "none"
     }
     println(s"[info] Loaded ${rules.size} rule(s) from $rulesSummary")
 
@@ -158,14 +151,13 @@ object CoverageRewriter {
   }
 
   private def verify(cfg: CliConfig): Unit = {
-    val rules = Rules.loadAll(cfg.globalRules, cfg.localRules, cfg.rules)
+    val rules = Rules.loadAll(cfg.globalRules, cfg.localRules)
     
-    val rulesSummary = (cfg.globalRules, cfg.localRules, cfg.rules) match {
-      case (Some(g), Some(l), _) => s"global: $g, local: $l"
-      case (Some(g), None, _) => s"global: $g"
-      case (None, Some(l), _) => s"local: $l"
-      case (None, None, Some(r)) => s"legacy: $r"
-      case _ => "none"
+    val rulesSummary = (cfg.globalRules, cfg.localRules) match {
+      case (Some(g), Some(l)) => s"global: $g, local: $l"
+      case (Some(g), None)    => s"global: $g"
+      case (None, Some(l))    => s"local: $l"
+      case _                  => "none"
     }
     
     println(s"[verify] Active rules from $rulesSummary:")
@@ -178,9 +170,8 @@ object CoverageRewriter {
       val flagsStr = if (rule.flags.nonEmpty) s" [${rule.flags.mkString(",")}]" else ""
       val sourceStr = rule.source match {
         case GlobalSource(origin) => s" [global: $origin]"
-        case LocalSource(path) => s" [local: $path]"
-        case LegacySource(path) if path.nonEmpty => s" [legacy: $path]"
-        case _ => ""
+        case LocalSource(path)    => s" [local: $path]"
+        case _                    => ""
       }
       println(s"[verify]   ${idx + 1}. [$modeStr] $idStr$flagsStr$sourceStr")
     }

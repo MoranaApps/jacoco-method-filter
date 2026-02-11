@@ -211,7 +211,7 @@ object JacocoFilterPlugin extends AutoPlugin {
               globalRules.toSeq.flatMap(g => Seq("--global-rules", g)) ++
               localRules.toSeq.flatMap(l => Seq("--local-rules", l.getAbsolutePath))
             } else {
-              Seq("--rules", rulesFile.getAbsolutePath)
+              Seq("--local-rules", rulesFile.getAbsolutePath)
             }
             
             val args = baseArgs ++ rulesArgs
@@ -279,7 +279,7 @@ object JacocoFilterPlugin extends AutoPlugin {
               globalRules.toSeq.flatMap(g => Seq("--global-rules", g)) ++
               localRules.toSeq.flatMap(l => Seq("--local-rules", l.getAbsolutePath))
             } else {
-              Seq("--rules", rulesFile.getAbsolutePath)
+              Seq("--local-rules", rulesFile.getAbsolutePath)
             }
             
             val dryRunArgs = if (jmfDryRun.value) Seq("--dry-run") else Seq.empty

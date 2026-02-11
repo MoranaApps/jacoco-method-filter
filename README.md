@@ -138,14 +138,13 @@ By default, all rules are **exclusion rules** — they mark methods to be filter
 
 Most users can start with a **single local rules file**.
 
-- **Simple (single file)**: use `--rules jmf-rules.txt` (CLI) or the plugin default `jmf-rules.txt`
+- **Simple (single file)**: use `--local-rules jmf-rules.txt` (CLI) or the plugin default `jmf-rules.txt`
 - **Advanced (two-layer)**: use **global** rules (shared defaults) + **local** rules (project overrides)
 
 #### Rule sources
 
 - **Global** rules can be a **local path or an HTTP/HTTPS URL**
 - **Local** rules are a **local file path**
-- The legacy `--rules` flag is also a **local file path**
 
 You can separate organization-wide shared rules from project-specific rules:
 
@@ -182,23 +181,13 @@ java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
   --local-rules jmf-local-rules.txt
 ```
 
-**Backward compatible CLI (single file):**
-
-```bash
-java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
-  --in target/classes \
-  --out target/classes-filtered \
-  --rules jmf-rules.txt
-```
-
 ### How rules are merged
 
 When using global and local rules:
 
 1. **Global rules** are loaded first (from URL or path)
 2. **Local rules** are appended
-3. If the legacy `--rules` file is also provided, it is appended last
-4. During evaluation, **any include rule overrides any exclude rule** for the same method
+3. During evaluation, **any include rule overrides any exclude rule** for the same method
 
 This lets you:
 
@@ -236,7 +225,7 @@ mvn jacoco-method-filter:verify
 java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
   --verify \
   --in target/classes \
-  --rules jmf-rules.txt
+  --local-rules jmf-rules.txt
 ```
 
 **Example output:**
@@ -266,7 +255,7 @@ java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
   --verify \
   --verify-suggest-includes \
   --in target/classes \
-  --rules jmf-rules.txt
+  --local-rules jmf-rules.txt
 ```
 
 **Example additional output:**

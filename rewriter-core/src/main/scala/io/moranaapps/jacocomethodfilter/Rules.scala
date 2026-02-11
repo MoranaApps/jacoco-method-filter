@@ -17,7 +17,6 @@ case object Include extends RuleMode
 sealed trait RuleSource
 final case class GlobalSource(origin: String) extends RuleSource
 final case class LocalSource(path: String) extends RuleSource
-final case class LegacySource(path: String) extends RuleSource
 
 // --- Selector helpers -------------------------------------------------------
 
@@ -52,7 +51,7 @@ final case class MethodRule(
                              nameStarts: Option[String],   // name-starts:<s>
                              nameEnds: Option[String],     // name-ends:<s>
                              mode: RuleMode = Exclude,     // exclude or include
-                             source: RuleSource = LegacySource("") // where this rule came from
+                             source: RuleSource = LocalSource("") // where this rule came from
                            )
 
 object Rules {
@@ -73,11 +72,11 @@ object Rules {
   def load(path: Path): Seq[MethodRule] = {
     if (!Files.exists(path)) return Seq.empty
     val lines = Files.readAllLines(path).asScala.toVector
-    val source = LegacySource(path.toString)
+    val source = LocalSource(path.toString)
     lines.flatMap(line => parseLine(line, source))
   }
 
-  private[jacocomethodfilter] def parseLine(raw: String, source: RuleSource = LegacySource("")): Option[MethodRule] = {
+  private[jacocomethodfilter] def parseLine(raw: String, source: RuleSource = LocalSource("")): Option[MethodRule] = {
     val line = raw.trim
     if (line.isEmpty || line.startsWith("#")) return None
 
@@ -261,13 +260,12 @@ object Rules {
   }
 
   /**
-   * Load and merge rules from global, local, and legacy sources.
+   * Load and merge rules from global and local sources.
    * @param globalSource optional global rules (path or URL)
    * @param localPath optional local rules file
-   * @param legacyPath optional legacy rules file (for backward compatibility)
    * @return merged sequence of all rules
    */
-  def loadAll(globalSource: Option[String], localPath: Option[Path], legacyPath: Option[Path]): Seq[MethodRule] = {
+  def loadAll(globalSource: Option[String], localPath: Option[Path]): Seq[MethodRule] = {
     val globalRules = globalSource match {
       case Some(src) => loadFromSource(src, GlobalSource(src))
       case None => Seq.empty
@@ -278,12 +276,7 @@ object Rules {
       case None => Seq.empty
     }
     
-    val legacyRules = legacyPath match {
-      case Some(path) => load(path)
-      case None => Seq.empty
-    }
-    
-    globalRules ++ localRules ++ legacyRules
+    globalRules ++ localRules
   }
 }
 
