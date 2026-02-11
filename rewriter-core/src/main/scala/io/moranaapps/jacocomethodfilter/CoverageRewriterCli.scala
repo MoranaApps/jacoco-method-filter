@@ -12,8 +12,8 @@ private[jacocomethodfilter] object CoverageRewriterCli {
 
   /** Parses command-line arguments into a validated CliConfig.
     *
-    * @param args command-line arguments
-    * @return Some(config) if parsing succeeds, None if parsing fails or --help is used
+    * @param args Command-line arguments.
+    * @return Some(config) if parsing succeeds, None if parsing fails or --help is used.
     */
   def parse(args: Array[String]): Option[CliConfig] =
     parser.parse(args, CliConfig())
