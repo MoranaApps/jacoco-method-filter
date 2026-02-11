@@ -8,4 +8,4 @@ echo "Using rules: $RULES"
 echo "Input classes: $IN_DIR"
 echo "Output classes: $OUT_DIR"
 
-sbt "project rewriterCore" "run --in $IN_DIR --out $OUT_DIR --rules $RULES --dry-run"
+sbt "project rewriterCore" "run --in $IN_DIR --out $OUT_DIR --local-rules $RULES --dry-run"

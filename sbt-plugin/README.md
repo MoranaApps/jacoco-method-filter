@@ -105,7 +105,7 @@ sbt jacocoCleanAll    # all enabled modules
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `jacocoPluginEnabled` | `Boolean` | `false` | Enable/disable the plugin for this module |
-| `jmfRulesFile` | `File` | `jmf-rules.txt` | Path to the rules file |
+| `jmfRulesFile` | `File` | `jmf-rules.txt` | Fallback path to the rules file (used when `jmfGlobalRules` and `jmfLocalRules` are not set) |
 | `jmfDryRun` | `Boolean` | `false` | Dry run mode - logs matches without modifying classes |
 | `jmfOutputDirectory` | `File` | `target/classes-filtered` | Output directory for filtered classes |
 | `jacocoReportDirectory` | `File` | `target/jacoco-report` | Output directory for JaCoCo reports |

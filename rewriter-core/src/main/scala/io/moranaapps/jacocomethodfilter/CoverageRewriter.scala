@@ -2,99 +2,55 @@ package io.moranaapps.jacocomethodfilter
 
 import io.moranaapps.jacocomethodfilter.Compat.using
 import org.objectweb.asm._
-import scopt.OptionParser
 
 import java.nio.file.{Files, Path, Paths}
 import scala.collection.JavaConverters._
 
-final case class CliConfig(
-                            in: Path   = Paths.get("target/scala-2.13/classes"),
-                            out: Option[Path]  = None,
-                            rules: Option[Path] = None,
-                            globalRules: Option[String] = None,
-                            localRules: Option[Path] = None,
-                            dryRun: Boolean = false,
-                            verify: Boolean = false,
-                            verifySuggestIncludes: Boolean = false
-                          )
+/** Configuration for the jacoco-method-filter CLI.
+  *
+  * @param in Input classes directory to scan
+  * @param out Output classes directory (optional in verify mode)
+  * @param globalRules Global rules file path or URL (optional if localRules provided)
+  * @param localRules Local rules file path (optional if globalRules provided)
+  * @param dryRun If true, print matches without modifying classes
+  * @param verify If true, run read-only scan mode
+  * @param verifySuggestIncludes If true with verify, suggest include rules for human-written methods
+  */
+private[jacocomethodfilter] final case class CliConfig(
+  in: Path = Paths.get("target/scala-2.13/classes"),
+  out: Option[Path] = None,
+  globalRules: Option[String] = None,
+  localRules: Option[Path] = None,
+  dryRun: Boolean = false,
+  verify: Boolean = false,
+  verifySuggestIncludes: Boolean = false
+)
 
 object CoverageRewriter {
   private val AnnotationDesc = "Lio/moranaapps/jacocomethodfilter/CoverageGenerated;"
 
   def main(args: Array[String]): Unit = {
-    val parser = new OptionParser[CliConfig]("jacoco-method-filter") {
-      opt[String]("in")
-        .required()
-        .action((v, c) => c.copy(in = Paths.get(v)))
-        .text("Input classes directory")
-
-      opt[String]("out")
-        .optional()
-        .action((v, c) => c.copy(out = Some(Paths.get(v))))
-        .text("Output classes directory (required unless --verify is used)")
-
-      opt[String]("rules")
-        .optional()
-        .action((v, c) => c.copy(rules = Some(Paths.get(v))))
-        .text("Rules file path (legacy, use --global-rules or --local-rules instead)")
-
-      opt[String]("global-rules")
-        .optional()
-        .action((v, c) => c.copy(globalRules = Some(v)))
-        .text("Global rules file path or URL")
-
-      opt[String]("local-rules")
-        .optional()
-        .action((v, c) => c.copy(localRules = Some(Paths.get(v))))
-        .text("Local rules file path")
-
-      opt[Unit]("dry-run")
-        .action((_, c) => c.copy(dryRun = true))
-        .text("Only print matches; do not modify classes")
-
-      opt[Unit]("verify")
-        .action((_, c) => c.copy(verify = true))
-        .text("Read-only scan: list all methods that would be excluded by rules")
-
-      opt[Unit]("verify-suggest-includes")
-        .action((_, c) => c.copy(verifySuggestIncludes = true))
-        .text("When used with --verify, suggest include rules for likely human-written excluded methods")
-
-      checkConfig { cfg =>
-        if (!cfg.verify && cfg.out.isEmpty) {
-          failure("--out is required when not in verify mode")
-        } else if (cfg.rules.isEmpty && cfg.globalRules.isEmpty && cfg.localRules.isEmpty) {
-          failure("At least one of --rules, --global-rules, or --local-rules must be specified")
-        } else {
-          success
-        }
-      }
-    }
-
-    parser.parse(args, CliConfig()) match {
+    CoverageRewriterCli.parse(args) match {
       case Some(cfg) =>
-        if (cfg.verify) {
-          verify(cfg)
-        } else {
-          run(cfg)
-        }
-      case None      => sys.exit(2)
+        if (cfg.verify) verify(cfg) else run(cfg)
+      case None =>
+        sys.exit(2)
     }
   }
 
   private def run(cfg: CliConfig): Unit = {
-    val rules = Rules.loadAll(cfg.globalRules, cfg.localRules, cfg.rules)
+    val rules = Rules.loadAll(cfg.globalRules, cfg.localRules)
     
-    val rulesSummary = (cfg.globalRules, cfg.localRules, cfg.rules) match {
-      case (Some(g), Some(l), _) => s"global: $g, local: $l"
-      case (Some(g), None, _) => s"global: $g"
-      case (None, Some(l), _) => s"local: $l"
-      case (None, None, Some(r)) => s"legacy: $r"
-      case _ => "none"
+    val rulesSummary = (cfg.globalRules, cfg.localRules) match {
+      case (Some(g), Some(l)) => s"global: $g, local: $l"
+      case (Some(g), None)    => s"global: $g"
+      case (None, Some(l))    => s"local: $l"
+      case _                  => "none"
     }
     println(s"[info] Loaded ${rules.size} rule(s) from $rulesSummary")
 
-    val outPath = cfg.out.get // Safe because we validated it's present in main()
+    // Safe: CoverageRewriterCli.checkConfig ensures out.isDefined when !verify
+    val outPath = cfg.out.get
     Files.createDirectories(outPath)
     var files = 0
     var marked = 0
@@ -158,14 +114,13 @@ object CoverageRewriter {
   }
 
   private def verify(cfg: CliConfig): Unit = {
-    val rules = Rules.loadAll(cfg.globalRules, cfg.localRules, cfg.rules)
+    val rules = Rules.loadAll(cfg.globalRules, cfg.localRules)
     
-    val rulesSummary = (cfg.globalRules, cfg.localRules, cfg.rules) match {
-      case (Some(g), Some(l), _) => s"global: $g, local: $l"
-      case (Some(g), None, _) => s"global: $g"
-      case (None, Some(l), _) => s"local: $l"
-      case (None, None, Some(r)) => s"legacy: $r"
-      case _ => "none"
+    val rulesSummary = (cfg.globalRules, cfg.localRules) match {
+      case (Some(g), Some(l)) => s"global: $g, local: $l"
+      case (Some(g), None)    => s"global: $g"
+      case (None, Some(l))    => s"local: $l"
+      case _                  => "none"
     }
     
     println(s"[verify] Active rules from $rulesSummary:")
@@ -178,9 +133,8 @@ object CoverageRewriter {
       val flagsStr = if (rule.flags.nonEmpty) s" [${rule.flags.mkString(",")}]" else ""
       val sourceStr = rule.source match {
         case GlobalSource(origin) => s" [global: $origin]"
-        case LocalSource(path) => s" [local: $path]"
-        case LegacySource(path) if path.nonEmpty => s" [legacy: $path]"
-        case _ => ""
+        case LocalSource(path)    => s" [local: $path]"
+        case _                    => ""
       }
       println(s"[verify]   ${idx + 1}. [$modeStr] $idStr$flagsStr$sourceStr")
     }

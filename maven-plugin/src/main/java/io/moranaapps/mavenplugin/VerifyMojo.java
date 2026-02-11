@@ -104,7 +104,7 @@ public class VerifyMojo extends AbstractMojo {
         cmd.add("--in");
         cmd.add(inputDirectory.getAbsolutePath());
         
-        // Add rules configuration (priority: global/local > legacy)
+        // Add rules configuration (priority: global/local > rulesFile fallback)
         if (globalRules != null || localRules != null) {
             if (globalRules != null) {
                 cmd.add("--global-rules");
@@ -115,7 +115,7 @@ public class VerifyMojo extends AbstractMojo {
                 cmd.add(localRules.getAbsolutePath());
             }
         } else {
-            cmd.add("--rules");
+            cmd.add("--local-rules");
             cmd.add(rulesFile.getAbsolutePath());
         }
         

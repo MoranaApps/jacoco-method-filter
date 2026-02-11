@@ -68,7 +68,7 @@ info "$TEST_NAME — running CLI verify"
 OUTPUT=$(java -cp "$CP" io.moranaapps.jacocomethodfilter.CoverageRewriter \
   --verify \
   --in target/scala-2.12/classes \
-  --rules jmf-rules.txt 2>&1)
+  --local-rules jmf-rules.txt 2>&1)
 CLI_STATUS=$?
 
 echo "─── CLI verify output ───"

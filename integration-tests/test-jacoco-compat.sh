@@ -113,7 +113,7 @@ mkdir -p "$FILTERED_DIR"
 
 # Use sbt run to invoke the rewriter (most reliable approach)
 (cd "$REPO_ROOT" && sbt "project rewriterCore" \
-  "run --in $PROJECT_DIR/classes --out $PROJECT_DIR/$FILTERED_DIR --rules $PROJECT_DIR/jmf-rules.txt" \
+  "run --in $PROJECT_DIR/classes --out $PROJECT_DIR/$FILTERED_DIR --local-rules $PROJECT_DIR/jmf-rules.txt" \
   2>&1 | tee "$WORK_DIR/rewriter.log") || fail "$TEST_NAME — CoverageRewriter failed"
 
 assert_dir_not_empty "$FILTERED_DIR" "$TEST_NAME — filtered classes directory"
