@@ -6,15 +6,25 @@ import org.objectweb.asm._
 import java.nio.file.{Files, Path, Paths}
 import scala.collection.JavaConverters._
 
+/** Configuration for the jacoco-method-filter CLI.
+  *
+  * @param in Input classes directory to scan
+  * @param out Output classes directory (optional in verify mode)
+  * @param globalRules Global rules file path or URL (optional if localRules provided)
+  * @param localRules Local rules file path (optional if globalRules provided)
+  * @param dryRun If true, print matches without modifying classes
+  * @param verify If true, run read-only scan mode
+  * @param verifySuggestIncludes If true with verify, suggest include rules for human-written methods
+  */
 private[jacocomethodfilter] final case class CliConfig(
-                            in: Path   = Paths.get("target/scala-2.13/classes"),
-                            out: Option[Path]  = None,
-                            globalRules: Option[String] = None,
-                            localRules: Option[Path] = None,
-                            dryRun: Boolean = false,
-                            verify: Boolean = false,
-                            verifySuggestIncludes: Boolean = false
-                          )
+  in: Path = Paths.get("target/scala-2.13/classes"),
+  out: Option[Path] = None,
+  globalRules: Option[String] = None,
+  localRules: Option[Path] = None,
+  dryRun: Boolean = false,
+  verify: Boolean = false,
+  verifySuggestIncludes: Boolean = false
+)
 
 object CoverageRewriter {
   private val AnnotationDesc = "Lio/moranaapps/jacocomethodfilter/CoverageGenerated;"
@@ -39,7 +49,8 @@ object CoverageRewriter {
     }
     println(s"[info] Loaded ${rules.size} rule(s) from $rulesSummary")
 
-    val outPath = cfg.out.get // Safe because we validated it's present in main()
+    // Safe: CoverageRewriterCli.checkConfig ensures out.isDefined when !verify
+    val outPath = cfg.out.get
     Files.createDirectories(outPath)
     var files = 0
     var marked = 0
