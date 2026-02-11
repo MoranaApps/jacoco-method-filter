@@ -6,7 +6,7 @@ import org.objectweb.asm._
 import java.nio.file.{Files, Path, Paths}
 import scala.collection.JavaConverters._
 
-final case class CliConfig(
+private[jacocomethodfilter] final case class CliConfig(
                             in: Path   = Paths.get("target/scala-2.13/classes"),
                             out: Option[Path]  = None,
                             globalRules: Option[String] = None,

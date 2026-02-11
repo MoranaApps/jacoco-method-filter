@@ -10,10 +10,15 @@ import java.nio.file.Paths
   */
 private[jacocomethodfilter] object CoverageRewriterCli {
 
+  /** Parses command-line arguments into a validated CliConfig.
+    *
+    * @param args command-line arguments
+    * @return Some(config) if parsing succeeds, None if parsing fails or --help is used
+    */
   def parse(args: Array[String]): Option[CliConfig] =
     parser.parse(args, CliConfig())
 
-  private def parser: OptionParser[CliConfig] =
+  private lazy val parser: OptionParser[CliConfig] =
     new OptionParser[CliConfig]("jacoco-method-filter") {
       opt[String]("in")
         .required()
