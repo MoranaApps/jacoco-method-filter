@@ -151,6 +151,40 @@ class CoverageRewriterCliSpec extends AnyFunSuite {
     assert(result.isEmpty)
   }
 
+  test("parse should fail when --verify-suggest-includes is used without --verify") {
+    val inDir = newTempDir("jmf-in-")
+    val outDir = newTempDir("jmf-out-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--out", outDir.toString, "--global-rules", "rules.txt", "--verify-suggest-includes")
+    )
+    assert(result.isEmpty)
+  }
+
+  test("parse should succeed in verify mode with --out provided") {
+    val inDir = newTempDir("jmf-in-")
+    val outDir = newTempDir("jmf-out-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--out", outDir.toString, "--global-rules", "rules.txt", "--verify")
+    )
+    assert(result.isDefined)
+    assert(result.get.verify)
+    assert(result.get.out.contains(outDir))
+  }
+
+  test("parse should succeed with all valid rewrite flags") {
+    val inDir = newTempDir("jmf-in-")
+    val outDir = newTempDir("jmf-out-")
+    val localRules = newTempFile("jmf-rules-", ".txt")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--out", outDir.toString, "--global-rules", "global.txt", "--local-rules", localRules.toString, "--dry-run")
+    )
+    assert(result.isDefined)
+    assert(result.get.dryRun)
+    assert(result.get.globalRules.contains("global.txt"))
+    assert(result.get.localRules.contains(localRules))
+    assert(!result.get.verify)
+  }
+
   test("parse should handle empty args array") {
     val result = CoverageRewriterCli.parse(Array.empty)
     assert(result.isEmpty)

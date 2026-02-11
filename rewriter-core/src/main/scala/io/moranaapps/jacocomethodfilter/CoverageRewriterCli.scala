@@ -55,6 +55,8 @@ private[jacocomethodfilter] object CoverageRewriterCli {
       checkConfig { cfg =>
         if (!Files.isDirectory(cfg.in)) {
           failure("--in must exist and be a directory")
+        } else if (cfg.verifySuggestIncludes && !cfg.verify) {
+          failure("--verify-suggest-includes requires --verify")
         } else if (!cfg.verify && cfg.out.isEmpty) {
           failure("--out is required when not in verify mode")
         } else if (cfg.globalRules.isEmpty && cfg.localRules.isEmpty) {

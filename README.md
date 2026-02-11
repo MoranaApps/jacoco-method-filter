@@ -250,7 +250,7 @@ java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
 #### Suggest Include Rules
 
 When using broad exclusion rules, you might accidentally exclude hand-written methods.
-Use `--verify-suggest-includes` to get heuristic suggestions for include (rescue) rules:
+Use `--verify-suggest-includes` (requires `--verify`) to get heuristic suggestions for include (rescue) rules:
 
 **CLI:**
 
