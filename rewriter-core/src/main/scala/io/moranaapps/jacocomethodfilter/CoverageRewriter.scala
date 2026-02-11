@@ -2,7 +2,6 @@ package io.moranaapps.jacocomethodfilter
 
 import io.moranaapps.jacocomethodfilter.Compat.using
 import org.objectweb.asm._
-import scopt.OptionParser
 
 import java.nio.file.{Files, Path, Paths}
 import scala.collection.JavaConverters._
@@ -21,58 +20,11 @@ object CoverageRewriter {
   private val AnnotationDesc = "Lio/moranaapps/jacocomethodfilter/CoverageGenerated;"
 
   def main(args: Array[String]): Unit = {
-    val parser = new OptionParser[CliConfig]("jacoco-method-filter") {
-      opt[String]("in")
-        .required()
-        .action((v, c) => c.copy(in = Paths.get(v)))
-        .text("Input classes directory")
-
-      opt[String]("out")
-        .optional()
-        .action((v, c) => c.copy(out = Some(Paths.get(v))))
-        .text("Output classes directory (required unless --verify is used)")
-
-      opt[String]("global-rules")
-        .optional()
-        .action((v, c) => c.copy(globalRules = Some(v)))
-        .text("Global rules file path or URL")
-
-      opt[String]("local-rules")
-        .optional()
-        .action((v, c) => c.copy(localRules = Some(Paths.get(v))))
-        .text("Local rules file path")
-
-      opt[Unit]("dry-run")
-        .action((_, c) => c.copy(dryRun = true))
-        .text("Only print matches; do not modify classes")
-
-      opt[Unit]("verify")
-        .action((_, c) => c.copy(verify = true))
-        .text("Read-only scan: list all methods that would be excluded by rules")
-
-      opt[Unit]("verify-suggest-includes")
-        .action((_, c) => c.copy(verifySuggestIncludes = true))
-        .text("When used with --verify, suggest include rules for likely human-written excluded methods")
-
-      checkConfig { cfg =>
-        if (!cfg.verify && cfg.out.isEmpty) {
-          failure("--out is required when not in verify mode")
-        } else if (cfg.globalRules.isEmpty && cfg.localRules.isEmpty) {
-          failure("At least one of --global-rules or --local-rules must be specified")
-        } else {
-          success
-        }
-      }
-    }
-
-    parser.parse(args, CliConfig()) match {
+    CoverageRewriterCli.parse(args) match {
       case Some(cfg) =>
-        if (cfg.verify) {
-          verify(cfg)
-        } else {
-          run(cfg)
-        }
-      case None      => sys.exit(2)
+        if (cfg.verify) verify(cfg) else run(cfg)
+      case None =>
+        sys.exit(2)
     }
   }
 
