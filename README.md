@@ -173,6 +173,18 @@ jmfLocalRules := Some(baseDirectory.value / "jmf-local-rules.txt")
 
 **CLI:**
 
+#### CLI Flags Reference
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--in <dir>` | Yes | Input classes directory (must exist) |
+| `--out <dir>` | Unless `--verify` | Output classes directory |
+| `--global-rules <path\|url>` | At least one of `--global-rules` / `--local-rules` | Global rules file path or URL |
+| `--local-rules <path>` | At least one of `--global-rules` / `--local-rules` | Local rules file path |
+| `--dry-run` | No | Only print matches; do not modify classes |
+| `--verify` | No | Read-only scan: list all methods that would be excluded by rules |
+| `--verify-suggest-includes` | No (requires `--verify`) | Suggest include rules for likely human-written excluded methods |
+
 `--in` must exist and be a directory containing compiled `.class` files.
 
 In rewrite mode, `--out` is required (omit it only when using `--verify`).
