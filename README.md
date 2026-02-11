@@ -173,6 +173,8 @@ jmfLocalRules := Some(baseDirectory.value / "jmf-local-rules.txt")
 
 **CLI:**
 
+In rewrite mode, `--out` is required (omit it only when using `--verify`).
+
 ```bash
 java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
   --in target/classes \

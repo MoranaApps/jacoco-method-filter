@@ -32,13 +32,19 @@ object CoverageRewriter {
   def main(args: Array[String]): Unit = {
     CoverageRewriterCli.parse(args) match {
       case Some(cfg) =>
-        if (cfg.verify) verify(cfg) else run(cfg)
+        if (cfg.verify) verify(cfg)
+        else {
+          cfg.out match {
+            case Some(outPath) => run(cfg, outPath)
+            case None          => sys.exit(2)
+          }
+        }
       case None =>
         sys.exit(2)
     }
   }
 
-  private def run(cfg: CliConfig): Unit = {
+  private def run(cfg: CliConfig, outPath: Path): Unit = {
     val rules = Rules.loadAll(cfg.globalRules, cfg.localRules)
     
     val rulesSummary = (cfg.globalRules, cfg.localRules) match {
@@ -49,8 +55,6 @@ object CoverageRewriter {
     }
     println(s"[info] Loaded ${rules.size} rule(s) from $rulesSummary")
 
-    // Safe: CoverageRewriterCli.checkConfig ensures out.isDefined when !verify
-    val outPath = cfg.out.get
     Files.createDirectories(outPath)
     var files = 0
     var marked = 0
