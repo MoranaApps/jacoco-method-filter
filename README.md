@@ -173,6 +173,8 @@ jmfLocalRules := Some(baseDirectory.value / "jmf-local-rules.txt")
 
 **CLI:**
 
+`--in` must exist and be a directory containing compiled `.class` files.
+
 In rewrite mode, `--out` is required (omit it only when using `--verify`).
 
 ```bash

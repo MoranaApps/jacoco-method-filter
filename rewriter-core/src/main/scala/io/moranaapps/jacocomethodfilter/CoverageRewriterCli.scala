@@ -2,7 +2,7 @@ package io.moranaapps.jacocomethodfilter
 
 import scopt.OptionParser
 
-import java.nio.file.Paths
+import java.nio.file.{Files, Paths}
 
 /** CLI argument parser for CoverageRewriter. Separated from the main entry point
   * so that `main` stays focused on orchestration while parsing/validation logic
@@ -53,7 +53,9 @@ private[jacocomethodfilter] object CoverageRewriterCli {
         .text("When used with --verify, suggest include rules for likely human-written excluded methods")
 
       checkConfig { cfg =>
-        if (!cfg.verify && cfg.out.isEmpty) {
+        if (!Files.isDirectory(cfg.in)) {
+          failure("--in must exist and be a directory")
+        } else if (!cfg.verify && cfg.out.isEmpty) {
           failure("--out is required when not in verify mode")
         } else if (cfg.globalRules.isEmpty && cfg.localRules.isEmpty) {
           failure("At least one of --global-rules or --local-rules must be specified")
