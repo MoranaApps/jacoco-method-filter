@@ -137,7 +137,9 @@ Rewrites compiled class files to add `@CoverageGenerated` annotations to methods
 | `jmf.dryRun` | `boolean` | `false` | Dry run mode — no files modified. |
 | `jmf.skip` | `boolean` | `false` | Skip execution. |
 
-> **Note:** `globalRules` and `localRules` can be used together; global rules are loaded first, then local rules are appended. By default, `localRules` points to `jmf-rules.txt` in the project root.
+> **Note:** `globalRules` and `localRules` can be used together; global rules are loaded first,
+> then local rules are appended. By default, `localRules` points to `jmf-rules.txt` in the
+> project root.
 
 **Example (simple — uses default `jmf-rules.txt`):**
 
@@ -204,7 +206,8 @@ Generates JaCoCo HTML and XML reports using filtered classes.
 
 - `jmf.jacocoExecFile` - JaCoCo exec file (default: `${project.build.directory}/jacoco.exec`)
 - `jmf.classesDirectory` - Classes directory for report (default: `${project.build.directory}/classes-filtered`)
-- `jmf.sourceDirectories` - Source directories (default: derived from `project.getCompileSourceRoots()`, falls back to `src/main/java`)
+- `jmf.sourceDirectories` - Source directories (default: derived from `project.getCompileSourceRoots()`,
+  falls back to `src/main/java`)
 - `jmf.reportDirectory` - HTML report output (default: `${project.build.directory}/jacoco-report`)
 - `jmf.xmlOutputFile` - XML report output (default: `${project.build.directory}/jacoco.xml`)
 - `jmf.skip` - Skip execution (default: `false`)

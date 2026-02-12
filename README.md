@@ -119,7 +119,8 @@ and optional **flags/predicates**.
 
 By default, all rules are **exclusion rules** — they mark methods to be filtered from coverage.
 
-**Include rules** (whitelist) can override exclusions for specific methods. Prefix a rule with `+` to mark it as an inclusion:
+**Include rules** (whitelist) can override exclusions for specific methods.
+Prefix a rule with `+` to mark it as an inclusion:
 
 ```text
 # Exclude all companion object apply methods
@@ -319,7 +320,8 @@ addCommandAlias("jacoco", "; jacocoOn; clean; test; jacocoReportAll; jacocoOff")
 ```
 
 See [`sbt-plugin/README.md`](./sbt-plugin/README.md) for installation, available tasks, and settings.
-Examples: [`examples/sbt-basic/`](./examples/sbt-basic/) — run `./enable-plugin.sh` inside the example to activate the plugin, then `sbt jacoco`.
+Examples: [`examples/sbt-basic/`](./examples/sbt-basic/) — run `./enable-plugin.sh` inside the example
+to activate the plugin, then `sbt jacoco`.
 
 ---
 
@@ -334,13 +336,15 @@ mvn clean verify -Pcode-coverage
 
 See [`maven-plugin/README.md`](./maven-plugin/README.md) for installation, available goals,
 and parameters.
-Examples: [`examples/maven-basic/`](./examples/maven-basic/) (Java), [`examples/maven-scala/`](./examples/maven-scala/) (Scala)
+Examples: [`examples/maven-basic/`](./examples/maven-basic/) (Java),
+[`examples/maven-scala/`](./examples/maven-scala/) (Scala)
 
 ---
 
 ### Output Locations
 
-Both sbt and Maven integrations produce coverage artifacts in a standardized layout under your project's `target/` directory:
+Both sbt and Maven integrations produce coverage artifacts in a standardized layout under your
+project's `target/` directory:
 
 - **Filtered classes**: `target/classes-filtered` — Compiled classes with `@CoverageGenerated` annotations applied
 - **JaCoCo HTML report**: `target/jacoco-report/index.html` — Interactive HTML coverage report

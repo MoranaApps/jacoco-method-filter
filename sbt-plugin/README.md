@@ -103,7 +103,8 @@ sbt jacocoCleanAll    # all enabled modules
 ## Settings
 
 **Important:** you do not need to set any of these for the common case.
-If you keep a `jmf-rules.txt` file in the build root (or generate it via `jmfInitRules`) and only toggle `jacocoPluginEnabled`, the defaults are enough.
+If you keep a `jmf-rules.txt` file in the build root (or generate it via `jmfInitRules`) and only
+toggle `jacocoPluginEnabled`, the defaults are enough.
 Only configure the settings below when you want to:
 
 - load rules from a different location (or add a global rules source)
