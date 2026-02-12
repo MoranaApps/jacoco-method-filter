@@ -5,7 +5,7 @@ import sbtassembly.AssemblyPlugin.autoImport._
 ThisBuild / organization   := "io.github.moranaapps"
 ThisBuild / scalaVersion   := "2.12.21"             // default
 ThisBuild / crossScalaVersions := Seq("2.12.21")
-ThisBuild / version        := "1.2.0"
+ThisBuild / version        := "2.0.0"
 ThisBuild / versionScheme  := Some("early-semver")
 
 // Central (bundle flow)

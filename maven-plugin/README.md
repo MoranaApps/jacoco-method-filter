@@ -18,7 +18,7 @@ Maven plugin for filtering JaCoCo coverage by annotating methods based on config
 
 - Java 8 or higher
 - Maven 3.6 or higher
-- `jacoco-method-filter-core_2.12:1.2.0` dependency (automatically included)
+- `jacoco-method-filter-core_2.12:2.0.0` dependency (automatically included)
 - JaCoCo CLI 0.8.14 (automatically included)
 
 ## Implementation Details
@@ -60,7 +60,7 @@ Add to your `pom.xml` (recommended: inside a coverage profile):
         <plugin>
           <groupId>io.github.moranaapps</groupId>
           <artifactId>jacoco-method-filter-maven-plugin</artifactId>
-          <version>1.2.0</version>
+          <version>2.0.0</version>
           <executions>
             <execution>
               <goals>
@@ -145,7 +145,7 @@ Rewrites compiled class files to add `@CoverageGenerated` annotations to methods
 <plugin>
     <groupId>io.github.moranaapps</groupId>
     <artifactId>jacoco-method-filter-maven-plugin</artifactId>
-    <version>1.2.0</version>
+    <version>2.0.0</version>
     <executions>
         <execution>
             <goals>
@@ -162,7 +162,7 @@ Rewrites compiled class files to add `@CoverageGenerated` annotations to methods
 <plugin>
     <groupId>io.github.moranaapps</groupId>
     <artifactId>jacoco-method-filter-maven-plugin</artifactId>
-    <version>1.2.0</version>
+    <version>2.0.0</version>
     <configuration>
         <globalRules>https://example.com/team-rules.txt</globalRules>
         <localRules>${project.basedir}/jmf-rules.txt</localRules>

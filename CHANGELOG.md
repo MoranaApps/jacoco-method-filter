@@ -4,7 +4,7 @@ All notable user-facing changes to **jacoco-method-filter** are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] — 1.2.0
+## [Unreleased] — 2.0.0
 
 ### Added
 - **Include rules** — rescue specific methods from broad exclusions (`+include` mode).

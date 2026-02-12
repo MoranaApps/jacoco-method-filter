@@ -39,7 +39,7 @@ This uncomments the plugin dependency in `project/plugins.sbt` and the configura
 1. **Plugin Configuration** (`project/plugins.sbt`):
 
    ```scala
-   addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "1.2.0")
+   addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "2.0.0")
    ```
 
 2. **Build Configuration** (`build.sbt`):
