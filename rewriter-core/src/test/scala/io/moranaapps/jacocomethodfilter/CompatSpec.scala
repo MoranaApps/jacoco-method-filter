@@ -27,4 +27,44 @@ class CompatSpec extends AnyFunSuite {
       Compat.using[AutoCloseable, Int](throw new RuntimeException("creation failed"))(_ => 1)
     }
   }
+
+  test("RichJavaList.asScala converts java.util.List to mutable.Buffer") {
+    import Compat._
+    val jl = new java.util.ArrayList[String]()
+    jl.add("a")
+    jl.add("b")
+    jl.add("c")
+    val buf = jl.asScala
+    assert(buf.size == 3)
+    assert(buf(0) == "a")
+    assert(buf(1) == "b")
+    assert(buf(2) == "c")
+  }
+
+  test("RichJavaList.asScala handles empty list") {
+    import Compat._
+    val jl = new java.util.ArrayList[Int]()
+    val buf = jl.asScala
+    assert(buf.isEmpty)
+  }
+
+  test("RichJavaIterator.asScala converts java.util.Iterator to scala Iterator") {
+    import Compat._
+    val jl = new java.util.ArrayList[String]()
+    jl.add("x")
+    jl.add("y")
+    val it = jl.iterator().asScala
+    assert(it.hasNext)
+    assert(it.next() == "x")
+    assert(it.hasNext)
+    assert(it.next() == "y")
+    assert(!it.hasNext)
+  }
+
+  test("RichJavaIterator.asScala handles empty iterator") {
+    import Compat._
+    val jl = new java.util.ArrayList[String]()
+    val it = jl.iterator().asScala
+    assert(!it.hasNext)
+  }
 }

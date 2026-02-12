@@ -164,6 +164,91 @@ class RulesLoadSpec extends AnyFunSuite {
     assert(ex.getMessage.contains("Missing '#' separator"))
   }
 
+  test("parseLine throws on empty method name after #") {
+    val ex = intercept[IllegalArgumentException] {
+      Rules.parseLine("com.example.Foo#")
+    }
+    assert(ex.getMessage.contains("Missing method name after '#'"))
+  }
+
+  test("parseLine rejects regex selector for class") {
+    val ex = intercept[IllegalArgumentException] {
+      Rules.parseLine("re:^x\\.A$#foo")
+    }
+    assert(ex.getMessage.contains("Regex selectors are not supported for class"))
+  }
+
+  test("parseLine rejects regex selector for method") {
+    val ex = intercept[IllegalArgumentException] {
+      Rules.parseLine("x.A#re:^foo$")
+    }
+    assert(ex.getMessage.contains("Regex selectors are not supported for method"))
+  }
+
+  test("parseLine returns None for empty line") {
+    assert(Rules.parseLine("").isEmpty)
+  }
+
+  test("parseLine returns None for whitespace-only line") {
+    assert(Rules.parseLine("   ").isEmpty)
+  }
+
+  test("parseLine returns None for comment line") {
+    assert(Rules.parseLine("# this is a comment").isEmpty)
+  }
+
+  test("parseLine preserves source metadata") {
+    val source = GlobalSource("http://example.com/rules.txt")
+    val rule = Rules.parseLine("x.A#foo", source)
+    assert(rule.isDefined)
+    assert(rule.get.source == source)
+  }
+
+  test("loadAll sets GlobalSource for global rules and LocalSource for local rules") {
+    val globalFile = write(tmpFile("global-"), Seq("com.example.*#foo(*) id:gbl"))
+    val localFile = write(tmpFile("local-"), Seq("com.example.*#bar(*) id:lcl"))
+    val rules = Rules.loadAll(Some(globalFile.toString), Some(localFile))
+    assert(rules.size == 2)
+
+    val globalRule = rules.find(_.id.contains("gbl")).get
+    assert(globalRule.source.isInstanceOf[GlobalSource])
+    assert(globalRule.source.asInstanceOf[GlobalSource].origin == globalFile.toString)
+
+    val localRule = rules.find(_.id.contains("lcl")).get
+    assert(localRule.source.isInstanceOf[LocalSource])
+    assert(localRule.source.asInstanceOf[LocalSource].path == localFile.toString)
+  }
+
+  test("loadAll with no sources returns empty") {
+    val rules = Rules.loadAll(None, None)
+    assert(rules.isEmpty)
+  }
+
+  test("loadAll with only global source works") {
+    val globalFile = write(tmpFile("global-"), Seq("com.example.*#foo(*)"))
+    val rules = Rules.loadAll(Some(globalFile.toString), None)
+    assert(rules.size == 1)
+  }
+
+  test("loadAll with only local source works") {
+    val localFile = write(tmpFile("local-"), Seq("com.example.*#bar(*)"))
+    val rules = Rules.loadAll(None, Some(localFile))
+    assert(rules.size == 1)
+  }
+
+  test("load sets LocalSource with file path") {
+    val file = write(tmpFile("local-"), Seq("x.A#foo"))
+    val rules = Rules.load(file)
+    assert(rules.size == 1)
+    assert(rules.head.source.isInstanceOf[LocalSource])
+    assert(rules.head.source.asInstanceOf[LocalSource].path == file.toString)
+  }
+
+  test("parseLine with comma-separated flags") {
+    val rule = Rules.parseLine("x.A#foo public,static,synthetic").get
+    assert(rule.flags == Set("public", "static", "synthetic"))
+  }
+
   test("loadAll succeeds with valid files") {
     val globalFile = write(tmpFile("global-"), Seq("com.example.*#foo(*)"))
     val localFile = write(tmpFile("local-"), Seq("com.example.*#bar(*)"))
