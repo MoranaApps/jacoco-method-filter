@@ -131,7 +131,7 @@ object JacocoFilterPlugin extends AutoPlugin {
     ivyConfigurations += Jmf,
 
     jmfOutDir := target.value,
-    jmfRulesFile := (ThisBuild / baseDirectory).value / "jmf-rules.txt",
+    jmfLocalRulesFile := (ThisBuild / baseDirectory).value / "jmf-rules.txt",
     jmfGlobalRules := None,
     jmfLocalRules := None,
     jmfCliMain := "io.moranaapps.jacocomethodfilter.CoverageRewriter",
@@ -142,7 +142,7 @@ object JacocoFilterPlugin extends AutoPlugin {
 
     jmfInitRules := {
       val log = streams.value.log
-      val rulesFile = jmfRulesFile.value
+      val rulesFile = jmfLocalRulesFile.value
       val force = jmfInitRulesForce.value
       val template = jmfRulesTemplate.value
       
@@ -168,7 +168,7 @@ object JacocoFilterPlugin extends AutoPlugin {
     jmfVerify := {
       val _ = (Compile / compile).value
 
-      val rulesFile   = jmfRulesFile.value
+      val rulesFile   = jmfLocalRulesFile.value
       val globalRules = jmfGlobalRules.value
       val localRules  = jmfLocalRules.value
       val log         = streams.value.log
@@ -227,7 +227,7 @@ object JacocoFilterPlugin extends AutoPlugin {
     jmfRewrite := {
       val _ = (Compile / compile).value
 
-      val rulesFile   = jmfRulesFile.value
+      val rulesFile   = jmfLocalRulesFile.value
       val globalRules = jmfGlobalRules.value
       val localRules  = jmfLocalRules.value
       val log         = streams.value.log
