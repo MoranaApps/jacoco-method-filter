@@ -1,10 +1,9 @@
 package io.moranaapps.jacocomethodfilter
 
-import io.moranaapps.jacocomethodfilter.Compat.using
+import io.moranaapps.jacocomethodfilter.Compat._
 import org.objectweb.asm._
 
 import java.nio.file.{Files, Path}
-import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 sealed trait MethodOutcome

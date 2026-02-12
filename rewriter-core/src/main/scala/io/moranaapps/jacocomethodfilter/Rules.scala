@@ -5,7 +5,7 @@ import java.net.{HttpURLConnection, URL}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 import java.util.regex.Pattern
-import scala.collection.JavaConverters._
+import io.moranaapps.jacocomethodfilter.Compat._
 import org.objectweb.asm.Opcodes
 
 // --- Rule mode and source ---------------------------------------------------
