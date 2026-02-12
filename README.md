@@ -25,6 +25,7 @@ Minimum tested JaCoCo version: **0.8.7** (JaCoCo must be **≥ 0.8.2** to ignore
   - [With Maven](#with-maven)
   - [Output Locations](#output-locations)
   - [Customization](#customization)
+- [Changelog](CHANGELOG.md)
 - [License](#license)
 
 ---
