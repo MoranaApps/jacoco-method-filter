@@ -23,6 +23,8 @@ This project uses [Semantic Versioning](https://semver.org/).
 - Collection converters replaced with a cross-version compat shim (no more `JavaConverters` deprecation warnings on Scala 2.13).
 - Core library published for Scala 2.12 only (fat JAR with shaded ASM).
 - Standardized output directories across sbt and Maven plugins.
+- Updated ASM to **9.7.1** (supports JDK 24 class files; was 9.6 / JDK 22).
+- Integration tests for sbt examples use a dedicated CI fixture instead of `sed`-based uncommenting.
 
 ### Removed
 - `jmf.rulesFile` Maven property removed from `rewrite`, `verify`, and `init-rules` goals (use `jmf.localRules`).

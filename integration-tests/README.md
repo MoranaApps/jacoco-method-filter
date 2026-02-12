@@ -32,12 +32,13 @@ bash integration-tests/test-sbt-init-rules.sh
 ## Test Matrix
 
 | Script | What it verifies |
-|--------|-----------------|
+|--------|------------------|
 | `test-sbt-init-rules.sh` | `sbt jmfInitRules` creates `jmf-rules.txt` from scratch |
 | `test-mvn-init-rules.sh` | `mvn jacoco-method-filter:init-rules` creates `jmf-rules.txt` |
 | `test-sbt-verify.sh` | `sbt jmfVerify` shows methods that would be filtered (read-only scan) |
 | `test-mvn-verify.sh` | `mvn jacoco-method-filter:verify` shows methods that would be filtered |
 | `test-cli-verify.sh` | CLI `--verify` mode shows methods that would be filtered |
+| `test-cli-verify-suggest.sh` | CLI `--verify --verify-suggest-includes` emits heuristic rescue-rule suggestions |
 | `test-sbt-basic.sh` | `examples/sbt-basic` passes tests without filtering, then with filtering + report generation |
 | `test-maven-basic.sh` | `examples/maven-basic` (Java) passes tests without and with `-Pcode-coverage` |
 | `test-maven-scala.sh` | `examples/maven-scala` (Scala) passes tests without and with `-Pcode-coverage` |
@@ -50,6 +51,14 @@ bash integration-tests/test-sbt-init-rules.sh
 3. The test runs the build with and without coverage filtering
 4. Assertions check that expected outputs (rules files, reports, filtered classes) exist
 5. Temp directories are cleaned up automatically
+
+### sbt fixture
+
+The `examples/sbt-basic/` project ships with the plugin **commented out** so that
+cloning the repo does not trigger dependency resolution. Rather than using fragile
+`sed` edits to uncomment the plugin at test time, the sbt integration tests copy
+a dedicated CI fixture (`fixtures/sbt-basic/`) that has the plugin already enabled,
+then overlay the source and rules files from the example.
 
 ## CI Integration
 

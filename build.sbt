@@ -37,8 +37,8 @@ lazy val rewriterCore = (project in file("rewriter-core"))
     Compile / mainClass := Some("io.moranaapps.jacocomethodfilter.CoverageRewriter"),
 
     libraryDependencies ++= Seq(
-      "org.ow2.asm"            %  "asm"                      % "9.6",
-      "org.ow2.asm"            %  "asm-commons"              % "9.6",
+      "org.ow2.asm"            %  "asm"                      % "9.7.1",
+      "org.ow2.asm"            %  "asm-commons"              % "9.7.1",
       "com.github.scopt"       %% "scopt"                    % "3.7.1",
       "org.scalatest"          %% "scalatest"                % "3.1.4" % Test
     ),

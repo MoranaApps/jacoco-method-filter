@@ -9,15 +9,12 @@ source "$(dirname "$0")/helpers.sh"
 TEST_NAME="sbt-init-rules"
 info "Running: $TEST_NAME"
 
-# Copy the sbt-basic example into a temp dir and remove the existing rules file.
-cp -R "$REPO_ROOT/examples/sbt-basic" "$WORK_DIR/project"
-rm -f "$WORK_DIR/project/jmf-rules.txt"
+# Use the CI fixture (plugin already enabled) + overlay source from the example.
+cp -R "$REPO_ROOT/integration-tests/fixtures/sbt-basic" "$WORK_DIR/project"
+cp -R "$REPO_ROOT/examples/sbt-basic/src" "$WORK_DIR/project/src"
+# Intentionally do NOT copy jmf-rules.txt — the test creates it from scratch.
 
 cd "$WORK_DIR/project"
-
-# Enable the plugin (commented out in the example by default).
-sed -i.bak 's|^// addSbtPlugin|addSbtPlugin|' project/plugins.sbt
-sed -i.bak 's|^  // \.enablePlugins|  .enablePlugins|' build.sbt
 
 # Run jmfInitRules — should create jmf-rules.txt
 run_cmd "$TEST_NAME — sbt jmfInitRules" sbt jmfInitRules
