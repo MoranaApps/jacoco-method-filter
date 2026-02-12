@@ -9,12 +9,11 @@ source "$(dirname "$0")/helpers.sh"
 TEST_NAME="sbt-verify"
 info "Running: $TEST_NAME"
 
-cp -R "$REPO_ROOT/examples/sbt-basic" "$WORK_DIR/project"
+# Use the CI fixture (plugin already enabled) + overlay source/rules from the example.
+cp -R "$REPO_ROOT/integration-tests/fixtures/sbt-basic" "$WORK_DIR/project"
+cp -R "$REPO_ROOT/examples/sbt-basic/src" "$WORK_DIR/project/src"
+cp    "$REPO_ROOT/examples/sbt-basic/jmf-rules.txt" "$WORK_DIR/project/"
 cd "$WORK_DIR/project"
-
-# Enable the plugin (commented out in the example by default).
-sed -i.bak 's|^// addSbtPlugin|addSbtPlugin|' project/plugins.sbt
-sed -i.bak 's|^  // \.enablePlugins|  .enablePlugins|' build.sbt
 
 # Run jmfVerify task — capture output for assertions
 info "$TEST_NAME — running sbt jmfVerify"

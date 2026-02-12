@@ -7,4 +7,4 @@
 // your build to the local version.)
 //
 // See `examples/sbt-basic/README.md` for the recommended workflow.
-// addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "1.2.0")
+// addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "2.0.0")

@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# Test: CLI --verify mode — read-only scan shows methods that would be filtered.
+# Test: CLI --verify --verify-suggest-includes produces suggestions.
+#
+# Asserts that:
+#   1. The suggestions section appears in the output.
+#   2. At least one "+<class>#<method>(*)" suggestion line is emitted.
+#   3. The heuristic NOTE footer is present.
 #
 # Prerequisite: rewriter-core published locally.
 # ---------------------------------------------------------------------------
 source "$(dirname "$0")/helpers.sh"
 
-TEST_NAME="cli-verify"
+TEST_NAME="cli-verify-suggest-includes"
 info "Running: $TEST_NAME"
 
 # Use the CI fixture (plugin already enabled) + overlay source/rules from the example.
@@ -25,16 +30,12 @@ run_cmd "$TEST_NAME — exporting classpath" sbt "export runtime:dependencyClass
 assert_dir_not_empty "target/scala-2.12/classes" \
   "$TEST_NAME — compiled classes exist"
 
-# Get the classpath for the CLI
-# Use Coursier cache (modern sbt default) + macOS location fallback
-# Dynamically find latest version instead of hardcoding
+# ── Locate JARs for CLI invocation ──────────────────────────────────────────
 
-# Find core JAR - use stat for cross-platform timestamp comparison
 CORE_JAR=$(
   find ~/.ivy2/local/io.github.moranaapps/jacoco-method-filter-core_2.12 \
     -name "jacoco-method-filter-core_2.12.jar" 2>/dev/null | \
   while IFS= read -r f; do
-    # stat -c %Y for GNU, stat -f %m for BSD/macOS
     timestamp=$(stat -c %Y "$f" 2>/dev/null || stat -f %m "$f" 2>/dev/null)
     printf '%s\t%s\n' "$timestamp" "$f"
   done | \
@@ -59,53 +60,53 @@ if [[ -z "$SCOPT_JAR" || ! -f "$SCOPT_JAR" ]]; then
   fail "$TEST_NAME — scopt JAR not found in Coursier cache"
 fi
 
-# Build classpath, only include ASM_COMMONS if it exists
 CP="$CORE_JAR:$SCALA_LIB:$ASM_JAR:$SCOPT_JAR"
 if [[ -n "$ASM_COMMONS_JAR" && -f "$ASM_COMMONS_JAR" ]]; then
   CP="$CP:$ASM_COMMONS_JAR"
 fi
 
-# Run CLI verify mode
-info "$TEST_NAME — running CLI verify"
+# ── Run CLI with --verify --verify-suggest-includes ─────────────────────────
+
+info "$TEST_NAME — running CLI verify with suggest-includes"
 OUTPUT=$(java -cp "$CP" io.moranaapps.jacocomethodfilter.CoverageRewriter \
   --verify \
+  --verify-suggest-includes \
   --in target/scala-2.12/classes \
   --local-rules jmf-rules.txt 2>&1)
 CLI_STATUS=$?
 
-echo "─── CLI verify output ───"
+echo "─── CLI verify-suggest-includes output ───"
 echo "$OUTPUT"
-echo "─── end CLI verify output ───"
+echo "─── end CLI verify-suggest-includes output ───"
 
 if [[ $CLI_STATUS -ne 0 ]]; then
-  fail "$TEST_NAME — CLI verify exited with status $CLI_STATUS"
+  fail "$TEST_NAME — CLI exited with status $CLI_STATUS"
 fi
 
-# Check that output contains expected markers
+# ── Assertions ──────────────────────────────────────────────────────────────
+
+# Basic verify markers must still be present
 echo "$OUTPUT" | grep -q "\[verify\]" || \
   fail "$TEST_NAME — output missing [verify] prefix"
 
-echo "$OUTPUT" | grep -q "Active rules" || \
-  fail "$TEST_NAME — output missing 'Active rules'"
+echo "$OUTPUT" | grep -q "Verification complete\|Summary:" || \
+  fail "$TEST_NAME — output missing completion marker"
 
-echo "$OUTPUT" | grep -q "Verification complete" || \
-  fail "$TEST_NAME — output missing 'Verification complete'"
+# The "Suggested include rules" header must appear
+echo "$OUTPUT" | grep -q "Suggested include rules" || \
+  fail "$TEST_NAME — output missing 'Suggested include rules' section"
 
-# Check that it mentions scanning class files
-echo "$OUTPUT" | grep -q "scanned [0-9]* class file" || \
-  fail "$TEST_NAME — output missing scan summary"
+# At least one suggestion line matching the pattern +<class>#<method>(*)
+echo "$OUTPUT" | grep -qE '^\[verify\]   \+[a-zA-Z0-9_.]+#[a-zA-Z0-9_]+\(\*\)' || \
+  fail "$TEST_NAME — output missing suggestion lines (+class#method(*))"
 
-# Calculator (case class) should appear — it has boilerplate methods matching rules
-echo "$OUTPUT" | grep -q "example.Calculator" || \
-  fail "$TEST_NAME — output should mention Calculator (has matched methods)"
+# The heuristic note must appear
+echo "$OUTPUT" | grep -q "heuristic" || \
+  fail "$TEST_NAME — output missing heuristic note"
 
-# StringFormatter (plain class) should NOT appear — none of its methods match rules
-if echo "$OUTPUT" | grep -q "StringFormatter"; then
-  fail "$TEST_NAME — output should NOT mention StringFormatter (no methods match rules)"
-fi
-
-# Verify that no output directory was created (read-only mode)
-[[ ! -d "target/classes-filtered" ]] || \
-  fail "$TEST_NAME — verify should not create output directory"
+# Calculator's excluded methods (e.g. equals, hashCode, toString, copy) should
+# produce suggestions because MethodClassifier considers them PossiblyHuman.
+echo "$OUTPUT" | grep -q "Calculator" || \
+  fail "$TEST_NAME — output should mention Calculator in suggestions"
 
 pass "$TEST_NAME"

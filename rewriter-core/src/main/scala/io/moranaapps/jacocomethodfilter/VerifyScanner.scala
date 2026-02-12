@@ -1,10 +1,9 @@
 package io.moranaapps.jacocomethodfilter
 
-import io.moranaapps.jacocomethodfilter.Compat.using
+import io.moranaapps.jacocomethodfilter.Compat._
 import org.objectweb.asm._
 
 import java.nio.file.{Files, Path}
-import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 sealed trait MethodOutcome
@@ -29,25 +28,13 @@ final case class ScanResult(
   def excludedMethods: Seq[MatchedMethod] = matches.filter(_.outcome == Excluded)
   def rescuedMethods: Seq[MatchedMethod] = matches.filter(_.outcome == Rescued)
   
-  /**
-   * Emit a human-readable report of matched methods.
-   * Default behavior: print to standard output, no suggestions.
-   */
+  /** Print report to stdout, no suggestions. */
   def printReport(): Unit = printReport(println, suggestIncludes = false)
 
-  /**
-   * Emit a human-readable report of matched methods.
-   *
-   * @param out sink for each formatted output line
-   */
+  /** Print report without suggestions. */
   def printReport(out: String => Unit): Unit = printReport(out, suggestIncludes = false)
 
-  /**
-   * Emit a human-readable report of matched methods.
-   *
-   * @param out sink for each formatted output line
-   * @param suggestIncludes whether to suggest include rules for likely human-written excluded methods
-   */
+  /** Print a report of matched methods. */
   def printReport(out: String => Unit, suggestIncludes: Boolean): Unit = {
     // Print excluded methods
     val excluded = excludedMethods

@@ -9,13 +9,11 @@ source "$(dirname "$0")/helpers.sh"
 TEST_NAME="sbt-basic-example"
 info "Running: $TEST_NAME"
 
-cp -R "$REPO_ROOT/examples/sbt-basic" "$WORK_DIR/project"
+# Use the CI fixture (plugin already enabled) + overlay source/rules from the example.
+cp -R "$REPO_ROOT/integration-tests/fixtures/sbt-basic" "$WORK_DIR/project"
+cp -R "$REPO_ROOT/examples/sbt-basic/src" "$WORK_DIR/project/src"
+cp    "$REPO_ROOT/examples/sbt-basic/jmf-rules.txt" "$WORK_DIR/project/"
 cd "$WORK_DIR/project"
-
-# Enable the plugin and command aliases (they are commented out in the example by default).
-sed -i.bak 's|^// addSbtPlugin|addSbtPlugin|' project/plugins.sbt
-sed -i.bak 's|^  // \.enablePlugins|  .enablePlugins|' build.sbt
-sed -i.bak 's|^// addCommandAlias|addCommandAlias|' build.sbt
 
 # ── 1. Without filtering (plain test) ──────────────────────────────────────
 run_cmd "$TEST_NAME — sbt clean test (no filtering)" sbt clean test

@@ -8,10 +8,7 @@ case object PossiblyHuman extends MethodClassification
 
 object MethodClassifier {
   
-  /**
-   * Glob patterns for common compiler-generated method names.
-   * Used to identify synthetic/generated methods by name alone.
-   */
+  /** Compiler-generated method name patterns (glob). */
   val GeneratedNamePatterns: Seq[String] = Seq(
     "$anonfun$*",
     "lambda$*",

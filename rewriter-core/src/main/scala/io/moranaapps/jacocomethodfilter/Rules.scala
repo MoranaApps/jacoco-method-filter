@@ -1,12 +1,13 @@
 package io.moranaapps.jacocomethodfilter
 
+import io.moranaapps.jacocomethodfilter.Compat._
+import org.objectweb.asm.Opcodes
+
 import java.io.{BufferedReader, InputStreamReader}
 import java.net.{HttpURLConnection, URL}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 import java.util.regex.Pattern
-import scala.collection.JavaConverters._
-import org.objectweb.asm.Opcodes
 
 // --- Rule mode and source ---------------------------------------------------
 
@@ -69,8 +70,14 @@ object Rules {
     else descSel0
   }
 
+  /** Load rules from a local file.
+    *
+    * @throws java.nio.file.NoSuchFileException if the file does not exist
+    * @throws java.io.IOException on read failure
+    */
   def load(path: Path): Seq[MethodRule] = {
-    if (!Files.exists(path)) return Seq.empty
+    if (!Files.exists(path))
+      throw new java.nio.file.NoSuchFileException(path.toString, null, "Rules file not found")
     val lines = Files.readAllLines(path).asScala.toVector
     val source = LocalSource(path.toString)
     lines.flatMap(line => parseLine(line, source))
@@ -93,7 +100,10 @@ object Rules {
       if (firstWs < 0) (lineWithoutPrefix, "")
       else (lineWithoutPrefix.substring(0, firstWs), lineWithoutPrefix.substring(firstWs).trim)
 
-    val Array(clsSel, rest) = main.split("#", 2)
+    val parts = main.split("#", 2)
+    require(parts.length == 2, s"Missing '#' separator in rule: $raw")
+    val clsSel = parts(0)
+    val rest   = parts(1)
     require(rest.nonEmpty, s"Missing method name after '#': $raw")
 
     val idx = rest.indexOf('(')
@@ -254,7 +264,8 @@ object Rules {
   }
 
   private def loadFromPath(path: Path, ruleSource: RuleSource): Seq[MethodRule] = {
-    if (!Files.exists(path)) return Seq.empty
+    if (!Files.exists(path))
+      throw new java.nio.file.NoSuchFileException(path.toString, null, "Rules file not found")
     val lines = Files.readAllLines(path).asScala.toVector
     lines.flatMap(line => parseLine(line, ruleSource))
   }

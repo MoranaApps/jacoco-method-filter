@@ -10,6 +10,7 @@ Maven plugin for filtering JaCoCo coverage by annotating methods based on config
 - [Available Goals](#available-goals)
 - [Goal Details](#goal-details)
   - [`jacoco-method-filter:rewrite`](#jacoco-method-filterrewrite)
+  - [`jacoco-method-filter:verify`](#jacoco-method-filterverify)
   - [`jacoco-method-filter:report`](#jacoco-method-filterreport)
   - [`jacoco-method-filter:init-rules`](#jacoco-method-filterinit-rules)
 
@@ -17,7 +18,7 @@ Maven plugin for filtering JaCoCo coverage by annotating methods based on config
 
 - Java 8 or higher
 - Maven 3.6 or higher
-- `jacoco-method-filter-core_2.12:1.2.0` dependency (automatically included)
+- `jacoco-method-filter-core_2.12:2.0.0` dependency (automatically included)
 - JaCoCo CLI 0.8.14 (automatically included)
 
 ## Implementation Details
@@ -59,7 +60,7 @@ Add to your `pom.xml` (recommended: inside a coverage profile):
         <plugin>
           <groupId>io.github.moranaapps</groupId>
           <artifactId>jacoco-method-filter-maven-plugin</artifactId>
-          <version>1.2.0</version>
+          <version>2.0.0</version>
           <executions>
             <execution>
               <goals>
@@ -114,6 +115,7 @@ mvn clean verify -Pcode-coverage      # run tests with coverage filtering
 |------|-------------|
 | `init-rules` | Creates a default `jmf-rules.txt` file in the project root with sensible defaults |
 | `rewrite` | Rewrites compiled classes, applying the `@CoverageGenerated` annotation to matched methods |
+| `verify` | Scans compiled classes and reports which methods would be matched by the configured rules (read-only) |
 | `report` | Generates JaCoCo HTML/XML reports from the filtered classes and execution data |
 
 ## Goal Details
@@ -126,19 +128,26 @@ Rewrites compiled class files to add `@CoverageGenerated` annotations to methods
 
 **Parameters:**
 
-- `jmf.rulesFile` - Rules file path (default: `${project.basedir}/jmf-rules.txt`)
-- `jmf.inputDirectory` - Input classes directory (default: `${project.build.outputDirectory}`)
-- `jmf.outputDirectory` - Output classes directory (default: `${project.build.directory}/classes-filtered`)
-- `jmf.dryRun` - Dry run mode, no files modified (default: `false`)
-- `jmf.skip` - Skip execution (default: `false`)
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `jmf.globalRules` | `String` | — | Global rules source (path or URL). Can be combined with `localRules`. |
+| `jmf.localRules` | `File` | `${project.basedir}/jmf-rules.txt` | Local rules file. Can be combined with `globalRules`. |
+| `jmf.inputDirectory` | `File` | `${project.build.outputDirectory}` | Input classes directory. |
+| `jmf.outputDirectory` | `File` | `${project.build.directory}/classes-filtered` | Output classes directory. |
+| `jmf.dryRun` | `boolean` | `false` | Dry run mode — no files modified. |
+| `jmf.skip` | `boolean` | `false` | Skip execution. |
 
-**Example:**
+> **Note:** `globalRules` and `localRules` can be used together; global rules are loaded first,
+> then local rules are appended. By default, `localRules` points to `jmf-rules.txt` in the
+> project root.
+
+**Example (simple — uses default `jmf-rules.txt`):**
 
 ```xml
 <plugin>
     <groupId>io.github.moranaapps</groupId>
     <artifactId>jacoco-method-filter-maven-plugin</artifactId>
-    <version>1.2.0</version>
+    <version>2.0.0</version>
     <executions>
         <execution>
             <goals>
@@ -149,6 +158,46 @@ Rewrites compiled class files to add `@CoverageGenerated` annotations to methods
 </plugin>
 ```
 
+**Example (global + local rules):**
+
+```xml
+<plugin>
+    <groupId>io.github.moranaapps</groupId>
+    <artifactId>jacoco-method-filter-maven-plugin</artifactId>
+    <version>2.0.0</version>
+    <configuration>
+        <globalRules>https://example.com/team-rules.txt</globalRules>
+        <localRules>${project.basedir}/jmf-rules.txt</localRules>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>rewrite</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
+
+### `jacoco-method-filter:verify`
+
+Scans compiled classes and reports which methods would be matched by the configured rules without modifying any files.
+
+**Parameters:**
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `jmf.globalRules` | `String` | — | Global rules source (path or URL). Can be combined with `localRules`. |
+| `jmf.localRules` | `File` | `${project.basedir}/jmf-rules.txt` | Local rules file. Can be combined with `globalRules`. |
+| `jmf.inputDirectory` | `File` | `${project.build.outputDirectory}` | Input classes directory. |
+| `jmf.skip` | `boolean` | `false` | Skip execution. |
+
+**Example:**
+
+```bash
+mvn compile jacoco-method-filter:verify
+```
+
 ### `jacoco-method-filter:report`
 
 Generates JaCoCo HTML and XML reports using filtered classes.
@@ -157,7 +206,8 @@ Generates JaCoCo HTML and XML reports using filtered classes.
 
 - `jmf.jacocoExecFile` - JaCoCo exec file (default: `${project.build.directory}/jacoco.exec`)
 - `jmf.classesDirectory` - Classes directory for report (default: `${project.build.directory}/classes-filtered`)
-- `jmf.sourceDirectories` - Source directories (default: derived from `project.getCompileSourceRoots()`, falls back to `src/main/java`)
+- `jmf.sourceDirectories` - Source directories (default: derived from `project.getCompileSourceRoots()`,
+  falls back to `src/main/java`)
 - `jmf.reportDirectory` - HTML report output (default: `${project.build.directory}/jacoco-report`)
 - `jmf.xmlOutputFile` - XML report output (default: `${project.build.directory}/jacoco.xml`)
 - `jmf.skip` - Skip execution (default: `false`)
@@ -181,7 +231,7 @@ Creates a `jmf-rules.txt` file from template (manual invocation only).
 
 **Parameters:**
 
-- `jmf.rulesFile` - Target rules file (default: `${project.basedir}/jmf-rules.txt`)
+- `jmf.localRules` - Target rules file path (default: `${project.basedir}/jmf-rules.txt`)
 - `jmf.overwrite` - Overwrite existing file (default: `false`)
 
 **Example:**

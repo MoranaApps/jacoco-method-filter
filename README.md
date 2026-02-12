@@ -25,6 +25,7 @@ Minimum tested JaCoCo version: **0.8.7** (JaCoCo must be **≥ 0.8.2** to ignore
   - [With Maven](#with-maven)
   - [Output Locations](#output-locations)
   - [Customization](#customization)
+- [Changelog](CHANGELOG.md)
 - [License](#license)
 
 ---
@@ -118,7 +119,8 @@ and optional **flags/predicates**.
 
 By default, all rules are **exclusion rules** — they mark methods to be filtered from coverage.
 
-**Include rules** (whitelist) can override exclusions for specific methods. Prefix a rule with `+` to mark it as an inclusion:
+**Include rules** (whitelist) can override exclusions for specific methods.
+Prefix a rule with `+` to mark it as an inclusion:
 
 ```text
 # Exclude all companion object apply methods
@@ -172,6 +174,22 @@ jmfLocalRules := Some(baseDirectory.value / "jmf-local-rules.txt")
 ```
 
 **CLI:**
+
+#### CLI Flags Reference
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--in <dir>` | Yes | Input classes directory (must exist) |
+| `--out <dir>` | Unless `--verify` | Output classes directory |
+| `--global-rules <path\|url>` | At least one of `--global-rules` / `--local-rules` | Global rules file path or URL |
+| `--local-rules <path>` | At least one of `--global-rules` / `--local-rules` | Local rules file path |
+| `--dry-run` | No | Only print matches; do not modify classes |
+| `--verify` | No | Read-only scan: list all methods that would be excluded by rules |
+| `--verify-suggest-includes` | No (requires `--verify`) | Suggest include rules for likely human-written excluded methods |
+
+`--in` must exist and be a directory containing compiled `.class` files.
+
+In rewrite mode, `--out` is required (omit it only when using `--verify`).
 
 ```bash
 java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
@@ -246,7 +264,7 @@ java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
 #### Suggest Include Rules
 
 When using broad exclusion rules, you might accidentally exclude hand-written methods.
-Use `--verify-suggest-includes` to get heuristic suggestions for include (rescue) rules:
+Use `--verify-suggest-includes` (requires `--verify`) to get heuristic suggestions for include (rescue) rules:
 
 **CLI:**
 
@@ -302,7 +320,8 @@ addCommandAlias("jacoco", "; jacocoOn; clean; test; jacocoReportAll; jacocoOff")
 ```
 
 See [`sbt-plugin/README.md`](./sbt-plugin/README.md) for installation, available tasks, and settings.
-Examples: [`examples/sbt-basic/`](./examples/sbt-basic/)
+Examples: [`examples/sbt-basic/`](./examples/sbt-basic/) — run `./enable-plugin.sh` inside the example
+to activate the plugin, then `sbt jacoco`.
 
 ---
 
@@ -317,13 +336,15 @@ mvn clean verify -Pcode-coverage
 
 See [`maven-plugin/README.md`](./maven-plugin/README.md) for installation, available goals,
 and parameters.
-Examples: [`examples/maven-basic/`](./examples/maven-basic/) (Java), [`examples/maven-scala/`](./examples/maven-scala/) (Scala)
+Examples: [`examples/maven-basic/`](./examples/maven-basic/) (Java),
+[`examples/maven-scala/`](./examples/maven-scala/) (Scala)
 
 ---
 
 ### Output Locations
 
-Both sbt and Maven integrations produce coverage artifacts in a standardized layout under your project's `target/` directory:
+Both sbt and Maven integrations produce coverage artifacts in a standardized layout under your
+project's `target/` directory:
 
 - **Filtered classes**: `target/classes-filtered` — Compiled classes with `@CoverageGenerated` annotations applied
 - **JaCoCo HTML report**: `target/jacoco-report/index.html` — Interactive HTML coverage report

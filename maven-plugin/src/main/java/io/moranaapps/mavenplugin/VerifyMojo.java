@@ -22,13 +22,10 @@ public class VerifyMojo extends AbstractMojo {
     @Parameter(defaultValue = "${plugin}", readonly = true, required = true)
     private org.apache.maven.plugin.descriptor.PluginDescriptor pluginDescriptor;
 
-    @Parameter(property = "jmf.rulesFile", defaultValue = "${project.basedir}/jmf-rules.txt")
-    private File rulesFile;
-
     @Parameter(property = "jmf.globalRules")
     private String globalRules;
 
-    @Parameter(property = "jmf.localRules")
+    @Parameter(property = "jmf.localRules", defaultValue = "${project.basedir}/jmf-rules.txt")
     private File localRules;
 
     @Parameter(property = "jmf.inputDirectory", defaultValue = "${project.build.outputDirectory}")
@@ -56,13 +53,12 @@ public class VerifyMojo extends AbstractMojo {
     private void checkInputs() throws MojoExecutionException {
         StringBuilder errors = new StringBuilder();
         
-        boolean hasRulesConfig = (rulesFile != null && rulesFile.exists()) || 
-                                 (globalRules != null && !globalRules.trim().isEmpty()) || 
+        boolean hasRulesConfig = (globalRules != null && !globalRules.trim().isEmpty()) || 
                                  (localRules != null && localRules.exists());
         
         if (!hasRulesConfig) {
             errors.append("\n  - Rules configuration missing");
-            if (rulesFile != null) errors.append(" at: ").append(rulesFile.getAbsolutePath());
+            if (localRules != null) errors.append(" at: ").append(localRules.getAbsolutePath());
             errors.append("\n    Solution: execute 'mvn ")
                   .append(pluginDescriptor.getGroupId())
                   .append(":")
@@ -88,7 +84,7 @@ public class VerifyMojo extends AbstractMojo {
         
         getLog().info("╔═══ JaCoCo Method Filter: Verify Rules Impact ═══");
         getLog().info("║ Classes:     " + inputDirectory.getAbsolutePath());
-        getLog().info("║ Rules:       " + rulesFile.getAbsolutePath());
+        logRulesConfig();
         getLog().info("╚══════════════════════════════════════════════════");
 
         launchSubprocess(command);
@@ -104,19 +100,13 @@ public class VerifyMojo extends AbstractMojo {
         cmd.add("--in");
         cmd.add(inputDirectory.getAbsolutePath());
         
-        // Add rules configuration (priority: global/local > rulesFile fallback)
-        if (globalRules != null || localRules != null) {
-            if (globalRules != null) {
-                cmd.add("--global-rules");
-                cmd.add(globalRules);
-            }
-            if (localRules != null) {
-                cmd.add("--local-rules");
-                cmd.add(localRules.getAbsolutePath());
-            }
-        } else {
+        if (globalRules != null) {
+            cmd.add("--global-rules");
+            cmd.add(globalRules);
+        }
+        if (localRules != null) {
             cmd.add("--local-rules");
-            cmd.add(rulesFile.getAbsolutePath());
+            cmd.add(localRules.getAbsolutePath());
         }
         
         return cmd;
@@ -188,6 +178,15 @@ public class VerifyMojo extends AbstractMojo {
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
             throw new MojoExecutionException("Process interrupted", ex);
+        }
+    }
+
+    private void logRulesConfig() {
+        if (globalRules != null) {
+            getLog().info("║ Global:     " + globalRules);
+        }
+        if (localRules != null) {
+            getLog().info("║ Local:      " + localRules.getAbsolutePath());
         }
     }
 

@@ -67,6 +67,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y maven
       - name: Integration tests
+        # Publishes rewriter-core, sbt-plugin, and maven-plugin locally, then
+        # runs all test-*.sh scripts end-to-end (no remote resolution).
+        # sbt plugin path: publishLocal → init-rules / verify / basic (compile+rewrite+test+report)
         run: ./integration-tests/run-all.sh
 
   jacoco-compat:

@@ -10,3 +10,8 @@ import java.lang.annotation._
 @Retention(RetentionPolicy.CLASS)
 @Target(Array(ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR))
 final class CoverageGenerated extends scala.annotation.StaticAnnotation
+
+object CoverageGenerated {
+  /** JVM type-descriptor for the annotation, used by the bytecode rewriter. */
+  val AnnotationDescriptor: String = "Lio/moranaapps/jacocomethodfilter/CoverageGenerated;"
+}

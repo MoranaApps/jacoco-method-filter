@@ -5,7 +5,7 @@ import sbtassembly.AssemblyPlugin.autoImport._
 ThisBuild / organization   := "io.github.moranaapps"
 ThisBuild / scalaVersion   := "2.12.21"             // default
 ThisBuild / crossScalaVersions := Seq("2.12.21")
-ThisBuild / version        := "1.2.0"
+ThisBuild / version        := "2.0.0"
 ThisBuild / versionScheme  := Some("early-semver")
 
 // Central (bundle flow)
@@ -37,8 +37,8 @@ lazy val rewriterCore = (project in file("rewriter-core"))
     Compile / mainClass := Some("io.moranaapps.jacocomethodfilter.CoverageRewriter"),
 
     libraryDependencies ++= Seq(
-      "org.ow2.asm"            %  "asm"                      % "9.6",
-      "org.ow2.asm"            %  "asm-commons"              % "9.6",
+      "org.ow2.asm"            %  "asm"                      % "9.7.1",
+      "org.ow2.asm"            %  "asm-commons"              % "9.7.1",
       "com.github.scopt"       %% "scopt"                    % "3.7.1",
       "org.scalatest"          %% "scalatest"                % "3.1.4" % Test
     ),

@@ -18,15 +18,15 @@ public class InitRulesMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
     private MavenProject project;
 
-    @Parameter(property = "jmf.rulesFile", defaultValue = "${project.basedir}/jmf-rules.txt")
-    private File rulesFile;
+    @Parameter(property = "jmf.localRules", defaultValue = "${project.basedir}/jmf-rules.txt")
+    private File localRules;
 
     @Parameter(property = "jmf.overwrite", defaultValue = "false")
     private boolean overwrite;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
-        if (rulesFile.exists() && !overwrite) {
-            getLog().info("Rules file exists: " + rulesFile.getAbsolutePath());
+        if (localRules.exists() && !overwrite) {
+            getLog().info("Rules file exists: " + localRules.getAbsolutePath());
             getLog().info("To replace, use: -Djmf.overwrite=true");
             return;
         }
@@ -37,10 +37,10 @@ public class InitRulesMojo extends AbstractMojo {
     private void createRulesFile() throws MojoExecutionException {
         File templateRef = new File(project.getBasedir(), "jmf-rules.template.txt");
         
-        getLog().info("Generating rules file: " + rulesFile.getAbsolutePath());
+        getLog().info("Generating rules file: " + localRules.getAbsolutePath());
         
         // Ensure parent directory exists
-        File parentDir = rulesFile.getParentFile();
+        File parentDir = localRules.getParentFile();
         if (parentDir != null && !parentDir.exists()) {
             try {
                 Files.createDirectories(parentDir.toPath());
@@ -51,7 +51,7 @@ public class InitRulesMojo extends AbstractMojo {
         
         try {
             if (templateRef.exists()) {
-                Files.copy(templateRef.toPath(), rulesFile.toPath(), 
+                Files.copy(templateRef.toPath(), localRules.toPath(), 
                           StandardCopyOption.REPLACE_EXISTING);
                 getLog().info("Rules file created from project template");
             } else {
@@ -59,7 +59,7 @@ public class InitRulesMojo extends AbstractMojo {
                 try (InputStream in = InitRulesMojo.class.getClassLoader()
                         .getResourceAsStream("jmf-rules.template.txt")) {
                     if (in != null) {
-                        Files.copy(in, rulesFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        Files.copy(in, localRules.toPath(), StandardCopyOption.REPLACE_EXISTING);
                         getLog().info("Rules file created from bundled template");
                     } else {
                         getLog().warn("No rules template found in project or plugin resources");
@@ -88,7 +88,7 @@ public class InitRulesMojo extends AbstractMojo {
                            "#\n" +
                            "# Project-specific rules:\n\n";
         
-        try (FileOutputStream out = new FileOutputStream(rulesFile)) {
+        try (FileOutputStream out = new FileOutputStream(localRules)) {
             out.write(basicRules.getBytes(StandardCharsets.UTF_8));
         }
     }

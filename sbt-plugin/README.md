@@ -34,7 +34,7 @@ The plugin executes the coverage flow by:
 Add to `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "1.2.0")
+addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "2.0.0")
 ```
 
 Enable the plugin in your `build.sbt`:
@@ -102,13 +102,56 @@ sbt jacocoCleanAll    # all enabled modules
 
 ## Settings
 
+**Important:** you do not need to set any of these for the common case.
+If you keep a `jmf-rules.txt` file in the build root (or generate it via `jmfInitRules`) and only
+toggle `jacocoPluginEnabled`, the defaults are enough.
+Only configure the settings below when you want to:
+
+- load rules from a different location (or add a global rules source)
+- change output locations
+- run in dry-run mode
+
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `jacocoPluginEnabled` | `Boolean` | `false` | Enable/disable the plugin for this module |
-| `jmfRulesFile` | `File` | `jmf-rules.txt` | Fallback path to the rules file (used when `jmfGlobalRules` and `jmfLocalRules` are not set) |
+| `jmfGlobalRules` | `Option[String]` | `None` | Global rules source (URL or file path). Loaded when defined. Note: URLs require network access. |
+| `jmfLocalRules` | `Option[File]` | `None` | Local rules file. Loaded when defined. |
+| `jmfLocalRulesFile` | `File` | `jmf-rules.txt` | Fallback local rules file used only when both `jmfGlobalRules` and `jmfLocalRules` are `None` |
 | `jmfDryRun` | `Boolean` | `false` | Dry run mode - logs matches without modifying classes |
-| `jmfOutputDirectory` | `File` | `target/classes-filtered` | Output directory for filtered classes |
-| `jacocoReportDirectory` | `File` | `target/jacoco-report` | Output directory for JaCoCo reports |
+| `jmfOutDir` | `File` | `target` | Base output directory; filtered classes are written under `jmfOutDir / "classes-filtered"` |
+| `jacocoReportDir` | `File` | `target/jacoco-report` | Output directory for JaCoCo reports |
+
+### Examples
+
+Override the default fallback rules file location:
+
+```scala
+// build.sbt
+ThisBuild / jmfLocalRulesFile := (ThisBuild / baseDirectory).value / "config" / "jmf-rules.txt"
+```
+
+Load both a global rules file (path as a String) and a local rules file:
+
+```scala
+// build.sbt
+jmfGlobalRules := Some(((ThisBuild / baseDirectory).value / "rules" / "global-rules.txt").getAbsolutePath)
+jmfLocalRules  := Some((ThisBuild / baseDirectory).value / "rules" / "local-rules.txt")
+```
+
+Load global rules from a URL (requires network access):
+
+```scala
+// build.sbt
+jmfGlobalRules := Some("https://example.com/jmf-rules.txt")
+```
+
+Change output locations:
+
+```scala
+// build.sbt
+jmfOutDir := target.value / "jmf"
+jacocoReportDir := target.value / "coverage"
+```
 
 ## Output Locations
 

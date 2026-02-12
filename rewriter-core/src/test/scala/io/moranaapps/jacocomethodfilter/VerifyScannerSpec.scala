@@ -329,6 +329,157 @@ class VerifyScannerSpec extends AnyFunSuite {
     assert(!lines.exists(_.contains("Suggested include rules")))
   }
 
+  // --- ScanResult accessor tests ---
+
+  test("excludedMethods returns only Excluded outcomes") {
+    val matches = Seq(
+      MatchedMethod("a.B", "foo", "()V", Excluded, Seq("id1"), Seq.empty, Opcodes.ACC_PUBLIC),
+      MatchedMethod("a.B", "bar", "()V", Rescued, Seq("id2"), Seq("id3"), Opcodes.ACC_PUBLIC),
+      MatchedMethod("a.B", "baz", "()V", Excluded, Seq.empty, Seq.empty, Opcodes.ACC_PUBLIC)
+    )
+    val result = ScanResult(1, 3, matches)
+    val excluded = result.excludedMethods
+    assert(excluded.size == 2)
+    assert(excluded.forall(_.outcome == Excluded))
+    assert(excluded.map(_.methodName).toSet == Set("foo", "baz"))
+  }
+
+  test("rescuedMethods returns only Rescued outcomes") {
+    val matches = Seq(
+      MatchedMethod("a.B", "foo", "()V", Excluded, Seq("id1"), Seq.empty, Opcodes.ACC_PUBLIC),
+      MatchedMethod("a.B", "bar", "()V", Rescued, Seq("id2"), Seq("id3"), Opcodes.ACC_PUBLIC)
+    )
+    val result = ScanResult(1, 2, matches)
+    val rescued = result.rescuedMethods
+    assert(rescued.size == 1)
+    assert(rescued.head.methodName == "bar")
+    assert(rescued.head.outcome == Rescued)
+  }
+
+  test("excludedMethods and rescuedMethods return empty when no matches") {
+    val result = ScanResult(5, 0, Seq.empty)
+    assert(result.excludedMethods.isEmpty)
+    assert(result.rescuedMethods.isEmpty)
+  }
+
+  // --- printReport edge cases ---
+
+  test("printReport with empty matches shows only summary") {
+    val result = ScanResult(3, 0, Seq.empty)
+    val lines = scala.collection.mutable.ArrayBuffer[String]()
+    result.printReport(line => lines += line)
+
+    assert(!lines.exists(_.contains("EXCLUDED")))
+    assert(!lines.exists(_.contains("RESCUED")))
+    assert(lines.exists(_.contains("Summary")))
+    assert(lines.exists(_.contains("0 methods excluded, 0 methods rescued")))
+  }
+
+  test("printReport zero-arg overload works") {
+    // Just ensure the zero-arg overload doesn't throw
+    val result = ScanResult(0, 0, Seq.empty)
+    result.printReport()
+  }
+
+  test("printReport rescued method with no IDs shows (no-id)") {
+    val matches = Seq(
+      MatchedMethod("test.X", "run", "()V", Rescued, Seq.empty, Seq.empty, Opcodes.ACC_PUBLIC)
+    )
+    val result = ScanResult(1, 1, matches)
+    val lines = scala.collection.mutable.ArrayBuffer[String]()
+    result.printReport(line => lines += line)
+
+    assert(lines.exists(_.contains("RESCUED")))
+    val rescuedLine = lines.find(_.contains("#run")).get
+    assert(rescuedLine.contains("excl:(no-id)"))
+    assert(rescuedLine.contains("incl:(no-id)"))
+  }
+
+  test("printReport excluded methods are grouped and sorted by class") {
+    val matches = Seq(
+      MatchedMethod("z.B", "b", "()V", Excluded, Seq.empty, Seq.empty, Opcodes.ACC_PUBLIC),
+      MatchedMethod("a.A", "a", "()V", Excluded, Seq.empty, Seq.empty, Opcodes.ACC_PUBLIC),
+      MatchedMethod("a.A", "c", "()V", Excluded, Seq.empty, Seq.empty, Opcodes.ACC_PUBLIC)
+    )
+    val result = ScanResult(2, 3, matches)
+    val lines = scala.collection.mutable.ArrayBuffer[String]()
+    result.printReport(line => lines += line)
+
+    // a.A should appear before z.B
+    val classLines = lines.filter(l => l.contains("a.A") || l.contains("z.B"))
+    assert(classLines.size >= 2)
+    val aIdx = lines.indexWhere(_.contains("a.A"))
+    val zIdx = lines.indexWhere(_.contains("z.B"))
+    assert(aIdx < zIdx, "Classes should be sorted alphabetically")
+  }
+
+  test("printReport suggestIncludes with mix of human and generated methods") {
+    val matches = Seq(
+      MatchedMethod("com.example.Svc", "process", "()V", Excluded, Seq.empty, Seq.empty, Opcodes.ACC_PUBLIC),
+      MatchedMethod("com.example.Svc", "$anonfun$apply$1", "()V", Excluded, Seq.empty, Seq.empty, Opcodes.ACC_PUBLIC),
+      MatchedMethod("com.example.Svc", "handle", "()V", Excluded, Seq.empty, Seq.empty, Opcodes.ACC_PUBLIC)
+    )
+    val result = ScanResult(1, 3, matches)
+    val lines = scala.collection.mutable.ArrayBuffer[String]()
+    result.printReport(line => lines += line, suggestIncludes = true)
+
+    // Only process and handle should be suggested, not $anonfun$apply$1
+    assert(lines.exists(_.contains("+com.example.Svc#process(*)")))
+    assert(lines.exists(_.contains("+com.example.Svc#handle(*)")))
+    assert(!lines.exists(_.contains("+com.example.Svc#$anonfun$apply$1(*)")))
+  }
+
+  // --- VerifyScanner scan edge cases ---
+
+  test("scan with empty directory returns zero counts") {
+    val dir = Files.createTempDirectory("verify-empty-")
+    try {
+      val result = VerifyScanner.scan(dir, Seq.empty)
+      assert(result.classesScanned == 0)
+      assert(result.totalMatched == 0)
+      assert(result.matches.isEmpty)
+    } finally {
+      deleteRecursively(dir)
+    }
+  }
+
+  test("scan ignores non-class files") {
+    val dir = Files.createTempDirectory("verify-non-class-")
+    try {
+      Files.write(dir.resolve("readme.txt"), "not a class file".getBytes)
+      Files.write(dir.resolve("data.json"), "{}".getBytes)
+      val result = VerifyScanner.scan(dir, Seq.empty)
+      assert(result.classesScanned == 0)
+    } finally {
+      deleteRecursively(dir)
+    }
+  }
+
+  test("scan with multiple classes and matching rules") {
+    val dir = Files.createTempDirectory("verify-multi-")
+    try {
+      createTestClass(dir, "pkg.A", Seq(
+        ("copy", "()V", Opcodes.ACC_PUBLIC),
+        ("process", "()V", Opcodes.ACC_PUBLIC)
+      ))
+      createTestClass(dir, "pkg.B", Seq(
+        ("copy", "()V", Opcodes.ACC_PUBLIC)
+      ))
+
+      val rulesFile = tmpFile()
+      write(rulesFile, Seq("pkg.*#copy(*) id:copy-rule"))
+      val rules = Rules.load(rulesFile)
+
+      val result = VerifyScanner.scan(dir, rules)
+      assert(result.classesScanned == 2)
+      // copy in pkg.A + copy in pkg.B = 2 matches (constructors don't match)
+      assert(result.excludedMethods.size == 2)
+      assert(result.excludedMethods.forall(_.methodName == "copy"))
+    } finally {
+      deleteRecursively(dir)
+    }
+  }
+
   // Helper to delete directory recursively
   private def deleteRecursively(path: Path): Unit = {
     if (Files.exists(path)) {
