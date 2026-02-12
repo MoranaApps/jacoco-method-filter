@@ -133,4 +133,41 @@ class RulesLoadSpec extends AnyFunSuite {
       assert(r.mode == Exclude)
     }
   }
+
+  // --- Failure cases (leaf throws) ---
+
+  test("load throws NoSuchFileException on missing file") {
+    val missing = java.nio.file.Paths.get("/tmp/does-not-exist-rules-" + System.nanoTime() + ".txt")
+    intercept[java.nio.file.NoSuchFileException] {
+      Rules.load(missing)
+    }
+  }
+
+  test("loadAll throws NoSuchFileException when local rules file is missing") {
+    val missing = java.nio.file.Paths.get("/tmp/does-not-exist-local-" + System.nanoTime() + ".txt")
+    intercept[java.nio.file.NoSuchFileException] {
+      Rules.loadAll(None, Some(missing))
+    }
+  }
+
+  test("loadAll throws NoSuchFileException when global rules path is missing") {
+    val missing = "/tmp/does-not-exist-global-" + System.nanoTime() + ".txt"
+    intercept[java.nio.file.NoSuchFileException] {
+      Rules.loadAll(Some(missing), None)
+    }
+  }
+
+  test("parseLine throws on missing method separator") {
+    val ex = intercept[IllegalArgumentException] {
+      Rules.parseLine("com.example.Foo")
+    }
+    assert(ex.getMessage.contains("Missing '#' separator"))
+  }
+
+  test("loadAll succeeds with valid files") {
+    val globalFile = write(tmpFile("global-"), Seq("com.example.*#foo(*)"))
+    val localFile = write(tmpFile("local-"), Seq("com.example.*#bar(*)"))
+    val rules = Rules.loadAll(Some(globalFile.toString), Some(localFile))
+    assert(rules.size == 2)
+  }
 }

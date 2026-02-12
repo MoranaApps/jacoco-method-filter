@@ -16,7 +16,7 @@ import java.nio.file.{Files, Path, Paths}
   * @param verifySuggestIncludes If true with verify, suggest include rules for human-written methods
   */
 private[jacocomethodfilter] final case class CliConfig(
-  in: Path = Paths.get("target/scala-2.13/classes"),
+  in: Path = Paths.get("."),
   out: Option[Path] = None,
   globalRules: Option[String] = None,
   localRules: Option[Path] = None,
