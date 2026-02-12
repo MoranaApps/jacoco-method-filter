@@ -4,10 +4,7 @@ import scopt.OptionParser
 
 import java.nio.file.{Files, Paths}
 
-/** CLI argument parser for CoverageRewriter. Separated from the main entry point
-  * so that `main` stays focused on orchestration while parsing/validation logic
-  * is self-contained and independently testable.
-  */
+/** CLI argument parser for CoverageRewriter. */
 private[jacocomethodfilter] object CoverageRewriterCli {
 
   /** Parses command-line arguments into a validated CliConfig.
