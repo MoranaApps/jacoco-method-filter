@@ -23,7 +23,7 @@ This project uses [Semantic Versioning](https://semver.org/).
 - Maven plugin parameters aligned: `globalRules` / `localRules` replace the legacy `rulesFile` parameter.
 - `localRules` defaults to `${project.basedir}/jmf-rules.txt` (same behavior, consistent naming).
 - Collection converters replaced with a cross-version compat shim (no more `JavaConverters`
-	deprecation warnings on Scala 2.13).
+ deprecation warnings on Scala 2.13).
 - Core library published for Scala 2.12 only (fat JAR with shaded ASM).
 - Standardized output directories across sbt and Maven plugins.
 - Updated ASM to **9.7.1** (supports JDK 24 class files; was 9.6 / JDK 22).
@@ -75,4 +75,3 @@ This project uses [Semantic Versioning](https://semver.org/).
 [1.0.0]: https://github.com/MoranaApps/jacoco-method-filter/compare/v0.1.7...v1.0.0
 [0.1.7]: https://github.com/MoranaApps/jacoco-method-filter/compare/0.1.0...v0.1.7
 [0.1.0]: https://github.com/MoranaApps/jacoco-method-filter/releases/tag/0.1.0
-
