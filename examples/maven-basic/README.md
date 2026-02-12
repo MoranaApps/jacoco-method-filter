@@ -122,7 +122,7 @@ Without filtering (standard JaCoCo):
     <groupId>io.github.moranaapps</groupId>
     <artifactId>jacoco-method-filter-maven-plugin</artifactId>
     <configuration>
-        <rulesFile>${project.basedir}/custom-rules.txt</rulesFile>
+        <localRules>${project.basedir}/custom-rules.txt</localRules>
     </configuration>
 </plugin>
 ```
