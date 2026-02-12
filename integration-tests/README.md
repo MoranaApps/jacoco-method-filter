@@ -62,6 +62,17 @@ then overlay the source and rules files from the example.
 
 ## CI Integration
 
+The `integration` job in `.github/workflows/ci.yml` runs `./integration-tests/run-all.sh`,
+which publishes both the sbt plugin and Maven plugin locally (no remote resolution) and then
+exercises every `test-*.sh` script. This covers the full sbt plugin lifecycle end-to-end:
+
+- `publishLocal` → `test-sbt-init-rules.sh` (creates rules file)
+- `publishLocal` → `test-sbt-verify.sh` (read-only scan)
+- `publishLocal` → `test-sbt-basic.sh` (compile → rewrite → test → report)
+
+All tests are deterministic: they copy fixtures into temp directories, rely only on
+locally-published artifacts, and clean up on exit.
+
 Add to your CI workflow:
 
 ```yaml

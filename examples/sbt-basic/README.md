@@ -18,6 +18,24 @@ sbt-basic/
 
 ## Setup
 
+> **Safe by default**: The plugin dependency and build configuration are commented out so that
+> cloning or opening the repo never triggers remote resolution. Follow the single enable step
+> below to activate the plugin.
+
+### Enable the plugin
+
+Run the provided enable script from the example directory:
+
+```bash
+cd examples/sbt-basic
+./enable-plugin.sh
+```
+
+This uncomments the plugin dependency in `project/plugins.sbt` and the configuration in
+`build.sbt`. You can also enable manually — see below.
+
+### Manual enable steps
+
 1. **Plugin Configuration** (`project/plugins.sbt`):
 
    ```scala

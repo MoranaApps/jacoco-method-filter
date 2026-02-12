@@ -26,7 +26,7 @@ private[jacocomethodfilter] final case class CliConfig(
 )
 
 object CoverageRewriter {
-  private val AnnotationDesc = "Lio/moranaapps/jacocomethodfilter/CoverageGenerated;"
+  private val AnnotationDesc = CoverageGenerated.AnnotationDescriptor
 
   def main(args: Array[String]): Unit = {
     CoverageRewriterCli.parse(args) match {

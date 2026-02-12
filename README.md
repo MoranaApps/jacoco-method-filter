@@ -319,7 +319,7 @@ addCommandAlias("jacoco", "; jacocoOn; clean; test; jacocoReportAll; jacocoOff")
 ```
 
 See [`sbt-plugin/README.md`](./sbt-plugin/README.md) for installation, available tasks, and settings.
-Examples: [`examples/sbt-basic/`](./examples/sbt-basic/)
+Examples: [`examples/sbt-basic/`](./examples/sbt-basic/) — run `./enable-plugin.sh` inside the example to activate the plugin, then `sbt jacoco`.
 
 ---
 
