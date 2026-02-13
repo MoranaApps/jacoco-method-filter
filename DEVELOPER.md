@@ -49,11 +49,11 @@ Artifacts will appear in:
 ```scala
 // project/plugins.sbt
 resolvers += Resolver.defaultLocal
-addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "1.0.0")
+addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "2.0.0")
 
 // build.sbt
 enablePlugins(morana.coverage.JacocoFilterPlugin)
-libraryDependencies += "io.github.moranaapps" %% "jacoco-method-filter-core" % "1.0.0"
+libraryDependencies += "io.github.moranaapps" %% "jacoco-method-filter-core" % "2.0.0"
 ```
 
 #### Maven (local snapshot)
@@ -74,7 +74,7 @@ libraryDependencies += "io.github.moranaapps" %% "jacoco-method-filter-core" % "
   <dependency>
     <groupId>io.github.moranaapps</groupId>
     <artifactId>jacoco-method-filter-core_2.13</artifactId>
-    <version>1.0.0</version>
+    <version>2.0.0</version>
   </dependency>
 </dependencies>
 ```
