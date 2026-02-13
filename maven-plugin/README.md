@@ -217,8 +217,8 @@ Generates JaCoCo coverage reports (HTML, XML, CSV) using filtered classes.
 | `jmf.reportName` | `String` | `${project.name}` | Title used in the HTML report header |
 | `jmf.reportFormats` | `String` | `"html,xml,csv"` | Comma-separated list of report formats to generate (valid: `html`, `xml`, `csv`) |
 | `jmf.sourceEncoding` | `String` | `"UTF-8"` | Source file encoding for report generation |
-| `jmf.jacocoIncludes` | `String` | `"**"` | Colon-separated include patterns for JaCoCo report (JaCoCo syntax, e.g., `"com/example/**"`) |
-| `jmf.jacocoExcludes` | `String` | `""` | Colon-separated exclude patterns for JaCoCo report (JaCoCo syntax) |
+| `jmf.jacocoIncludes` | `String` | `"**"` | Colon-separated include patterns for JaCoCo report (JaCoCo syntax, e.g., `"com/example/**:org/test/**"`) |
+| `jmf.jacocoExcludes` | `String` | `""` | Colon-separated exclude patterns for JaCoCo report (JaCoCo syntax, e.g., `"**/*Test*:**/*Generated*"`) |
 | `jmf.skip` | `boolean` | `false` | Skip execution |
 | `jmf.skipIfExecMissing` | `boolean` | `true` | Skip if exec file missing |
 

@@ -184,8 +184,8 @@ public class ReportMojo extends AbstractMojo {
             cmd.add(sourceEncoding);
         }
         
-        // Add includes if provided and not default
-        if (jacocoIncludes != null && !jacocoIncludes.isEmpty() && !"**".equals(jacocoIncludes)) {
+        // Add includes if provided
+        if (jacocoIncludes != null && !jacocoIncludes.isEmpty()) {
             cmd.add("--includes");
             cmd.add(jacocoIncludes);
         }

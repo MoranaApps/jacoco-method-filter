@@ -118,7 +118,7 @@ Only configure the settings below when you want to:
 | `jacocoVersion` | `String` | `"0.8.14"` | JaCoCo version to use |
 | `jacocoExecFile` | `File` | `target/jacoco/jacoco.exec` | JaCoCo execution data file location |
 | `jacocoReportDir` | `File` | `target/jacoco-report` | Output directory for JaCoCo reports |
-| `jacocoReportName` | `String` | `"Report: <module> - scala:<version>"` | Title used for JaCoCo HTML report |
+| `jacocoReportName` | `String` | Derived from module ID and Scala version | Title used for JaCoCo HTML report |
 | `jacocoReportFormats` | `Set[String]` | `Set("html", "xml", "csv")` | Report formats to generate (valid: `html`, `xml`, `csv`) |
 | `jacocoSourceEncoding` | `String` | `"UTF-8"` | Source file encoding for report generation |
 | `jacocoIncludes` | `Seq[String]` | `Seq("**")` | Include patterns for coverage (JaCoCo syntax, e.g., `com/example/**`) |
