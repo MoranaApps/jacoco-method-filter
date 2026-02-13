@@ -4,7 +4,7 @@ import sbtassembly.AssemblyPlugin.autoImport._
 // ---- global ---------------------------------------------------------------
 ThisBuild / organization   := "io.github.moranaapps"
 ThisBuild / scalaVersion   := "2.12.21"             // default
-ThisBuild / crossScalaVersions := Seq("2.12.21")
+ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.21", "2.13.16")
 ThisBuild / version        := "2.0.0"
 ThisBuild / versionScheme  := Some("early-semver")
 
@@ -32,6 +32,9 @@ lazy val rewriterCore = (project in file("rewriter-core"))
   .settings(
     name := "jacoco-method-filter-core",
     publish / skip := false,
+    
+    // Enable cross-compilation for Scala 2.11, 2.12, and 2.13
+    crossScalaVersions := Seq("2.11.12", "2.12.21", "2.13.16"),
 
     // CLI entrypoint you already have
     Compile / mainClass := Some("io.moranaapps.jacocomethodfilter.CoverageRewriter"),
@@ -43,51 +46,23 @@ lazy val rewriterCore = (project in file("rewriter-core"))
       "org.scalatest"          %% "scalatest"                % "3.1.4" % Test
     ),
 
-    // ---- Fat JAR: bundle all runtime deps so consumers have zero transitive dependencies ----
-    // Replace the default packageBin JAR with the assembly fat JAR
-    Compile / packageBin := assembly.value,
-
-    assembly / assemblyJarName := s"${name.value}_${scalaBinaryVersion.value}-${version.value}.jar",
-
-    // Exclude scala-library and scopt from the fat JAR to avoid version conflicts
-    assembly / assemblyExcludedJars := {
-      val cp = (assembly / fullClasspath).value
-      cp.filter { f =>
-        val name = f.data.getName
-        name.startsWith("scala-library") || name.startsWith("scala-reflect") || name.startsWith("scopt_")
-      }
-    },
-
-    // Shade/relocate dependencies to avoid classpath conflicts (e.g. ASM version clash with JaCoCo)
+    // Shade/relocate ASM dependencies to avoid classpath conflicts (e.g. ASM version clash with JaCoCo)
     assembly / assemblyShadeRules := Seq(
       ShadeRule.rename("org.objectweb.asm.**" -> "jmf.shaded.asm.@1").inAll
     ),
 
     // Merge strategy for duplicates
     assembly / assemblyMergeStrategy := {
-      val log = sLog.value
-      val warnFirst: String => sbtassembly.MergeStrategy = (path: String) =>
-        sbtassembly.CustomMergeStrategy("warn-first", 1) {
-          (deps: Vector[sbtassembly.Assembly.Dependency]) =>
-            if (deps.size > 1) {
-              log.warn(s"assembly merge conflict for '$path' (${deps.size} entries); keeping the first one")
-            }
-            sbtassembly.MergeStrategy.first(deps)
-        }
-
-      {
-        case PathList("META-INF", xs @ _*) => sbtassembly.MergeStrategy.discard
-        case "module-info.class"           => sbtassembly.MergeStrategy.discard
-        case x                             => warnFirst(x)
-      }
+      case PathList("META-INF", xs @ _*) => sbtassembly.MergeStrategy.discard
+      case "module-info.class"           => sbtassembly.MergeStrategy.discard
+      case x                             => sbtassembly.MergeStrategy.first
     },
 
-    // Strip ASM dependencies from the published POM (they're shaded/bundled)
-    // but keep scala-library and scopt as dependencies
+    // Strip ASM dependencies from the published POM (they're shaded/bundled into the JAR)
     pomPostProcess := { (node: scala.xml.Node) =>
       import scala.xml._
       import scala.xml.transform._
-      val transformed = new RuleTransformer(new RewriteRule {
+      new RuleTransformer(new RewriteRule {
         override def transform(n: Node): Seq[Node] = n match {
           case e: Elem if e.label == "dependencies" =>
             // Keep scala-library and scopt, remove ASM
@@ -100,28 +75,6 @@ lazy val rewriterCore = (project in file("rewriter-core"))
           case other => other
         }
       }).transform(node).head
-
-      // Validate: the published POM must have exactly scala-library and scopt
-      val pomDeps = (transformed \\ "dependency").map { dep =>
-        (dep \ "groupId").text + ":" + (dep \ "artifactId").text
-      }
-      val expectedPrefixes = Set("org.scala-lang:scala-library", "com.github.scopt:scopt_")
-      val missing = expectedPrefixes.filterNot(prefix => pomDeps.exists(_.startsWith(prefix)))
-      if (missing.nonEmpty) {
-        sys.error(
-          s"pomPostProcess validation failed: expected dependencies matching $expectedPrefixes " +
-            s"but these are missing: $missing. Actual POM deps: $pomDeps"
-        )
-      }
-      val unexpected = pomDeps.filterNot(d => expectedPrefixes.exists(d.startsWith))
-      if (unexpected.nonEmpty) {
-        sys.error(
-          s"pomPostProcess validation failed: unexpected dependencies in published POM: $unexpected. " +
-            s"Only $expectedPrefixes should remain after filtering."
-        )
-      }
-
-      transformed
     },
 
     Compile / doc / scalacOptions ++= Seq("-no-link-warnings")

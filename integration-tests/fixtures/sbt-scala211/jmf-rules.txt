@@ -1,0 +1,9 @@
+# Test rules for Scala 2.11 integration test
+# Exclude synthetic methods
+*#* synthetic
+*#* bridge
+
+# Exclude compiler-generated methods
+*#$anonfun$*
+*#lambda$*
+*#$default$*

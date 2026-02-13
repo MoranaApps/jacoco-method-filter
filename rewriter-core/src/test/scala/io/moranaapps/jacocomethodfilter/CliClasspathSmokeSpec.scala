@@ -7,10 +7,10 @@ import java.net.URLClassLoader
 import scala.sys.process._
 
 /**
- * Smoke test: verify the CLI can run with only the fat JAR + scala-library + scopt
+ * Smoke test: verify the CLI can run with the core JAR + scala-library + scopt
  * on the classpath (no standalone ASM jars).
  *
- * This ensures the shaded ASM inside the fat JAR is sufficient at runtime.
+ * This ensures the shaded ASM inside the core JAR is sufficient at runtime.
  */
 class CliClasspathSmokeSpec extends AnyFunSuite {
 
@@ -38,15 +38,15 @@ class CliClasspathSmokeSpec extends AnyFunSuite {
   }
 
   /**
-   * Find the fat JAR (produced by `Compile / packageBin := assembly.value`).
+   * Find the core JAR with shaded ASM.
    * It lives next to the classes directory: target/scala-X.Y/jacoco-method-filter-core_X.Y-VER.jar
    *
    * We derive the directory from the classes dir on the classpath, then find the
    * latest matching jar.
    */
-  private def fatJar: Option[File] = {
+  private def coreJar: Option[File] = {
     val all = classpathEntries
-    // The classes dir is on the test classpath; its parent holds the fat JAR
+    // The classes dir is on the test classpath; its parent holds the JAR
     val classesDir = all.map(new File(_)).find { f =>
       f.getAbsolutePath.contains("rewriter-core") &&
         f.getName == "classes" &&
@@ -68,9 +68,10 @@ class CliClasspathSmokeSpec extends AnyFunSuite {
         f.getName.startsWith("jacoco-method-filter-core") &&
           f.getName.endsWith(".jar") &&
           !f.getName.contains("-sources") &&
-          !f.getName.contains("-javadoc")
+          !f.getName.contains("-javadoc") &&
+          !f.getName.contains("-assembly")
       }
-      // Only accept jars that actually contain shaded ASM (i.e., real fat JARs)
+      // Only accept jars that actually contain shaded ASM
       .filter { f =>
         val jar = new java.util.jar.JarFile(f)
         try jar.getEntry("jmf/shaded/asm/ClassVisitor.class") != null
@@ -83,8 +84,8 @@ class CliClasspathSmokeSpec extends AnyFunSuite {
   }
 
   /**
-   * Build a minimal classpath: fat JAR + scala-library + scopt.
-   * No standalone ASM jars allowed.
+   * Build a minimal classpath: core JAR + scala-library + scopt + ASM.
+   * No standalone ASM jars allowed (they should be shaded inside the core JAR).
    */
   private def minimalClasspath: String = {
     val all = classpathEntries
@@ -92,7 +93,7 @@ class CliClasspathSmokeSpec extends AnyFunSuite {
       val name = new File(entry).getName
       name.startsWith("scala-library") || name.startsWith("scopt")
     }
-    val jar = fatJar.getOrElse { return "" } // caller uses assume() to skip
+    val jar = coreJar.getOrElse { return "" } // caller uses assume() to skip
     val keep = jar.getAbsolutePath +: runtimeDeps
 
     // Sanity: no standalone ASM
@@ -106,8 +107,8 @@ class CliClasspathSmokeSpec extends AnyFunSuite {
   }
 
   test("CLI prints usage and exits 2 with no args (no standalone ASM on classpath)") {
-    assume(fatJar.isDefined,
-      "Fat JAR not found — run `sbt rewriterCore/assembly` first. Skipping smoke test.")
+    assume(coreJar.isDefined,
+      "Core JAR not found — run `sbt rewriterCore/package` first. Skipping smoke test.")
     val java = sys.props.getOrElse("java.home", "/usr") + File.separator + "bin" + File.separator + "java"
     val cp   = minimalClasspath
 

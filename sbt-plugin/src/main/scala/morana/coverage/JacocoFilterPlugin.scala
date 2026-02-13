@@ -110,13 +110,13 @@ object JacocoFilterPlugin extends AutoPlugin {
     libraryDependencies ++= Seq(
       ("org.jacoco" % "org.jacoco.agent" % jacocoVersion.value % Test).classifier("runtime"),
       ("org.jacoco" % "org.jacoco.cli" % jacocoVersion.value % Test).classifier("nodeps"),
-      "io.github.moranaapps" % "jacoco-method-filter-core_2.12" % jmfCoreVersion.value % Jmf.name
+      "io.github.moranaapps" %% "jacoco-method-filter-core" % jmfCoreVersion.value % Jmf.name
     ),
 
     jacocoSetUserDirToBuildRoot := true,
 
-    jacocoExecFile := target.value / "jacoco" / "jacoco.exec",
-    jacocoReportDir := target.value / "jacoco-report",
+    jacocoExecFile := crossTarget.value / "jacoco" / "jacoco.exec",
+    jacocoReportDir := crossTarget.value / "jacoco-report",
     jacocoIncludes := defaultIncludes,
     jacocoExcludes := defaultExcludes,
     jacocoAppend := false,
@@ -130,7 +130,7 @@ object JacocoFilterPlugin extends AutoPlugin {
     // --- JMF tool wiring
     ivyConfigurations += Jmf,
 
-    jmfOutDir := target.value,
+    jmfOutDir := crossTarget.value,
     jmfLocalRulesFile := (ThisBuild / baseDirectory).value / "jmf-rules.txt",
     jmfGlobalRules := None,
     jmfLocalRules := None,
@@ -175,10 +175,8 @@ object JacocoFilterPlugin extends AutoPlugin {
       val workDir     = baseDirectory.value
       val classesIn   = (Compile / classDirectory).value
 
-      val compileCp: Seq[File] = Attributed.data((Compile / fullClasspath).value)
       val jmfJars: Seq[File] = (Jmf / update).value.matching(artifactFilter(`type` = "jar")).distinct
-      val cp: Seq[File] = (compileCp ++ jmfJars :+ (Compile / classDirectory).value).distinct
-      val cpStr = cp.map(_.getAbsolutePath).mkString(java.io.File.pathSeparator)
+      val cpStr = jmfJars.map(_.getAbsolutePath).mkString(java.io.File.pathSeparator)
 
       val javaBin = {
         val h = sys.props.get("java.home").getOrElse("")
@@ -235,10 +233,8 @@ object JacocoFilterPlugin extends AutoPlugin {
       val classesIn   = (Compile / classDirectory).value
       val enabled     = jacocoPluginEnabled.value
 
-      val compileCp: Seq[File] = Attributed.data((Compile / fullClasspath).value)
       val jmfJars: Seq[File] = (Jmf / update).value.matching(artifactFilter(`type` = "jar")).distinct
-      val cp: Seq[File] = (compileCp ++ jmfJars :+ (Compile / classDirectory).value).distinct
-      val cpStr = cp.map(_.getAbsolutePath).mkString(java.io.File.pathSeparator)
+      val cpStr = jmfJars.map(_.getAbsolutePath).mkString(java.io.File.pathSeparator)
 
       val javaBin = {
         val h = sys.props.get("java.home").getOrElse("")
@@ -369,7 +365,7 @@ object JacocoFilterPlugin extends AutoPlugin {
     },
 
     // ---- per-module report
-    jacocoReport := {
+    jacocoReport := Def.taskDyn {
       val log        = streams.value.log
       val reportDir  = jacocoReportDir.value
       val execFile   = jacocoExecFile.value
@@ -377,48 +373,60 @@ object JacocoFilterPlugin extends AutoPlugin {
       val enabled    = jacocoPluginEnabled.value
       val failOnMissing = jacocoFailOnMissingExec.value
       val cp         = (Test / dependencyClasspath).value
-      val classesDir = (Compile / classDirectory).value
+      val baseClassesDir = (Compile / classDirectory).value
       val sourcesDir = (Compile / sourceDirectory).value
+      val jmfIsEnabled = jmfEnabled.value
 
-      if (!enabled) {
-        IO.createDirectory(reportDir)
-        log.info("[jacoco] disabled (jacocoPluginEnabled=false); report no-op")
-        reportDir
-      } else if (!execFile.exists) {
-        val msg = s"[jacoco] exec file missing, skipping report: ${execFile.getAbsolutePath}"
-        if (failOnMissing) sys.error(msg) else log.warn(msg)
-        IO.createDirectory(reportDir)
-        reportDir
+      // Use rewritten classes if JMF is enabled, otherwise use original classes
+      val classesTask = if (enabled && jmfIsEnabled) {
+        Def.task { jmfRewrite.value }
       } else {
-        val cli = cliJar(cp)
-
-        IO.createDirectory(reportDir)
-
-        val args = Seq(
-          "java",
-          "-jar",
-          cli.getAbsolutePath,
-          "report",
-          execFile.getAbsolutePath,
-          "--classfiles",
-          classesDir.getAbsolutePath,
-          "--sourcefiles",
-          sourcesDir.getAbsolutePath,
-          "--html",
-          reportDir.getAbsolutePath,
-          "--xml",
-          (reportDir / "jacoco.xml").getAbsolutePath,
-          "--csv",
-          (reportDir / "jacoco.csv").getAbsolutePath,
-          "--name",
-          name
-        )
-
-        log.info(s"[jacoco] report: ${args.mkString(" ")}")
-        val code = scala.sys.process.Process(args, baseDirectory.value).!
-        if (code != 0) sys.error(s"[jacoco] report failed ($code)")
-        reportDir
+        Def.task { baseClassesDir }
       }
-    }
+
+      Def.task {
+        val classesDir = classesTask.value
+
+        if (!enabled) {
+          IO.createDirectory(reportDir)
+          log.info("[jacoco] disabled (jacocoPluginEnabled=false); report no-op")
+          reportDir
+        } else if (!execFile.exists) {
+          val msg = s"[jacoco] exec file missing, skipping report: ${execFile.getAbsolutePath}"
+          if (failOnMissing) sys.error(msg) else log.warn(msg)
+          IO.createDirectory(reportDir)
+          reportDir
+        } else {
+          val cli = cliJar(cp)
+
+          IO.createDirectory(reportDir)
+
+          val args = Seq(
+            "java",
+            "-jar",
+            cli.getAbsolutePath,
+            "report",
+            execFile.getAbsolutePath,
+            "--classfiles",
+            classesDir.getAbsolutePath,
+            "--sourcefiles",
+            sourcesDir.getAbsolutePath,
+            "--html",
+            reportDir.getAbsolutePath,
+            "--xml",
+            (reportDir / "jacoco.xml").getAbsolutePath,
+            "--csv",
+            (reportDir / "jacoco.csv").getAbsolutePath,
+            "--name",
+            name
+          )
+
+          log.info(s"[jacoco] report: ${args.mkString(" ")}")
+          val code = scala.sys.process.Process(args, baseDirectory.value).!
+          if (code != 0) sys.error(s"[jacoco] report failed ($code)")
+          reportDir
+        }
+      }
+    }.value
   )
 }
