@@ -121,8 +121,8 @@ Only configure the settings below when you want to:
 | `jacocoReportName` | `String` | Derived from module ID and Scala version | Title used for JaCoCo HTML report |
 | `jacocoReportFormats` | `Set[String]` | `Set("html", "xml", "csv")` | Report formats to generate (valid: `html`, `xml`, `csv`) |
 | `jacocoSourceEncoding` | `String` | `"UTF-8"` | Source file encoding for report generation |
-| `jacocoIncludes` | `Seq[String]` | `Seq("**")` | Include patterns for coverage (JaCoCo syntax, e.g., `com/example/**`) |
-| `jacocoExcludes` | `Seq[String]` | `Seq("scala.*", "java.*", "sun.*", "jdk.*")` | Exclude patterns for coverage (JaCoCo syntax) |
+| `jacocoIncludes` | `Seq[String]` | `Seq("**")` | Include patterns for JaCoCo agent (JaCoCo syntax, e.g., `com/example/**`). Used during test execution, not report generation. |
+| `jacocoExcludes` | `Seq[String]` | `Seq("scala.*", "java.*", "sun.*", "jdk.*")` | Exclude patterns for JaCoCo agent (JaCoCo syntax). Used during test execution, not report generation. |
 | `jacocoAppend` | `Boolean` | `false` | Append to existing .exec file instead of overwriting |
 | `jacocoFailOnMissingExec` | `Boolean` | `false` | Fail `jacocoReport` if .exec file is missing (default: warn & skip) |
 | `jacocoSetUserDirToBuildRoot` | `Boolean` | `true` | Mimic non-forked runs by setting `-Duser.dir` to the build root for forked tests |
@@ -177,7 +177,8 @@ jacocoReportName := "My Project Coverage Report"
 // Use different source encoding
 jacocoSourceEncoding := "ISO-8859-1"
 
-// Filter classes in report (JaCoCo patterns)
+// Filter classes during test execution (agent configuration)
+// Note: These control which classes are instrumented during tests, NOT which appear in reports
 jacocoIncludes := Seq("com/example/core/**", "com/example/api/**")
 jacocoExcludes := Seq("com/example/generated/**", "**/*Test*")
 ```

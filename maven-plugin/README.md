@@ -217,8 +217,8 @@ Generates JaCoCo coverage reports (HTML, XML, CSV) using filtered classes.
 | `jmf.reportName` | `String` | `${project.name}` | Title used in the HTML report header |
 | `jmf.reportFormats` | `String` | `"html,xml,csv"` | Comma-separated list of report formats to generate (valid: `html`, `xml`, `csv`) |
 | `jmf.sourceEncoding` | `String` | `"UTF-8"` | Source file encoding for report generation |
-| `jmf.jacocoIncludes` | `String` | `"**"` | Colon-separated include patterns for JaCoCo report (JaCoCo syntax, e.g., `"com/example/**:org/test/**"`) |
-| `jmf.jacocoExcludes` | `String` | `""` | Colon-separated exclude patterns for JaCoCo report (JaCoCo syntax, e.g., `"**/*Test*:**/*Generated*"`) |
+| `jmf.jacocoIncludes` | `String` | `"**"` | *(Not used in report goal)* Colon-separated include patterns for JaCoCo agent. Use this with the `jacoco-maven-plugin` configuration instead. |
+| `jmf.jacocoExcludes` | `String` | `""` | *(Not used in report goal)* Colon-separated exclude patterns for JaCoCo agent. Use this with the `jacoco-maven-plugin` configuration instead. |
 | `jmf.skip` | `boolean` | `false` | Skip execution |
 | `jmf.skipIfExecMissing` | `boolean` | `true` | Skip if exec file missing |
 
@@ -258,16 +258,32 @@ Generates JaCoCo coverage reports (HTML, XML, CSV) using filtered classes.
                 <!-- Custom source encoding -->
                 <sourceEncoding>UTF-8</sourceEncoding>
                 
-                <!-- Filter specific packages in report -->
-                <jacocoIncludes>com/example/core/**:com/example/api/**</jacocoIncludes>
-                <jacocoExcludes>com/example/generated/**:**/*Test*</jacocoExcludes>
-                
                 <!-- Custom output locations -->
                 <reportDirectory>${project.build.directory}/coverage-report</reportDirectory>
                 <xmlOutputFile>${project.build.directory}/coverage.xml</xmlOutputFile>
             </configuration>
         </execution>
     </executions>
+</plugin>
+```
+
+**Note on includes/excludes:** The `jacocoIncludes` and `jacocoExcludes` parameters exist for consistency with the sbt plugin but are not used by the report goal. To filter which classes are instrumented, configure the `jacoco-maven-plugin` instead:
+
+```xml
+<plugin>
+    <groupId>org.jacoco</groupId>
+    <artifactId>jacoco-maven-plugin</artifactId>
+    <version>0.8.14</version>
+    <configuration>
+        <includes>
+            <include>com/example/core/**</include>
+            <include>com/example/api/**</include>
+        </includes>
+        <excludes>
+            <exclude>com/example/generated/**</exclude>
+        </excludes>
+    </configuration>
+    <!-- ... executions ... -->
 </plugin>
 ```
 

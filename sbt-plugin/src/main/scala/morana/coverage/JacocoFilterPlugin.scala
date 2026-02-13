@@ -374,8 +374,6 @@ object JacocoFilterPlugin extends AutoPlugin {
       val name       = jacocoReportName.value
       val formats    = jacocoReportFormats.value
       val encoding   = jacocoSourceEncoding.value
-      val includes   = jacocoIncludes.value
-      val excludes   = jacocoExcludes.value
       val enabled    = jacocoPluginEnabled.value
       val failOnMissing = jacocoFailOnMissingExec.value
       val cp         = (Test / dependencyClasspath).value
@@ -429,19 +427,10 @@ object JacocoFilterPlugin extends AutoPlugin {
               Seq.empty
           }
 
-          // Add includes/excludes if non-default
-          val includesArgs = if (includes.nonEmpty && includes != defaultIncludes) {
-            Seq("--includes", includes.mkString(":"))
-          } else Seq.empty
-
-          val excludesArgs = if (excludes.nonEmpty && excludes != defaultExcludes) {
-            Seq("--excludes", excludes.mkString(":"))
-          } else Seq.empty
-
           val encodingArgs = Seq("--encoding", encoding)
           val nameArgs = Seq("--name", name)
 
-          val args = baseArgs ++ formatArgs ++ includesArgs ++ excludesArgs ++ encodingArgs ++ nameArgs
+          val args = baseArgs ++ formatArgs ++ encodingArgs ++ nameArgs
 
           log.info(s"[jacoco] report: ${args.mkString(" ")}")
           val code = scala.sys.process.Process(args, baseDirectory.value).!

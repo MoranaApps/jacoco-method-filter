@@ -121,12 +121,6 @@ public class ReportMojo extends AbstractMojo {
         if (sourceEncoding != null && !sourceEncoding.isEmpty()) {
             getLog().info("║ Encoding:   " + sourceEncoding);
         }
-        if (jacocoIncludes != null && !jacocoIncludes.isEmpty()) {
-            getLog().info("║ Includes:   " + jacocoIncludes);
-        }
-        if (jacocoExcludes != null && !jacocoExcludes.isEmpty()) {
-            getLog().info("║ Excludes:   " + jacocoExcludes);
-        }
         getLog().info("╚════════════════════════════════════════════════");
 
         executeReportTool(command);
@@ -182,18 +176,6 @@ public class ReportMojo extends AbstractMojo {
         if (sourceEncoding != null && !sourceEncoding.isEmpty()) {
             cmd.add("--encoding");
             cmd.add(sourceEncoding);
-        }
-        
-        // Add includes if provided
-        if (jacocoIncludes != null && !jacocoIncludes.isEmpty()) {
-            cmd.add("--includes");
-            cmd.add(jacocoIncludes);
-        }
-        
-        // Add excludes if provided
-        if (jacocoExcludes != null && !jacocoExcludes.isEmpty()) {
-            cmd.add("--excludes");
-            cmd.add(jacocoExcludes);
         }
         
         return cmd;

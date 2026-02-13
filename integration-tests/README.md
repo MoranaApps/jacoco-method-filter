@@ -40,7 +40,9 @@ bash integration-tests/test-sbt-init-rules.sh
 | `test-cli-verify.sh` | CLI `--verify` mode shows methods that would be filtered |
 | `test-cli-verify-suggest.sh` | CLI `--verify --verify-suggest-includes` emits heuristic rescue-rule suggestions |
 | `test-sbt-basic.sh` | `examples/sbt-basic` passes tests without filtering, then with filtering + report generation |
+| `test-sbt-report-custom.sh` | sbt plugin with custom report settings (formats, title, encoding) verifies only specified formats are generated |
 | `test-maven-basic.sh` | `examples/maven-basic` (Java) passes tests without and with `-Pcode-coverage` |
+| `test-maven-report-custom.sh` | Maven plugin with custom report settings (formats, title, encoding) verifies only specified formats are generated |
 | `test-maven-scala.sh` | `examples/maven-scala` (Scala) passes tests without and with `-Pcode-coverage` |
 | `test-jacoco-compat.sh` | End-to-end JaCoCo compatibility — generates coverage, rewrites classes, verifies filtering works across JaCoCo versions |
 
