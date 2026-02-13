@@ -306,52 +306,45 @@ to help you adapt the rules to your own project.
 
 ### With sbt plugin
 
-Example usage:
+Use this when your build runs on sbt.
 
 ```bash
 sbt jmfInitRules
 sbt jacocoReport
 ```
 
-Or define a `jacoco` alias in your `build.sbt`:
+Start here for details:
 
-```scala
-addCommandAlias("jacoco", "; jacocoOn; clean; test; jacocoReportAll; jacocoOff")
-```
-
-See [`sbt-plugin/README.md`](./sbt-plugin/README.md) for installation, available tasks, and settings.
-Examples: [`examples/sbt-basic/`](./examples/sbt-basic/) — run `./enable-plugin.sh` inside the example
-to activate the plugin, then `sbt jacoco`.
+- [`sbt-plugin/README.md`](./sbt-plugin/README.md) — installation, tasks, and settings
+- [`examples/sbt-basic/`](./examples/sbt-basic/) — minimal working sbt project
 
 ---
 
 ### With Maven
 
-Example usage:
+Use this when your build runs on Maven.
 
 ```bash
 mvn jacoco-method-filter:init-rules
 mvn clean verify -Pcode-coverage
 ```
 
-See [`maven-plugin/README.md`](./maven-plugin/README.md) for installation, available goals,
-and parameters.
-Examples: [`examples/maven-basic/`](./examples/maven-basic/) (Java),
-[`examples/maven-scala/`](./examples/maven-scala/) (Scala)
+Start here for details:
+
+- [`maven-plugin/README.md`](./maven-plugin/README.md) — installation, goals, and parameters
+- [`examples/maven-basic/`](./examples/maven-basic/) (Java)
+- [`examples/maven-scala/`](./examples/maven-scala/) (Scala)
 
 ---
 
 ### Output Locations
 
-Both sbt and Maven integrations produce coverage artifacts in a standardized layout under your
-project's `target/` directory:
+Outputs are under `target/`, but exact paths differ by integration:
 
-- **Filtered classes**: `target/classes-filtered` — Compiled classes with `@CoverageGenerated` annotations applied
-- **JaCoCo HTML report**: `target/jacoco-report/index.html` — Interactive HTML coverage report
-- **JaCoCo XML report**: `target/jacoco.xml` — Machine-readable coverage data (for CI/CD)
-- **JaCoCo CSV report**: `target/jacoco-report/jacoco.csv` — Coverage data in CSV format (sbt only)
+- **sbt plugin**: `target/scala-<version>/classes-filtered` and `target/scala-<version>/jacoco-report/`
+- **Maven plugin**: `target/classes-filtered`, `target/jacoco-report/`, and `target/jacoco.xml`
 
-These paths are configurable. See plugin documentation for customization options.
+See plugin READMEs for full defaults and customization options.
 
 ---
 

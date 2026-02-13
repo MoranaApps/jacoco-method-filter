@@ -17,60 +17,16 @@ sbt-basic/
 ```
 
 ## Setup
+The plugin is already enabled in this example.
 
-> **Safe by default**: The plugin dependency and build configuration are commented out so that
-> cloning or opening the repo never triggers remote resolution. Follow the single enable step
-> below to activate the plugin.
-
-### Enable the plugin
-
-Run the provided enable script from the example directory:
+Generate rules (recommended if you want to reset from template):
 
 ```bash
 cd examples/sbt-basic
-./enable-plugin.sh
-```
-
-This uncomments the plugin dependency in `project/plugins.sbt` and the configuration in
-`build.sbt`. You can also enable manually — see below.
-
-### Manual enable steps
-
-1. **Plugin Configuration** (`project/plugins.sbt`):
-
-   ```scala
-   addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "2.0.0")
-   ```
-
-2. **Build Configuration** (`build.sbt`):
-
-   ```scala
-   lazy val root = (project in file("."))
-     .enablePlugins(JacocoFilterPlugin)
-     .settings(
-       name := "sbt-basic-example",
-       scalaVersion := "2.13.14"
-     )
-
-   // Optional: Command aliases for convenience
-   addCommandAlias("jacoco", "; jacocoOn; clean; test; jacocoReportAll; jacocoOff")
-   addCommandAlias("jacocoOff", "; set every jacocoPluginEnabled := false")
-   addCommandAlias("jacocoOn", "; set every jacocoPluginEnabled := true")
-   ```
-
-3. **Rules File** (`jmf-rules.txt`):
-
-Contains patterns for methods to exclude from coverage.
-
-**Option A (Recommended):** Run the bootstrap task to create it:
-
-```bash
 sbt jmfInitRules
 ```
 
-This creates `jmf-rules.txt` with sensible defaults for Scala projects.
-
-**Option B (Manual):** Create the file manually with patterns for methods to exclude from coverage.
+This writes `jmf-rules.txt` with sensible defaults for Scala projects.
 
 ## Running Coverage
 
@@ -108,14 +64,11 @@ sbt "set every jacocoPluginEnabled := false"
 
 After running coverage, you'll find:
 
-- **HTML Report**: `target/jacoco/report/index.html`
-- **XML Report**: `target/jacoco/report/jacoco.xml`
-- **CSV Report**: `target/jacoco/report/jacoco.csv`
-- **Filtered Classes**: `target/jmf/classes-filtered/`
+- **HTML Report**: `target/scala-2.12/jacoco-report/index.html`
+- **XML Report**: `target/scala-2.12/jacoco-report/jacoco.xml`
+- **CSV Report**: `target/scala-2.12/jacoco-report/jacoco.csv`
+- **Filtered Classes**: `target/scala-2.12/classes-filtered/`
 
 ## Notes
 
-- The plugin automatically adds JaCoCo dependencies to your build
-- Tests are forked automatically to enable the JaCoCo agent
-- The rewriter runs before tests to apply coverage filters
-- Coverage is disabled by default to avoid overhead during normal development
+- See [`sbt-plugin/README.md`](../../sbt-plugin/README.md) for complete task and settings reference
