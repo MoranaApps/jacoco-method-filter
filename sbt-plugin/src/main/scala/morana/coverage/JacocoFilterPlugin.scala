@@ -132,6 +132,11 @@ object JacocoFilterPlugin extends AutoPlugin {
 
     // --- JMF tool wiring
     ivyConfigurations += Jmf,
+    
+    // Force Scala 2.12 binary version for Jmf configuration to avoid version conflicts
+    Jmf / scalaModuleInfo := {
+      scalaModuleInfo.value.map(_.withScalaBinaryVersion("2.12"))
+    },
 
     jmfOutDir := target.value,
     jmfLocalRulesFile := (ThisBuild / baseDirectory).value / "jmf-rules.txt",
