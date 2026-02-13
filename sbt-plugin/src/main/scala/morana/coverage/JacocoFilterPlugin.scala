@@ -115,8 +115,8 @@ object JacocoFilterPlugin extends AutoPlugin {
 
     jacocoSetUserDirToBuildRoot := true,
 
-    jacocoExecFile := target.value / "jacoco" / "jacoco.exec",
-    jacocoReportDir := target.value / "jacoco-report",
+    jacocoExecFile := crossTarget.value / "jacoco" / "jacoco.exec",
+    jacocoReportDir := crossTarget.value / "jacoco-report",
     jacocoIncludes := defaultIncludes,
     jacocoExcludes := defaultExcludes,
     jacocoAppend := false,
@@ -130,7 +130,7 @@ object JacocoFilterPlugin extends AutoPlugin {
     // --- JMF tool wiring
     ivyConfigurations += Jmf,
 
-    jmfOutDir := target.value,
+    jmfOutDir := crossTarget.value,
     jmfLocalRulesFile := (ThisBuild / baseDirectory).value / "jmf-rules.txt",
     jmfGlobalRules := None,
     jmfLocalRules := None,
