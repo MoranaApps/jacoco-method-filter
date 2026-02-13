@@ -175,10 +175,8 @@ object JacocoFilterPlugin extends AutoPlugin {
       val workDir     = baseDirectory.value
       val classesIn   = (Compile / classDirectory).value
 
-      val compileCp: Seq[File] = Attributed.data((Compile / fullClasspath).value)
       val jmfJars: Seq[File] = (Jmf / update).value.matching(artifactFilter(`type` = "jar")).distinct
-      val cp: Seq[File] = (compileCp ++ jmfJars :+ (Compile / classDirectory).value).distinct
-      val cpStr = cp.map(_.getAbsolutePath).mkString(java.io.File.pathSeparator)
+      val cpStr = jmfJars.map(_.getAbsolutePath).mkString(java.io.File.pathSeparator)
 
       val javaBin = {
         val h = sys.props.get("java.home").getOrElse("")
@@ -235,10 +233,8 @@ object JacocoFilterPlugin extends AutoPlugin {
       val classesIn   = (Compile / classDirectory).value
       val enabled     = jacocoPluginEnabled.value
 
-      val compileCp: Seq[File] = Attributed.data((Compile / fullClasspath).value)
       val jmfJars: Seq[File] = (Jmf / update).value.matching(artifactFilter(`type` = "jar")).distinct
-      val cp: Seq[File] = (compileCp ++ jmfJars :+ (Compile / classDirectory).value).distinct
-      val cpStr = cp.map(_.getAbsolutePath).mkString(java.io.File.pathSeparator)
+      val cpStr = jmfJars.map(_.getAbsolutePath).mkString(java.io.File.pathSeparator)
 
       val javaBin = {
         val h = sys.props.get("java.home").getOrElse("")
