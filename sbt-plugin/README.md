@@ -109,17 +109,28 @@ Only configure the settings below when you want to:
 
 - load rules from a different location (or add a global rules source)
 - change output locations
+- customize report generation (format, encoding, includes/excludes)
 - run in dry-run mode
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `jacocoPluginEnabled` | `Boolean` | `false` | Enable/disable the plugin for this module |
+| `jacocoVersion` | `String` | `"0.8.14"` | JaCoCo version to use |
+| `jacocoExecFile` | `File` | `target/jacoco/jacoco.exec` | JaCoCo execution data file location |
+| `jacocoReportDir` | `File` | `target/jacoco-report` | Output directory for JaCoCo reports |
+| `jacocoReportName` | `String` | `"Report: <module> - scala:<version>"` | Title used for JaCoCo HTML report |
+| `jacocoReportFormats` | `Set[String]` | `Set("html", "xml", "csv")` | Report formats to generate (valid: `html`, `xml`, `csv`) |
+| `jacocoSourceEncoding` | `String` | `"UTF-8"` | Source file encoding for report generation |
+| `jacocoIncludes` | `Seq[String]` | `Seq("**")` | Include patterns for coverage (JaCoCo syntax, e.g., `com/example/**`) |
+| `jacocoExcludes` | `Seq[String]` | `Seq("scala.*", "java.*", "sun.*", "jdk.*")` | Exclude patterns for coverage (JaCoCo syntax) |
+| `jacocoAppend` | `Boolean` | `false` | Append to existing .exec file instead of overwriting |
+| `jacocoFailOnMissingExec` | `Boolean` | `false` | Fail `jacocoReport` if .exec file is missing (default: warn & skip) |
+| `jacocoSetUserDirToBuildRoot` | `Boolean` | `true` | Mimic non-forked runs by setting `-Duser.dir` to the build root for forked tests |
 | `jmfGlobalRules` | `Option[String]` | `None` | Global rules source (URL or file path). Loaded when defined. Note: URLs require network access. |
 | `jmfLocalRules` | `Option[File]` | `None` | Local rules file. Loaded when defined. |
 | `jmfLocalRulesFile` | `File` | `jmf-rules.txt` | Fallback local rules file used only when both `jmfGlobalRules` and `jmfLocalRules` are `None` |
 | `jmfDryRun` | `Boolean` | `false` | Dry run mode - logs matches without modifying classes |
 | `jmfOutDir` | `File` | `target` | Base output directory; filtered classes are written under `jmfOutDir / "classes-filtered"` |
-| `jacocoReportDir` | `File` | `target/jacoco-report` | Output directory for JaCoCo reports |
 
 ### Examples
 
@@ -151,6 +162,24 @@ Change output locations:
 // build.sbt
 jmfOutDir := target.value / "jmf"
 jacocoReportDir := target.value / "coverage"
+```
+
+Customize report generation:
+
+```scala
+// build.sbt
+// Generate only HTML report (skip XML and CSV)
+jacocoReportFormats := Set("html")
+
+// Change report title
+jacocoReportName := "My Project Coverage Report"
+
+// Use different source encoding
+jacocoSourceEncoding := "ISO-8859-1"
+
+// Filter classes in report (JaCoCo patterns)
+jacocoIncludes := Seq("com/example/core/**", "com/example/api/**")
+jacocoExcludes := Seq("com/example/generated/**", "**/*Test*")
 ```
 
 ## Output Locations

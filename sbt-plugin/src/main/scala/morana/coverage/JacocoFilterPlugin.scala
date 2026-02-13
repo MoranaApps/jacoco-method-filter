@@ -126,6 +126,8 @@ object JacocoFilterPlugin extends AutoPlugin {
       val moduleId = thisProject.value.id
       s"Report: $moduleId - scala:${scalaVersion.value}"
     },
+    jacocoReportFormats := Set("html", "xml", "csv"),
+    jacocoSourceEncoding := "UTF-8",
 
     // --- JMF tool wiring
     ivyConfigurations += Jmf,
@@ -370,6 +372,10 @@ object JacocoFilterPlugin extends AutoPlugin {
       val reportDir  = jacocoReportDir.value
       val execFile   = jacocoExecFile.value
       val name       = jacocoReportName.value
+      val formats    = jacocoReportFormats.value
+      val encoding   = jacocoSourceEncoding.value
+      val includes   = jacocoIncludes.value
+      val excludes   = jacocoExcludes.value
       val enabled    = jacocoPluginEnabled.value
       val failOnMissing = jacocoFailOnMissingExec.value
       val cp         = (Test / dependencyClasspath).value
@@ -401,7 +407,7 @@ object JacocoFilterPlugin extends AutoPlugin {
 
           IO.createDirectory(reportDir)
 
-          val args = Seq(
+          val baseArgs = Seq(
             "java",
             "-jar",
             cli.getAbsolutePath,
@@ -410,16 +416,32 @@ object JacocoFilterPlugin extends AutoPlugin {
             "--classfiles",
             classesDir.getAbsolutePath,
             "--sourcefiles",
-            sourcesDir.getAbsolutePath,
-            "--html",
-            reportDir.getAbsolutePath,
-            "--xml",
-            (reportDir / "jacoco.xml").getAbsolutePath,
-            "--csv",
-            (reportDir / "jacoco.csv").getAbsolutePath,
-            "--name",
-            name
+            sourcesDir.getAbsolutePath
           )
+
+          // Conditionally add report format outputs
+          val formatArgs = formats.toSeq.flatMap {
+            case "html" => Seq("--html", reportDir.getAbsolutePath)
+            case "xml"  => Seq("--xml", (reportDir / "jacoco.xml").getAbsolutePath)
+            case "csv"  => Seq("--csv", (reportDir / "jacoco.csv").getAbsolutePath)
+            case other  => 
+              log.warn(s"[jacoco] unknown report format: $other (valid: html, xml, csv)")
+              Seq.empty
+          }
+
+          // Add includes/excludes if non-default
+          val includesArgs = if (includes.nonEmpty && includes != defaultIncludes) {
+            Seq("--includes", includes.mkString(":"))
+          } else Seq.empty
+
+          val excludesArgs = if (excludes.nonEmpty && excludes != defaultExcludes) {
+            Seq("--excludes", excludes.mkString(":"))
+          } else Seq.empty
+
+          val encodingArgs = Seq("--encoding", encoding)
+          val nameArgs = Seq("--name", name)
+
+          val args = baseArgs ++ formatArgs ++ includesArgs ++ excludesArgs ++ encodingArgs ++ nameArgs
 
           log.info(s"[jacoco] report: ${args.mkString(" ")}")
           val code = scala.sys.process.Process(args, baseDirectory.value).!

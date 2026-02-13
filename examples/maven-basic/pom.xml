@@ -94,6 +94,15 @@
                                 <goals>
                                     <goal>report</goal>
                                 </goals>
+                                <!-- Optional: customize report generation
+                                <configuration>
+                                    <reportName>My Project Coverage</reportName>
+                                    <reportFormats>html,xml</reportFormats>
+                                    <sourceEncoding>UTF-8</sourceEncoding>
+                                    <jacocoIncludes>com/example/core/**:com/example/api/**</jacocoIncludes>
+                                    <jacocoExcludes>com/example/generated/**</jacocoExcludes>
+                                </configuration>
+                                -->
                             </execution>
                         </executions>
                     </plugin>

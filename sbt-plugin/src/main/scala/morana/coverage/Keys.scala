@@ -21,6 +21,8 @@ object Keys {
     )
 
     val jacocoReportName = settingKey[String]("Title used for JaCoCo HTML report")
+    val jacocoReportFormats = settingKey[Set[String]]("Report formats to generate (html, xml, csv)")
+    val jacocoSourceEncoding = settingKey[String]("Source file encoding for report generation")
 
     // Root-only helpers (NO MERGE): just run per-module tasks across aggregated projects
     val jacocoCleanAll  = taskKey[Unit]("Run jacocoClean in all aggregated modules (no merge)")

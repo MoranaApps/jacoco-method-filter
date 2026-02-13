@@ -200,20 +200,29 @@ mvn compile jacoco-method-filter:verify
 
 ### `jacoco-method-filter:report`
 
-Generates JaCoCo HTML and XML reports using filtered classes.
+Generates JaCoCo coverage reports (HTML, XML, CSV) using filtered classes.
+
+**Default Phase:** `verify`
 
 **Parameters:**
 
-- `jmf.jacocoExecFile` - JaCoCo exec file (default: `${project.build.directory}/jacoco.exec`)
-- `jmf.classesDirectory` - Classes directory for report (default: `${project.build.directory}/classes-filtered`)
-- `jmf.sourceDirectories` - Source directories (default: derived from `project.getCompileSourceRoots()`,
-  falls back to `src/main/java`)
-- `jmf.reportDirectory` - HTML report output (default: `${project.build.directory}/jacoco-report`)
-- `jmf.xmlOutputFile` - XML report output (default: `${project.build.directory}/jacoco.xml`)
-- `jmf.skip` - Skip execution (default: `false`)
-- `jmf.skipIfExecMissing` - Skip if exec file missing (default: `true`)
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `jmf.jacocoExecFile` | `File` | `${project.build.directory}/jacoco.exec` | JaCoCo execution data file |
+| `jmf.classesDirectory` | `File` | `${project.build.directory}/classes-filtered` | Filtered classes directory for report generation |
+| `jmf.sourceDirectories` | `File[]` | Derived from `project.getCompileSourceRoots()`, falls back to `src/main/java` | Source directories for report generation |
+| `jmf.reportDirectory` | `File` | `${project.build.directory}/jacoco-report` | HTML report output directory |
+| `jmf.xmlOutputFile` | `File` | `${project.build.directory}/jacoco.xml` | XML report output file |
+| `jmf.csvOutputFile` | `File` | `${project.build.directory}/jacoco.csv` | CSV report output file |
+| `jmf.reportName` | `String` | `${project.name}` | Title used in the HTML report header |
+| `jmf.reportFormats` | `String` | `"html,xml,csv"` | Comma-separated list of report formats to generate (valid: `html`, `xml`, `csv`) |
+| `jmf.sourceEncoding` | `String` | `"UTF-8"` | Source file encoding for report generation |
+| `jmf.jacocoIncludes` | `String` | `"**"` | Colon-separated include patterns for JaCoCo report (JaCoCo syntax, e.g., `"com/example/**"`) |
+| `jmf.jacocoExcludes` | `String` | `""` | Colon-separated exclude patterns for JaCoCo report (JaCoCo syntax) |
+| `jmf.skip` | `boolean` | `false` | Skip execution |
+| `jmf.skipIfExecMissing` | `boolean` | `true` | Skip if exec file missing |
 
-**Example:**
+**Example (basic):**
 
 ```xml
 <execution>
@@ -223,6 +232,43 @@ Generates JaCoCo HTML and XML reports using filtered classes.
         <goal>report</goal>
     </goals>
 </execution>
+```
+
+**Example (customized report generation):**
+
+```xml
+<plugin>
+    <groupId>io.github.moranaapps</groupId>
+    <artifactId>jacoco-method-filter-maven-plugin</artifactId>
+    <version>2.0.0</version>
+    <executions>
+        <execution>
+            <id>report</id>
+            <phase>verify</phase>
+            <goals>
+                <goal>report</goal>
+            </goals>
+            <configuration>
+                <!-- Custom report title -->
+                <reportName>My Project Coverage</reportName>
+                
+                <!-- Generate only HTML and XML (skip CSV) -->
+                <reportFormats>html,xml</reportFormats>
+                
+                <!-- Custom source encoding -->
+                <sourceEncoding>UTF-8</sourceEncoding>
+                
+                <!-- Filter specific packages in report -->
+                <jacocoIncludes>com/example/core/**:com/example/api/**</jacocoIncludes>
+                <jacocoExcludes>com/example/generated/**:**/*Test*</jacocoExcludes>
+                
+                <!-- Custom output locations -->
+                <reportDirectory>${project.build.directory}/coverage-report</reportDirectory>
+                <xmlOutputFile>${project.build.directory}/coverage.xml</xmlOutputFile>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
 ```
 
 ### `jacoco-method-filter:init-rules`

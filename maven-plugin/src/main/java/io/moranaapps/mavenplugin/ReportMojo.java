@@ -37,6 +37,24 @@ public class ReportMojo extends AbstractMojo {
     @Parameter(property = "jmf.xmlOutputFile", defaultValue = "${project.build.directory}/jacoco.xml")
     private File xmlOutputFile;
 
+    @Parameter(property = "jmf.csvOutputFile", defaultValue = "${project.build.directory}/jacoco.csv")
+    private File csvOutputFile;
+
+    @Parameter(property = "jmf.reportName", defaultValue = "${project.name}")
+    private String reportName;
+
+    @Parameter(property = "jmf.jacocoIncludes", defaultValue = "**")
+    private String jacocoIncludes;
+
+    @Parameter(property = "jmf.jacocoExcludes", defaultValue = "")
+    private String jacocoExcludes;
+
+    @Parameter(property = "jmf.sourceEncoding", defaultValue = "UTF-8")
+    private String sourceEncoding;
+
+    @Parameter(property = "jmf.reportFormats", defaultValue = "html,xml,csv")
+    private String reportFormats;
+
     @Parameter(property = "jmf.skip", defaultValue = "false")
     private boolean skip;
 
@@ -93,10 +111,22 @@ public class ReportMojo extends AbstractMojo {
         List<String> command = buildReportCmd(javaCmd, cliJar);
         
         getLog().info("╔═══ JaCoCo Method Filter: Report Generation ═══");
-        getLog().info("║ Exec data: " + jacocoExecFile.getAbsolutePath());
-        getLog().info("║ Classes:   " + classesDirectory.getAbsolutePath());
-        getLog().info("║ HTML:      " + reportDirectory.getAbsolutePath());
-        getLog().info("║ XML:       " + xmlOutputFile.getAbsolutePath());
+        getLog().info("║ Exec data:  " + jacocoExecFile.getAbsolutePath());
+        getLog().info("║ Classes:    " + classesDirectory.getAbsolutePath());
+        getLog().info("║ Report:     " + reportDirectory.getAbsolutePath());
+        getLog().info("║ Formats:    " + reportFormats);
+        if (reportName != null && !reportName.isEmpty()) {
+            getLog().info("║ Title:      " + reportName);
+        }
+        if (sourceEncoding != null && !sourceEncoding.isEmpty()) {
+            getLog().info("║ Encoding:   " + sourceEncoding);
+        }
+        if (jacocoIncludes != null && !jacocoIncludes.isEmpty()) {
+            getLog().info("║ Includes:   " + jacocoIncludes);
+        }
+        if (jacocoExcludes != null && !jacocoExcludes.isEmpty()) {
+            getLog().info("║ Excludes:   " + jacocoExcludes);
+        }
         getLog().info("╚════════════════════════════════════════════════");
 
         executeReportTool(command);
@@ -119,10 +149,52 @@ public class ReportMojo extends AbstractMojo {
             }
         }
         
-        cmd.add("--html");
-        cmd.add(reportDirectory.getAbsolutePath());
-        cmd.add("--xml");
-        cmd.add(xmlOutputFile.getAbsolutePath());
+        // Parse report formats and conditionally add outputs
+        Set<String> formats = new HashSet<>();
+        if (reportFormats != null && !reportFormats.isEmpty()) {
+            for (String format : reportFormats.split(",")) {
+                formats.add(format.trim().toLowerCase());
+            }
+        }
+        
+        if (formats.contains("html")) {
+            cmd.add("--html");
+            cmd.add(reportDirectory.getAbsolutePath());
+        }
+        
+        if (formats.contains("xml")) {
+            cmd.add("--xml");
+            cmd.add(xmlOutputFile.getAbsolutePath());
+        }
+        
+        if (formats.contains("csv")) {
+            cmd.add("--csv");
+            cmd.add(csvOutputFile.getAbsolutePath());
+        }
+        
+        // Add report name/title if provided
+        if (reportName != null && !reportName.isEmpty()) {
+            cmd.add("--name");
+            cmd.add(reportName);
+        }
+        
+        // Add source encoding if provided
+        if (sourceEncoding != null && !sourceEncoding.isEmpty()) {
+            cmd.add("--encoding");
+            cmd.add(sourceEncoding);
+        }
+        
+        // Add includes if provided and not default
+        if (jacocoIncludes != null && !jacocoIncludes.isEmpty() && !"**".equals(jacocoIncludes)) {
+            cmd.add("--includes");
+            cmd.add(jacocoIncludes);
+        }
+        
+        // Add excludes if provided
+        if (jacocoExcludes != null && !jacocoExcludes.isEmpty()) {
+            cmd.add("--excludes");
+            cmd.add(jacocoExcludes);
+        }
         
         return cmd;
     }
