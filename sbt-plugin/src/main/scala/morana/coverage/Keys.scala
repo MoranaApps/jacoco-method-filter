@@ -32,7 +32,7 @@ object Keys {
 
     // ---- JMF integration
     val jmfCoreVersion     = settingKey[String]("JMF core library version")
-    val Jmf                = config("jmf").extend(Compile).hide
+    val Jmf                = config("jmf").hide
     val jmfRewrite         = taskKey[File]("Rewrite compiled classes using JMF tool; returns output dir")
     val jmfOutDir          = settingKey[File]("JMF output base dir")
     val jmfLocalRulesFile  = settingKey[File]("Local rules file path (fallback when jmfGlobalRules/jmfLocalRules are not set)")
