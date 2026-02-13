@@ -110,7 +110,10 @@ object JacocoFilterPlugin extends AutoPlugin {
     libraryDependencies ++= Seq(
       ("org.jacoco" % "org.jacoco.agent" % jacocoVersion.value % Test).classifier("runtime"),
       ("org.jacoco" % "org.jacoco.cli" % jacocoVersion.value % Test).classifier("nodeps"),
-      "io.github.moranaapps" % "jacoco-method-filter-core_2.12" % jmfCoreVersion.value % Jmf.name
+      "io.github.moranaapps" % "jacoco-method-filter-core_2.12" % jmfCoreVersion.value % Jmf.name,
+      // Explicitly add Scala 2.12 dependencies for the Jmf configuration to avoid version conflicts
+      "org.scala-lang" % "scala-library" % "2.12.21" % Jmf.name,
+      "com.github.scopt" % "scopt_2.12" % "3.7.1" % Jmf.name
     ),
 
     jacocoSetUserDirToBuildRoot := true,
@@ -176,12 +179,7 @@ object JacocoFilterPlugin extends AutoPlugin {
       val classesIn   = (Compile / classDirectory).value
 
       val jmfJars: Seq[File] = (Jmf / update).value.matching(artifactFilter(`type` = "jar")).distinct
-      // Filter out scala-library and scopt; keep only the fat JAR
-      val fatJarOnly = jmfJars.filterNot { f =>
-        val name = f.getName
-        name.startsWith("scala-library") || name.startsWith("scopt_")
-      }
-      val cpStr = fatJarOnly.map(_.getAbsolutePath).mkString(java.io.File.pathSeparator)
+      val cpStr = jmfJars.map(_.getAbsolutePath).mkString(java.io.File.pathSeparator)
 
       val javaBin = {
         val h = sys.props.get("java.home").getOrElse("")
@@ -239,12 +237,7 @@ object JacocoFilterPlugin extends AutoPlugin {
       val enabled     = jacocoPluginEnabled.value
 
       val jmfJars: Seq[File] = (Jmf / update).value.matching(artifactFilter(`type` = "jar")).distinct
-      // Filter out scala-library and scopt; keep only the fat JAR
-      val fatJarOnly = jmfJars.filterNot { f =>
-        val name = f.getName
-        name.startsWith("scala-library") || name.startsWith("scopt_")
-      }
-      val cpStr = fatJarOnly.map(_.getAbsolutePath).mkString(java.io.File.pathSeparator)
+      val cpStr = jmfJars.map(_.getAbsolutePath).mkString(java.io.File.pathSeparator)
 
       val javaBin = {
         val h = sys.props.get("java.home").getOrElse("")
