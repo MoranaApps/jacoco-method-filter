@@ -176,7 +176,12 @@ object JacocoFilterPlugin extends AutoPlugin {
       val classesIn   = (Compile / classDirectory).value
 
       val jmfJars: Seq[File] = (Jmf / update).value.matching(artifactFilter(`type` = "jar")).distinct
-      val cpStr = jmfJars.map(_.getAbsolutePath).mkString(java.io.File.pathSeparator)
+      // Filter out scala-library and scopt; keep only the fat JAR
+      val fatJarOnly = jmfJars.filterNot { f =>
+        val name = f.getName
+        name.startsWith("scala-library") || name.startsWith("scopt_")
+      }
+      val cpStr = fatJarOnly.map(_.getAbsolutePath).mkString(java.io.File.pathSeparator)
 
       val javaBin = {
         val h = sys.props.get("java.home").getOrElse("")
@@ -234,7 +239,12 @@ object JacocoFilterPlugin extends AutoPlugin {
       val enabled     = jacocoPluginEnabled.value
 
       val jmfJars: Seq[File] = (Jmf / update).value.matching(artifactFilter(`type` = "jar")).distinct
-      val cpStr = jmfJars.map(_.getAbsolutePath).mkString(java.io.File.pathSeparator)
+      // Filter out scala-library and scopt; keep only the fat JAR
+      val fatJarOnly = jmfJars.filterNot { f =>
+        val name = f.getName
+        name.startsWith("scala-library") || name.startsWith("scopt_")
+      }
+      val cpStr = fatJarOnly.map(_.getAbsolutePath).mkString(java.io.File.pathSeparator)
 
       val javaBin = {
         val h = sys.props.get("java.home").getOrElse("")
