@@ -110,10 +110,7 @@ object JacocoFilterPlugin extends AutoPlugin {
     libraryDependencies ++= Seq(
       ("org.jacoco" % "org.jacoco.agent" % jacocoVersion.value % Test).classifier("runtime"),
       ("org.jacoco" % "org.jacoco.cli" % jacocoVersion.value % Test).classifier("nodeps"),
-      "io.github.moranaapps" % "jacoco-method-filter-core_2.12" % jmfCoreVersion.value % Jmf.name,
-      // Explicitly add Scala 2.12 dependencies for the Jmf configuration to avoid version conflicts
-      "org.scala-lang" % "scala-library" % "2.12.21" % Jmf.name,
-      "com.github.scopt" % "scopt_2.12" % "3.7.1" % Jmf.name
+      "io.github.moranaapps" %% "jacoco-method-filter-core" % jmfCoreVersion.value % Jmf.name
     ),
 
     jacocoSetUserDirToBuildRoot := true,
@@ -132,11 +129,6 @@ object JacocoFilterPlugin extends AutoPlugin {
 
     // --- JMF tool wiring
     ivyConfigurations += Jmf,
-    
-    // Force Scala 2.12 binary version for Jmf configuration to avoid version conflicts
-    Jmf / scalaModuleInfo := {
-      scalaModuleInfo.value.map(_.withScalaBinaryVersion("2.12"))
-    },
 
     jmfOutDir := target.value,
     jmfLocalRulesFile := (ThisBuild / baseDirectory).value / "jmf-rules.txt",
