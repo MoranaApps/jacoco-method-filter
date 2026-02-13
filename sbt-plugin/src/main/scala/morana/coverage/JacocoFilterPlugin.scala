@@ -365,7 +365,7 @@ object JacocoFilterPlugin extends AutoPlugin {
     },
 
     // ---- per-module report
-    jacocoReport := {
+    jacocoReport := Def.taskDyn {
       val log        = streams.value.log
       val reportDir  = jacocoReportDir.value
       val execFile   = jacocoExecFile.value
@@ -373,48 +373,60 @@ object JacocoFilterPlugin extends AutoPlugin {
       val enabled    = jacocoPluginEnabled.value
       val failOnMissing = jacocoFailOnMissingExec.value
       val cp         = (Test / dependencyClasspath).value
-      val classesDir = (Compile / classDirectory).value
+      val baseClassesDir = (Compile / classDirectory).value
       val sourcesDir = (Compile / sourceDirectory).value
+      val jmfIsEnabled = jmfEnabled.value
 
-      if (!enabled) {
-        IO.createDirectory(reportDir)
-        log.info("[jacoco] disabled (jacocoPluginEnabled=false); report no-op")
-        reportDir
-      } else if (!execFile.exists) {
-        val msg = s"[jacoco] exec file missing, skipping report: ${execFile.getAbsolutePath}"
-        if (failOnMissing) sys.error(msg) else log.warn(msg)
-        IO.createDirectory(reportDir)
-        reportDir
+      // Use rewritten classes if JMF is enabled, otherwise use original classes
+      val classesTask = if (enabled && jmfIsEnabled) {
+        Def.task { jmfRewrite.value }
       } else {
-        val cli = cliJar(cp)
-
-        IO.createDirectory(reportDir)
-
-        val args = Seq(
-          "java",
-          "-jar",
-          cli.getAbsolutePath,
-          "report",
-          execFile.getAbsolutePath,
-          "--classfiles",
-          classesDir.getAbsolutePath,
-          "--sourcefiles",
-          sourcesDir.getAbsolutePath,
-          "--html",
-          reportDir.getAbsolutePath,
-          "--xml",
-          (reportDir / "jacoco.xml").getAbsolutePath,
-          "--csv",
-          (reportDir / "jacoco.csv").getAbsolutePath,
-          "--name",
-          name
-        )
-
-        log.info(s"[jacoco] report: ${args.mkString(" ")}")
-        val code = scala.sys.process.Process(args, baseDirectory.value).!
-        if (code != 0) sys.error(s"[jacoco] report failed ($code)")
-        reportDir
+        Def.task { baseClassesDir }
       }
-    }
+
+      Def.task {
+        val classesDir = classesTask.value
+
+        if (!enabled) {
+          IO.createDirectory(reportDir)
+          log.info("[jacoco] disabled (jacocoPluginEnabled=false); report no-op")
+          reportDir
+        } else if (!execFile.exists) {
+          val msg = s"[jacoco] exec file missing, skipping report: ${execFile.getAbsolutePath}"
+          if (failOnMissing) sys.error(msg) else log.warn(msg)
+          IO.createDirectory(reportDir)
+          reportDir
+        } else {
+          val cli = cliJar(cp)
+
+          IO.createDirectory(reportDir)
+
+          val args = Seq(
+            "java",
+            "-jar",
+            cli.getAbsolutePath,
+            "report",
+            execFile.getAbsolutePath,
+            "--classfiles",
+            classesDir.getAbsolutePath,
+            "--sourcefiles",
+            sourcesDir.getAbsolutePath,
+            "--html",
+            reportDir.getAbsolutePath,
+            "--xml",
+            (reportDir / "jacoco.xml").getAbsolutePath,
+            "--csv",
+            (reportDir / "jacoco.csv").getAbsolutePath,
+            "--name",
+            name
+          )
+
+          log.info(s"[jacoco] report: ${args.mkString(" ")}")
+          val code = scala.sys.process.Process(args, baseDirectory.value).!
+          if (code != 0) sys.error(s"[jacoco] report failed ($code)")
+          reportDir
+        }
+      }
+    }.value
   )
 }
