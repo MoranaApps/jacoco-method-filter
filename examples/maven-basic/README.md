@@ -51,7 +51,7 @@ After running `mvn clean verify -Pcode-coverage`, open the coverage report:
 
 ```bash
 # HTML report
-open target/jacoco-html/index.html
+open target/jacoco-report/index.html
 
 # XML report for CI/CD tools
 cat target/jacoco.xml
@@ -83,7 +83,7 @@ cat target/jacoco.xml
    - JaCoCo ignores @Generated methods
 
 5. **report** (jacoco-method-filter-maven-plugin) - Phase: `verify`
-   - Generates HTML report in `target/jacoco-html/`
+   - Generates HTML report in `target/jacoco-report/`
    - Generates XML report at `target/jacoco.xml`
 
 ### Rules File

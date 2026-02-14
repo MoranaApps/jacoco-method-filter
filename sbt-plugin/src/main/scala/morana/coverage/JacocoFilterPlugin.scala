@@ -126,6 +126,8 @@ object JacocoFilterPlugin extends AutoPlugin {
       val moduleId = thisProject.value.id
       s"Report: $moduleId - scala:${scalaVersion.value}"
     },
+    jacocoReportFormats := Set("html", "xml", "csv"),
+    jacocoSourceEncoding := "UTF-8",
 
     // --- JMF tool wiring
     ivyConfigurations += Jmf,
@@ -138,24 +140,20 @@ object JacocoFilterPlugin extends AutoPlugin {
     jmfDryRun := false,
     jmfEnabled := true,
     jmfInitRulesForce := false,
-    jmfRulesTemplate := "scala",
 
     jmfInitRules := {
       val log = streams.value.log
       val rulesFile = jmfLocalRulesFile.value
       val force = jmfInitRulesForce.value
-      val template = jmfRulesTemplate.value
       
       if (rulesFile.exists() && !force) {
         log.info(s"[jmf] Rules file already exists: ${rulesFile.getAbsolutePath}")
         log.info("[jmf] To overwrite, set jmfInitRulesForce := true and run again.")
         rulesFile
       } else {
-        val templateContent = template.toLowerCase match {
-          case "scala-java" | "scalajava" | "java" => DefaultRulesTemplates.scalaJava
-          case _ => DefaultRulesTemplates.scala
-        }
-        
+        val tplStream = getClass.getResourceAsStream("/jmf-rules.template.txt")
+        if (tplStream == null) sys.error("jmf-rules.template.txt not found in plugin resources")
+        val templateContent = try { scala.io.Source.fromInputStream(tplStream, "UTF-8").mkString } finally { tplStream.close() }
         IO.write(rulesFile, templateContent)
         log.info(s"[jmf] Created rules file: ${rulesFile.getAbsolutePath}")
         log.info("[jmf] Next steps:")
@@ -370,6 +368,8 @@ object JacocoFilterPlugin extends AutoPlugin {
       val reportDir  = jacocoReportDir.value
       val execFile   = jacocoExecFile.value
       val name       = jacocoReportName.value
+      val formats    = jacocoReportFormats.value
+      val encoding   = jacocoSourceEncoding.value
       val enabled    = jacocoPluginEnabled.value
       val failOnMissing = jacocoFailOnMissingExec.value
       val cp         = (Test / dependencyClasspath).value
@@ -401,7 +401,7 @@ object JacocoFilterPlugin extends AutoPlugin {
 
           IO.createDirectory(reportDir)
 
-          val args = Seq(
+          val baseArgs = Seq(
             "java",
             "-jar",
             cli.getAbsolutePath,
@@ -410,16 +410,28 @@ object JacocoFilterPlugin extends AutoPlugin {
             "--classfiles",
             classesDir.getAbsolutePath,
             "--sourcefiles",
-            sourcesDir.getAbsolutePath,
-            "--html",
-            reportDir.getAbsolutePath,
-            "--xml",
-            (reportDir / "jacoco.xml").getAbsolutePath,
-            "--csv",
-            (reportDir / "jacoco.csv").getAbsolutePath,
-            "--name",
-            name
+            sourcesDir.getAbsolutePath
           )
+
+          // Conditionally add report format outputs
+          val validFormats = Set("html", "xml", "csv")
+          val formatArgs = formats.toSeq.flatMap {
+            case "html" => Seq("--html", reportDir.getAbsolutePath)
+            case "xml"  => Seq("--xml", (reportDir / "jacoco.xml").getAbsolutePath)
+            case "csv"  => Seq("--csv", (reportDir / "jacoco.csv").getAbsolutePath)
+            case other  => 
+              log.warn(s"[jacoco] unknown report format: $other (valid: html, xml, csv)")
+              Seq.empty
+          }
+
+          if ((formats & validFormats).isEmpty) {
+            log.warn("[jacoco] jacocoReportFormats is empty \u2014 no reports will be generated")
+          }
+
+          val encodingArgs = Seq("--encoding", encoding)
+          val nameArgs = Seq("--name", name)
+
+          val args = baseArgs ++ formatArgs ++ encodingArgs ++ nameArgs
 
           log.info(s"[jacoco] report: ${args.mkString(" ")}")
           val code = scala.sys.process.Process(args, baseDirectory.value).!

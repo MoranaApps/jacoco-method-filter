@@ -22,20 +22,8 @@ final case class LocalSource(path: String) extends RuleSource
 // --- Selector helpers -------------------------------------------------------
 
 private object Selectors {
-  private val meta = "\\.^$+{}[]()|"
-
-  /** Convert a glob to a compiled regex Pattern. */
-  def globToRegex(glob: String): Pattern = {
-    val sb = new StringBuilder("^")
-    glob.foreach {
-      case '*' => sb.append(".*")
-      case '?' => sb.append(".")
-      case c if meta.indexOf(c) >= 0 => sb.append("\\").append(c)
-      case c => sb.append(c)
-    }
-    sb.append("$")
-    Pattern.compile(sb.toString)
-  }
+  /** Delegate to the public Glob.toRegex utility. */
+  def globToRegex(glob: String): Pattern = Glob.toRegex(glob)
 }
 
 // --- Rule model -------------------------------------------------------------

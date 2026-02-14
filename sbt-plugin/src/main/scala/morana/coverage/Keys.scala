@@ -11,7 +11,6 @@ object Keys {
 
     val jacocoVersion    = settingKey[String]("JaCoCo version")
     val jacocoExecFile   = settingKey[File]("Per-module JaCoCo .exec file (Test)")
-    val jacocoItExecFile = settingKey[File]("Per-module JaCoCo .exec file (IntegrationTest)")
     val jacocoReportDir  = settingKey[File]("Per-module report directory")
     val jacocoIncludes   = settingKey[Seq[String]]("Include patterns (JaCoCo syntax)")
     val jacocoExcludes   = settingKey[Seq[String]]("Exclude patterns (JaCoCo syntax)")
@@ -21,6 +20,8 @@ object Keys {
     )
 
     val jacocoReportName = settingKey[String]("Title used for JaCoCo HTML report")
+    val jacocoReportFormats = settingKey[Set[String]]("Report formats to generate (html, xml, csv)")
+    val jacocoSourceEncoding = settingKey[String]("Source file encoding for report generation")
 
     // Root-only helpers (NO MERGE): just run per-module tasks across aggregated projects
     val jacocoCleanAll  = taskKey[Unit]("Run jacocoClean in all aggregated modules (no merge)")
@@ -44,7 +45,6 @@ object Keys {
     val jmfPrepareForTests = taskKey[Unit]("Run JMF rewrite when enabled")
     val jmfInitRules       = taskKey[File]("Create default jmf-rules.txt if it does not exist")
     val jmfInitRulesForce  = settingKey[Boolean]("Force overwrite existing jmf-rules.txt (default: false)")
-    val jmfRulesTemplate   = settingKey[String]("Template type: 'scala' (default) or 'scala-java'")
     val jmfVerify          = taskKey[Unit]("On-demand scan: show which methods would be excluded from coverage by current rules")
   }
 }

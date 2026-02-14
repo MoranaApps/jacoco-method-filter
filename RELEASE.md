@@ -72,7 +72,7 @@ git push origin master
 
 Notes:
 
-- The workflow publishes **Scala 2.12** under **JDK 17**.
+- The workflow cross-publishes **Scala 2.11 / 2.12 / 2.13** under **JDK 17**.
 - The core library is published as a **fat JAR** with ASM shaded (relocated to `jmf.shaded.asm`).
   The published POM declares exactly 2 runtime dependencies: `scala-library` and `scopt`.
 - The **Maven plugin** is built and deployed via `mvn deploy` using the
@@ -93,10 +93,10 @@ Notes:
 
 Expected coordinates:
 
-- Core library (Scala 2.12 fat JAR with zero dependencies):
+- Core library (cross-built fat JAR with shaded ASM; runtime deps: `scala-library`, `scopt`):
 
 ```scala
-io.github.moranaapps:jacoco-method-filter-core_2.12:<version>
+io.github.moranaapps:jacoco-method-filter-core_2.{11,12,13}:<version>
 ```
 
 - sbt plugin:

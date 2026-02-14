@@ -17,6 +17,7 @@ sbt-basic/
 ```
 
 ## Setup
+
 The plugin is already enabled in this example.
 
 Generate rules (recommended if you want to reset from template):

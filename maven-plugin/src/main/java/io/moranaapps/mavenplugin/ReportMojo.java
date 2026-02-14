@@ -37,6 +37,24 @@ public class ReportMojo extends AbstractMojo {
     @Parameter(property = "jmf.xmlOutputFile", defaultValue = "${project.build.directory}/jacoco.xml")
     private File xmlOutputFile;
 
+    @Parameter(property = "jmf.csvOutputFile", defaultValue = "${project.build.directory}/jacoco.csv")
+    private File csvOutputFile;
+
+    @Parameter(property = "jmf.reportName", defaultValue = "${project.name}")
+    private String reportName;
+
+    @Parameter(property = "jmf.jacocoIncludes", defaultValue = "**")
+    private String jacocoIncludes;
+
+    @Parameter(property = "jmf.jacocoExcludes", defaultValue = "")
+    private String jacocoExcludes;
+
+    @Parameter(property = "jmf.sourceEncoding", defaultValue = "UTF-8")
+    private String sourceEncoding;
+
+    @Parameter(property = "jmf.reportFormats", defaultValue = "html,xml,csv")
+    private String reportFormats;
+
     @Parameter(property = "jmf.skip", defaultValue = "false")
     private boolean skip;
 
@@ -93,10 +111,16 @@ public class ReportMojo extends AbstractMojo {
         List<String> command = buildReportCmd(javaCmd, cliJar);
         
         getLog().info("╔═══ JaCoCo Method Filter: Report Generation ═══");
-        getLog().info("║ Exec data: " + jacocoExecFile.getAbsolutePath());
-        getLog().info("║ Classes:   " + classesDirectory.getAbsolutePath());
-        getLog().info("║ HTML:      " + reportDirectory.getAbsolutePath());
-        getLog().info("║ XML:       " + xmlOutputFile.getAbsolutePath());
+        getLog().info("║ Exec data:  " + jacocoExecFile.getAbsolutePath());
+        getLog().info("║ Classes:    " + classesDirectory.getAbsolutePath());
+        getLog().info("║ Report:     " + reportDirectory.getAbsolutePath());
+        getLog().info("║ Formats:    " + reportFormats);
+        if (reportName != null && !reportName.isEmpty()) {
+            getLog().info("║ Title:      " + reportName);
+        }
+        if (sourceEncoding != null && !sourceEncoding.isEmpty()) {
+            getLog().info("║ Encoding:   " + sourceEncoding);
+        }
         getLog().info("╚════════════════════════════════════════════════");
 
         executeReportTool(command);
@@ -119,10 +143,51 @@ public class ReportMojo extends AbstractMojo {
             }
         }
         
-        cmd.add("--html");
-        cmd.add(reportDirectory.getAbsolutePath());
-        cmd.add("--xml");
-        cmd.add(xmlOutputFile.getAbsolutePath());
+        // Parse report formats and conditionally add outputs
+        Set<String> validFormats = new HashSet<>(Arrays.asList("html", "xml", "csv"));
+        Set<String> formats = new LinkedHashSet<>();
+        if (reportFormats != null && !reportFormats.isEmpty()) {
+            for (String format : reportFormats.split(",")) {
+                String f = format.trim().toLowerCase();
+                if (f.isEmpty()) continue;
+                if (validFormats.contains(f)) {
+                    formats.add(f);
+                } else {
+                    getLog().warn("[jacoco] unknown report format: " + f + " (valid: html, xml, csv)");
+                }
+            }
+        }
+
+        if (formats.isEmpty()) {
+            getLog().warn("[jacoco] jacocoReportFormats is empty — no reports will be generated");
+        }
+        
+        if (formats.contains("html")) {
+            cmd.add("--html");
+            cmd.add(reportDirectory.getAbsolutePath());
+        }
+        
+        if (formats.contains("xml")) {
+            cmd.add("--xml");
+            cmd.add(xmlOutputFile.getAbsolutePath());
+        }
+        
+        if (formats.contains("csv")) {
+            cmd.add("--csv");
+            cmd.add(csvOutputFile.getAbsolutePath());
+        }
+        
+        // Add report name/title if provided
+        if (reportName != null && !reportName.isEmpty()) {
+            cmd.add("--name");
+            cmd.add(reportName);
+        }
+        
+        // Add source encoding if provided
+        if (sourceEncoding != null && !sourceEncoding.isEmpty()) {
+            cmd.add("--encoding");
+            cmd.add(sourceEncoding);
+        }
         
         return cmd;
     }

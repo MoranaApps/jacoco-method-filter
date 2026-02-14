@@ -40,7 +40,9 @@ bash integration-tests/test-sbt-init-rules.sh
 | `test-cli-verify.sh` | CLI `--verify` mode shows methods that would be filtered |
 | `test-cli-verify-suggest.sh` | CLI `--verify --verify-suggest-includes` emits heuristic rescue-rule suggestions |
 | `test-sbt-basic.sh` | `examples/sbt-basic` passes tests without filtering, then with filtering + report generation |
+| `test-sbt-report-custom.sh` | sbt plugin with custom report settings (formats, title, encoding) verifies only specified formats are generated |
 | `test-maven-basic.sh` | `examples/maven-basic` (Java) passes tests without and with `-Pcode-coverage` |
+| `test-maven-report-custom.sh` | Maven plugin with custom report settings (formats, title, encoding) verifies only specified formats are generated |
 | `test-maven-scala.sh` | `examples/maven-scala` (Scala) passes tests without and with `-Pcode-coverage` |
 | `test-jacoco-compat.sh` | End-to-end JaCoCo compatibility — generates coverage, rewrites classes, verifies filtering works across JaCoCo versions |
 
@@ -54,11 +56,10 @@ bash integration-tests/test-sbt-init-rules.sh
 
 ### sbt fixture
 
-The `examples/sbt-basic/` project ships with the plugin **commented out** so that
-cloning the repo does not trigger dependency resolution. Rather than using fragile
-`sed` edits to uncomment the plugin at test time, the sbt integration tests copy
-a dedicated CI fixture (`fixtures/sbt-basic/`) that has the plugin already enabled,
-then overlay the source and rules files from the example.
+The sbt integration tests copy a dedicated CI fixture (`fixtures/sbt-basic/`)
+that has the plugin already enabled, then overlay the source and rules files
+from the example. This avoids fragile `sed` edits and ensures dependency
+resolution works cleanly in CI.
 
 ## CI Integration
 
