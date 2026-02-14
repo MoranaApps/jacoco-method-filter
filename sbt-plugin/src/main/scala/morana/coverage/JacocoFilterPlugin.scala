@@ -418,6 +418,7 @@ object JacocoFilterPlugin extends AutoPlugin {
           )
 
           // Conditionally add report format outputs
+          val validFormats = Set("html", "xml", "csv")
           val formatArgs = formats.toSeq.flatMap {
             case "html" => Seq("--html", reportDir.getAbsolutePath)
             case "xml"  => Seq("--xml", (reportDir / "jacoco.xml").getAbsolutePath)
@@ -425,6 +426,10 @@ object JacocoFilterPlugin extends AutoPlugin {
             case other  => 
               log.warn(s"[jacoco] unknown report format: $other (valid: html, xml, csv)")
               Seq.empty
+          }
+
+          if ((formats & validFormats).isEmpty) {
+            log.warn("[jacoco] jacocoReportFormats is empty \u2014 no reports will be generated")
           }
 
           val encodingArgs = Seq("--encoding", encoding)

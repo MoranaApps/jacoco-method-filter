@@ -144,11 +144,22 @@ public class ReportMojo extends AbstractMojo {
         }
         
         // Parse report formats and conditionally add outputs
-        Set<String> formats = new HashSet<>();
+        Set<String> validFormats = new HashSet<>(Arrays.asList("html", "xml", "csv"));
+        Set<String> formats = new LinkedHashSet<>();
         if (reportFormats != null && !reportFormats.isEmpty()) {
             for (String format : reportFormats.split(",")) {
-                formats.add(format.trim().toLowerCase());
+                String f = format.trim().toLowerCase();
+                if (f.isEmpty()) continue;
+                if (validFormats.contains(f)) {
+                    formats.add(f);
+                } else {
+                    getLog().warn("[jacoco] unknown report format: " + f + " (valid: html, xml, csv)");
+                }
             }
+        }
+
+        if (formats.isEmpty()) {
+            getLog().warn("[jacoco] jacocoReportFormats is empty — no reports will be generated");
         }
         
         if (formats.contains("html")) {
