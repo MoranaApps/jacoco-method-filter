@@ -267,7 +267,9 @@ Generates JaCoCo coverage reports (HTML, XML, CSV) using filtered classes.
 </plugin>
 ```
 
-**Note on includes/excludes:** The `jacocoIncludes` and `jacocoExcludes` parameters exist for consistency with the sbt plugin but are not used by the report goal. To filter which classes are instrumented, configure the `jacoco-maven-plugin` instead:
+**Note on includes/excludes:** The `jacocoIncludes` and `jacocoExcludes` parameters exist for consistency with the sbt
+ plugin but are not used by the report goal. To filter which classes are instrumented, configure the
+  `jacoco-maven-plugin` instead:
 
 ```xml
 <plugin>
