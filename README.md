@@ -185,7 +185,6 @@ jmfLocalRules := Some(baseDirectory.value / "jmf-local-rules.txt")
 | `--local-rules <path>` | At least one of `--global-rules` / `--local-rules` | Local rules file path |
 | `--dry-run` | No | Only print matches; do not modify classes |
 | `--verify` | No | Read-only scan: list all methods that would be excluded by rules |
-| `--verify-suggest-includes` | No (requires `--verify`) | Suggest include rules for likely human-written excluded methods |
 
 `--in` must exist and be a directory containing compiled `.class` files.
 
@@ -221,7 +220,8 @@ compilation**.
 > **Important**: Because `verify` scans bytecode, it sees all methods the JVM compiler generated
 > (synthetic bridges, anonymous function bodies, default parameter accessors, etc.) alongside your
 > hand-written code. Some broad exclusion rules may accidentally match methods you wrote yourself
-> (e.g., `apply`). Use include rules (`+...`) to rescue those methods — see below.
+> (e.g., `apply`). Use include rules (`+...`) to rescue those methods — see
+> [Exclude and Include](#exclude-and-include).
 
 Before running coverage, use the **verify** command to preview which methods will be excluded vs. rescued:
 
@@ -261,36 +261,8 @@ java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
 [verify] Summary: 42 classes scanned, 15 methods excluded, 1 method rescued
 ```
 
-#### Suggest Include Rules
-
-When using broad exclusion rules, you might accidentally exclude hand-written methods.
-Use `--verify-suggest-includes` (requires `--verify`) to get heuristic suggestions for include (rescue) rules:
-
-**CLI:**
-
-```bash
-java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
-  --verify \
-  --verify-suggest-includes \
-  --in target/classes \
-  --local-rules jmf-rules.txt
-```
-
-**Example additional output:**
-
-```text
-[verify] Suggested include rules (heuristic — review before use):
-[verify]   +com.example.Foo#apply(*)
-[verify]   +com.example.Config#process(*)
-
-[verify] NOTE: These suggestions are best-effort heuristics based on bytecode analysis.
-[verify]       "Human vs generated" cannot be determined perfectly from bytecode.
-```
-
-> **Limitations**: The heuristic classifies a method as "likely human" if it is **not**
-> synthetic/bridge and its name doesn't match common compiler-generated patterns
-> (e.g., `$anonfun$*`, `lambda$*`, `access$*`). Scala macros, compiler plugins,
-> and stripped debug info can fool the heuristic. Always review suggestions before adding them.
+- **Excluded** — matched by an exclusion rule; will be filtered from coverage.
+- **Rescued** — matched by an exclusion rule *and* an include rule (`+…`). Because include rules always win, the method stays in coverage. The `excl:… → incl:…` trace shows which rules were involved.
 
 ### Ready to Use Rules File
 

@@ -11,7 +11,6 @@ This project uses [Semantic Versioning](https://semver.org/).
 - **Include rules** — rescue specific methods from broad exclusions (`+include` mode).
 - **Global and local rules** — load shared team rules from a URL or path (`--global-rules` / `--local-rules`).
 - **Verify mode** — preview which methods would be excluded without modifying classes (`--verify`).
-- **`--verify-suggest-includes`** — suggest rescue rules for human-written methods in verify output.
 - **Maven plugin goals** — `rewrite`, `report`, `verify`, and `init-rules`.
 - **sbt `jmfInitRules` task** — bootstrap a default `jmf-rules.txt` with Scala-friendly templates.
 - **sbt `jmfVerify` task** — on-demand scan showing rule impact.

@@ -10,6 +10,7 @@ sbt plugin for filtering JaCoCo coverage by annotating methods based on configur
 - [Available Tasks](#available-tasks)
 - [Task Details](#task-details)
   - [`jmfInitRules`](#jmfinitrules)
+  - [`jmfVerify`](#jmfverify)
   - [`jacocoReport`](#jacocoreport)
   - [`jacocoReportAll`](#jacocoreportall)
   - [`jacocoClean` / `jacocoCleanAll`](#jacococlean--jacococleanall)
@@ -57,6 +58,7 @@ addCommandAlias("jacocoOff", "; set every jacocoPluginEnabled := false")
 | Task | Description |
 |------|-------------|
 | `jmfInitRules` | Creates a default `jmf-rules.txt` file in the project root with sensible Scala defaults |
+| `jmfVerify` | Scans compiled classes and reports which methods would be excluded/rescued by current rules (read-only) |
 | `jacocoReport` | Rewrites classes, runs method filtering, and generates JaCoCo HTML/XML/CSV reports |
 | `jacocoReportAll` | Runs `jacocoReport` on all enabled modules under the current aggregate |
 | `jacocoClean` | Removes filtered classes and JaCoCo report artifacts |
@@ -71,6 +73,32 @@ Creates a `jmf-rules.txt` file from the bundled template with sensible defaults 
 ```bash
 sbt jmfInitRules
 ```
+
+### `jmfVerify`
+
+Scans compiled classes and reports which methods would be excluded or rescued by your
+current rules — without modifying any files.
+
+```bash
+sbt jmfVerify
+```
+
+Example output:
+
+```text
+[verify] EXCLUDED (15 methods):
+[verify]   com.example.User
+[verify]     #copy(I)Lcom/example/User;    rule-id:case-copy
+
+[verify] RESCUED by include rules (1 method):
+[verify]   com.example.Config$
+[verify]     #apply(Lcom/example/Config;)Lcom/...;  excl:comp-apply → incl:keep-config-apply
+
+[verify] Summary: 42 classes scanned, 15 methods excluded, 1 method rescued
+```
+
+- **Excluded** — matched by an exclusion rule; will be filtered from coverage.
+- **Rescued** — matched by an exclusion rule *and* an include rule (`+…`). Because include rules always win, the method stays in coverage. The `excl:… → incl:…` trace shows which rules were involved.
 
 ### `jacocoReport`
 

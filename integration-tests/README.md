@@ -38,7 +38,6 @@ bash integration-tests/test-sbt-init-rules.sh
 | `test-sbt-verify.sh` | `sbt jmfVerify` shows methods that would be filtered (read-only scan) |
 | `test-mvn-verify.sh` | `mvn jacoco-method-filter:verify` shows methods that would be filtered |
 | `test-cli-verify.sh` | CLI `--verify` mode shows methods that would be filtered |
-| `test-cli-verify-suggest.sh` | CLI `--verify --verify-suggest-includes` emits heuristic rescue-rule suggestions |
 | `test-sbt-basic.sh` | `examples/sbt-basic` passes tests without filtering, then with filtering + report generation |
 | `test-sbt-report-custom.sh` | sbt plugin with custom report settings (formats, title, encoding) verifies only specified formats are generated |
 | `test-maven-basic.sh` | `examples/maven-basic` (Java) passes tests without and with `-Pcode-coverage` |

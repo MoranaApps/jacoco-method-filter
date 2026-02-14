@@ -45,15 +45,9 @@ private[jacocomethodfilter] object CoverageRewriterCli {
         .action((_, c) => c.copy(verify = true))
         .text("Read-only scan: list all methods that would be excluded by rules")
 
-      opt[Unit]("verify-suggest-includes")
-        .action((_, c) => c.copy(verifySuggestIncludes = true))
-        .text("When used with --verify, suggest include rules for likely human-written excluded methods")
-
       checkConfig { cfg =>
         if (!Files.isDirectory(cfg.in)) {
           failure("--in must exist and be a directory")
-        } else if (cfg.verifySuggestIncludes && !cfg.verify) {
-          failure("--verify-suggest-includes requires --verify")
         } else if (!cfg.verify && cfg.out.isEmpty) {
           failure("--out is required when not in verify mode")
         } else if (cfg.globalRules.isEmpty && cfg.localRules.isEmpty) {

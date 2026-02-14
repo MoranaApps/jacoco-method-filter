@@ -104,16 +104,6 @@ class CoverageRewriterCliSpec extends AnyFunSuite {
     assert(!result.get.dryRun)
   }
 
-  test("parse should handle verify-suggest-includes flag correctly") {
-    val inDir = newTempDir("jmf-in-")
-    val result = CoverageRewriterCli.parse(
-      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify", "--verify-suggest-includes")
-    )
-    assert(result.isDefined)
-    assert(result.get.verify)
-    assert(result.get.verifySuggestIncludes)
-  }
-
   test("parse should handle combination of dry-run and verify") {
     val inDir = newTempDir("jmf-in-")
     val outDir = newTempDir("jmf-out-")
@@ -147,15 +137,6 @@ class CoverageRewriterCliSpec extends AnyFunSuite {
   test("parse should fail when --in is missing") {
     val result = CoverageRewriterCli.parse(
       Array("--out", "/path/to/out", "--global-rules", "rules.txt")
-    )
-    assert(result.isEmpty)
-  }
-
-  test("parse should fail when --verify-suggest-includes is used without --verify") {
-    val inDir = newTempDir("jmf-in-")
-    val outDir = newTempDir("jmf-out-")
-    val result = CoverageRewriterCli.parse(
-      Array("--in", inDir.toString, "--out", outDir.toString, "--global-rules", "rules.txt", "--verify-suggest-includes")
     )
     assert(result.isEmpty)
   }

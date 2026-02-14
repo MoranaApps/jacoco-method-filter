@@ -13,7 +13,6 @@ import java.nio.file.{Files, Path, Paths}
   * @param localRules Local rules file path (optional if globalRules provided)
   * @param dryRun If true, print matches without modifying classes
   * @param verify If true, run read-only scan mode
-  * @param verifySuggestIncludes If true with verify, suggest include rules for human-written methods
   */
 private[jacocomethodfilter] final case class CliConfig(
   in: Path = Paths.get("."),
@@ -21,8 +20,7 @@ private[jacocomethodfilter] final case class CliConfig(
   globalRules: Option[String] = None,
   localRules: Option[Path] = None,
   dryRun: Boolean = false,
-  verify: Boolean = false,
-  verifySuggestIncludes: Boolean = false
+  verify: Boolean = false
 )
 
 object CoverageRewriter {
@@ -68,7 +66,7 @@ object CoverageRewriter {
     printRulesListing(rules)
 
     val result = VerifyScanner.scan(cfg.in, rules)
-    result.printReport(println, suggestIncludes = cfg.verifySuggestIncludes)
+    result.printReport(println)
 
     println(s"[info] Verification complete: scanned ${result.classesScanned} class file(s), found ${result.totalMatched} method(s) matched by rules.")
   }
