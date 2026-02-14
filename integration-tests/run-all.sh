@@ -112,7 +112,10 @@ for test_script in "$SCRIPT_DIR"/test-*.sh; do
   # For jacoco-compat test, pass JaCoCo version as argument
   # Test both versions to match CI matrix behavior
   if [[ "$test_name" == "test-jacoco-compat" ]]; then
+    # Undo the generic +1 above; each version iteration counts as its own test
+    TOTAL=$((TOTAL - 1))
     for version in 0.8.7 0.8.14; do
+      TOTAL=$((TOTAL + 1))
       echo -e "${YELLOW}Testing with JaCoCo $version${NC}"
       if bash "$test_script" "$version"; then
         PASSED=$((PASSED + 1))
@@ -120,7 +123,6 @@ for test_script in "$SCRIPT_DIR"/test-*.sh; do
         FAILED=$((FAILED + 1))
         FAILURES+=("$test_name (JaCoCo $version)")
       fi
-      TOTAL=$((TOTAL + 1))
     done
   else
     if bash "$test_script"; then

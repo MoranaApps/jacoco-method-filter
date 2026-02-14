@@ -56,11 +56,10 @@ bash integration-tests/test-sbt-init-rules.sh
 
 ### sbt fixture
 
-The `examples/sbt-basic/` project ships with the plugin **commented out** so that
-cloning the repo does not trigger dependency resolution. Rather than using fragile
-`sed` edits to uncomment the plugin at test time, the sbt integration tests copy
-a dedicated CI fixture (`fixtures/sbt-basic/`) that has the plugin already enabled,
-then overlay the source and rules files from the example.
+The sbt integration tests copy a dedicated CI fixture (`fixtures/sbt-basic/`)
+that has the plugin already enabled, then overlay the source and rules files
+from the example. This avoids fragile `sed` edits and ensures dependency
+resolution works cleanly in CI.
 
 ## CI Integration
 

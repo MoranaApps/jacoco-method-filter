@@ -140,24 +140,20 @@ object JacocoFilterPlugin extends AutoPlugin {
     jmfDryRun := false,
     jmfEnabled := true,
     jmfInitRulesForce := false,
-    jmfRulesTemplate := "scala",
 
     jmfInitRules := {
       val log = streams.value.log
       val rulesFile = jmfLocalRulesFile.value
       val force = jmfInitRulesForce.value
-      val template = jmfRulesTemplate.value
       
       if (rulesFile.exists() && !force) {
         log.info(s"[jmf] Rules file already exists: ${rulesFile.getAbsolutePath}")
         log.info("[jmf] To overwrite, set jmfInitRulesForce := true and run again.")
         rulesFile
       } else {
-        val templateContent = template.toLowerCase match {
-          case "scala-java" | "scalajava" | "java" => DefaultRulesTemplates.scalaJava
-          case _ => DefaultRulesTemplates.scala
-        }
-        
+        val tplStream = getClass.getResourceAsStream("/jmf-rules.template.txt")
+        if (tplStream == null) sys.error("jmf-rules.template.txt not found in plugin resources")
+        val templateContent = try { scala.io.Source.fromInputStream(tplStream, "UTF-8").mkString } finally { tplStream.close() }
         IO.write(rulesFile, templateContent)
         log.info(s"[jmf] Created rules file: ${rulesFile.getAbsolutePath}")
         log.info("[jmf] Next steps:")

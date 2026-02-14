@@ -187,7 +187,7 @@ jacocoExcludes := Seq("com/example/generated/**", "**/*Test*")
 
 After running `jacocoReport`:
 
-- **Filtered classes**: `target/classes-filtered`
-- **HTML report**: `target/jacoco-report/index.html`
-- **XML report**: `target/jacoco-report/jacoco.xml`
-- **CSV report**: `target/jacoco-report/jacoco.csv`
+- **Filtered classes**: `target/scala-<version>/classes-filtered`
+- **HTML report**: `target/scala-<version>/jacoco-report/index.html`
+- **XML report**: `target/scala-<version>/jacoco-report/jacoco.xml`
+- **CSV report**: `target/scala-<version>/jacoco-report/jacoco.csv`

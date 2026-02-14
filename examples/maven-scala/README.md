@@ -51,7 +51,7 @@ After running `mvn clean verify -Pcode-coverage`, open the coverage report:
 
 ```bash
 # HTML report
-open target/jacoco-html/index.html
+open target/jacoco-report/index.html
 
 # XML report for CI/CD tools
 cat target/jacoco.xml
