@@ -27,6 +27,11 @@ jobs:
             branch: 'master'
             version-tag: ${{ github.event.inputs.tag-name }}
 
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
       - name: Generate Release Notes
         id: generate_release_notes
         uses: AbsaOSS/generate-release-notes@master
