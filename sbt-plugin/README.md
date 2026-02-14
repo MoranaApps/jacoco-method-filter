@@ -98,7 +98,8 @@ Example output:
 ```
 
 - **Excluded** — matched by an exclusion rule; will be filtered from coverage.
-- **Rescued** — matched by an exclusion rule *and* an include rule (`+…`). Because include rules always win, the method stays in coverage. The `excl:… → incl:…` trace shows which rules were involved.
+- **Rescued** — matched by an exclusion rule *and* an include rule (`+…`). Because include rules always win, the
+ method stays in coverage. The `excl:… → incl:…` trace shows which rules were involved.
 
 ### `jacocoReport`
 
