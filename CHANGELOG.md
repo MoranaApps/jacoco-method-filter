@@ -10,7 +10,8 @@ This project uses [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
-- Release workflow now cross-publishes core library for **all three** Scala versions (2.11, 2.12, 2.13). Previously only the 2.12 artifact was published to Maven Central.
+- Release workflow now cross-publishes core library for **all three** Scala versions (2.11, 2.12, 2.13).
+ Previously only the 2.12 artifact was published to Maven Central.
 
 ## [2.0.0] — 2025-02-14
 
