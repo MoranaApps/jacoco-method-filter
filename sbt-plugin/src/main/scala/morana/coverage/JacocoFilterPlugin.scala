@@ -202,14 +202,14 @@ object JacocoFilterPlugin extends AutoPlugin {
               "--in",
               classesIn.getAbsolutePath
             )
-            
+
             val rulesArgs = if (globalRules.isDefined || localRules.isDefined) {
               globalRules.toSeq.flatMap(g => Seq("--global-rules", g)) ++
               localRules.toSeq.flatMap(l => Seq("--local-rules", l.getAbsolutePath))
             } else {
               Seq("--local-rules", rulesFile.getAbsolutePath)
             }
-            
+
             val args = baseArgs ++ rulesArgs
 
             log.info(s"[jmf] verify: ${args.mkString(" ")}")

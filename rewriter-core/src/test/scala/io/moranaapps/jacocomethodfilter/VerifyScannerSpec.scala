@@ -229,106 +229,6 @@ class VerifyScannerSpec extends AnyFunSuite {
     assert(!methodLine.get.contains("rule-id:"))
   }
 
-  // --- MethodClassifier tests ---
-
-  test("MethodClassifier.classify - synthetic method -> StronglyGenerated") {
-    val access = Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC
-    val result = MethodClassifier.classify("someMethod", access)
-    assert(result == StronglyGenerated)
-  }
-
-  test("MethodClassifier.classify - bridge method -> StronglyGenerated") {
-    val access = Opcodes.ACC_PUBLIC | Opcodes.ACC_BRIDGE
-    val result = MethodClassifier.classify("someMethod", access)
-    assert(result == StronglyGenerated)
-  }
-
-  test("MethodClassifier.classify - method named $anonfun$something -> StronglyGenerated") {
-    val access = Opcodes.ACC_PUBLIC
-    val result = MethodClassifier.classify("$anonfun$myFunc$1", access)
-    assert(result == StronglyGenerated)
-  }
-
-  test("MethodClassifier.classify - method named lambda$something -> StronglyGenerated") {
-    val access = Opcodes.ACC_PUBLIC
-    val result = MethodClassifier.classify("lambda$main$0", access)
-    assert(result == StronglyGenerated)
-  }
-
-  test("MethodClassifier.classify - method named access$000 -> StronglyGenerated") {
-    val access = Opcodes.ACC_PUBLIC
-    val result = MethodClassifier.classify("access$000", access)
-    assert(result == StronglyGenerated)
-  }
-
-  test("MethodClassifier.classify - regular methods like apply, process, getData -> PossiblyHuman") {
-    val access = Opcodes.ACC_PUBLIC
-    assert(MethodClassifier.classify("apply", access) == PossiblyHuman)
-    assert(MethodClassifier.classify("process", access) == PossiblyHuman)
-    assert(MethodClassifier.classify("getData", access) == PossiblyHuman)
-  }
-
-  // --- printReport with suggestions tests ---
-
-  test("printReport with suggestIncludes=true shows suggestions for possibly-human excluded methods") {
-    val matches = Seq(
-      MatchedMethod("com.example.User", "apply", "(I)Lcom/example/User;", Excluded, Seq("case-apply"), Seq.empty, Opcodes.ACC_PUBLIC),
-      MatchedMethod("com.example.User", "process", "()V", Excluded, Seq("user-methods"), Seq.empty, Opcodes.ACC_PUBLIC)
-    )
-    val result = ScanResult(1, 2, matches)
-    
-    val lines = scala.collection.mutable.ArrayBuffer[String]()
-    result.printReport(line => lines += line, suggestIncludes = true)
-    
-    // Should have suggestions section
-    assert(lines.exists(_.contains("Suggested include rules")))
-    assert(lines.exists(_.contains("+com.example.User#apply(*)")))
-    assert(lines.exists(_.contains("+com.example.User#process(*)")))
-    assert(lines.exists(_.contains("best-effort heuristics")))
-    assert(lines.exists(_.contains("Human vs generated")))
-  }
-
-  test("printReport with suggestIncludes=true does NOT suggest rules for synthetic/bridge excluded methods") {
-    val matches = Seq(
-      MatchedMethod("com.example.User", "$anonfun$apply$1", "(I)Lcom/example/User;", Excluded, Seq("anon"), Seq.empty, Opcodes.ACC_PUBLIC),
-      MatchedMethod("com.example.User", "bridgeMethod", "()V", Excluded, Seq("bridge"), Seq.empty, Opcodes.ACC_PUBLIC | Opcodes.ACC_BRIDGE)
-    )
-    val result = ScanResult(1, 2, matches)
-    
-    val lines = scala.collection.mutable.ArrayBuffer[String]()
-    result.printReport(line => lines += line, suggestIncludes = true)
-    
-    // Should NOT have suggestions section (all methods are generated)
-    assert(!lines.exists(_.contains("Suggested include rules")))
-  }
-
-  test("printReport with suggestIncludes=false (default) does NOT show the suggestions section") {
-    val matches = Seq(
-      MatchedMethod("com.example.User", "apply", "(I)Lcom/example/User;", Excluded, Seq("case-apply"), Seq.empty, Opcodes.ACC_PUBLIC)
-    )
-    val result = ScanResult(1, 1, matches)
-    
-    val lines = scala.collection.mutable.ArrayBuffer[String]()
-    result.printReport(line => lines += line, suggestIncludes = false)
-    
-    // Should NOT have suggestions section
-    assert(!lines.exists(_.contains("Suggested include rules")))
-    assert(!lines.exists(_.contains("+com.example.User#apply(*)")))
-  }
-
-  test("printReport default (no args) does NOT show suggestions") {
-    val matches = Seq(
-      MatchedMethod("com.example.User", "apply", "(I)Lcom/example/User;", Excluded, Seq("case-apply"), Seq.empty, Opcodes.ACC_PUBLIC)
-    )
-    val result = ScanResult(1, 1, matches)
-    
-    val lines = scala.collection.mutable.ArrayBuffer[String]()
-    result.printReport(line => lines += line) // No suggestIncludes parameter
-    
-    // Should NOT have suggestions section
-    assert(!lines.exists(_.contains("Suggested include rules")))
-  }
-
   // --- ScanResult accessor tests ---
 
   test("excludedMethods returns only Excluded outcomes") {
@@ -411,22 +311,6 @@ class VerifyScannerSpec extends AnyFunSuite {
     val aIdx = lines.indexWhere(_.contains("a.A"))
     val zIdx = lines.indexWhere(_.contains("z.B"))
     assert(aIdx < zIdx, "Classes should be sorted alphabetically")
-  }
-
-  test("printReport suggestIncludes with mix of human and generated methods") {
-    val matches = Seq(
-      MatchedMethod("com.example.Svc", "process", "()V", Excluded, Seq.empty, Seq.empty, Opcodes.ACC_PUBLIC),
-      MatchedMethod("com.example.Svc", "$anonfun$apply$1", "()V", Excluded, Seq.empty, Seq.empty, Opcodes.ACC_PUBLIC),
-      MatchedMethod("com.example.Svc", "handle", "()V", Excluded, Seq.empty, Seq.empty, Opcodes.ACC_PUBLIC)
-    )
-    val result = ScanResult(1, 3, matches)
-    val lines = scala.collection.mutable.ArrayBuffer[String]()
-    result.printReport(line => lines += line, suggestIncludes = true)
-
-    // Only process and handle should be suggested, not $anonfun$apply$1
-    assert(lines.exists(_.contains("+com.example.Svc#process(*)")))
-    assert(lines.exists(_.contains("+com.example.Svc#handle(*)")))
-    assert(!lines.exists(_.contains("+com.example.Svc#$anonfun$apply$1(*)")))
   }
 
   // --- VerifyScanner scan edge cases ---

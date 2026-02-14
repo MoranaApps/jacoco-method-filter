@@ -28,14 +28,11 @@ final case class ScanResult(
   def excludedMethods: Seq[MatchedMethod] = matches.filter(_.outcome == Excluded)
   def rescuedMethods: Seq[MatchedMethod] = matches.filter(_.outcome == Rescued)
   
-  /** Print report to stdout, no suggestions. */
-  def printReport(): Unit = printReport(println, suggestIncludes = false)
-
-  /** Print report without suggestions. */
-  def printReport(out: String => Unit): Unit = printReport(out, suggestIncludes = false)
+  /** Print report to stdout. */
+  def printReport(): Unit = printReport(println)
 
   /** Print a report of matched methods. */
-  def printReport(out: String => Unit, suggestIncludes: Boolean): Unit = {
+  def printReport(out: String => Unit): Unit = {
     // Print excluded methods
     val excluded = excludedMethods
     if (excluded.nonEmpty) {
@@ -69,24 +66,6 @@ final case class ScanResult(
         }
       }
       out("")
-    }
-    
-    // Print suggested include rules for possibly-human excluded methods
-    if (suggestIncludes && excluded.nonEmpty) {
-      val possiblyHuman = excluded.filter { m =>
-        MethodClassifier.classify(m.methodName, m.access) == PossiblyHuman
-      }
-      
-      if (possiblyHuman.nonEmpty) {
-        out(s"[verify] Suggested include rules (heuristic — review before use):")
-        possiblyHuman.sortBy(m => (m.fqcn, m.methodName)).foreach { m =>
-          out(s"[verify]   +${m.fqcn}#${m.methodName}(*)")
-        }
-        out("")
-        out(s"[verify] NOTE: These suggestions are best-effort heuristics based on bytecode analysis.")
-        out("""[verify]       "Human vs generated" cannot be determined perfectly from bytecode.""")
-        out("")
-      }
     }
     
     out(s"[verify] Summary: $classesScanned classes scanned, ${excluded.size} methods excluded, ${rescued.size} methods rescued")
