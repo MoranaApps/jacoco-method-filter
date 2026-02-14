@@ -47,8 +47,8 @@ jobs:
       - name: Clean previous local bundle
         run: find . -type d -path "*/target/sonatype-staging" -prune -exec rm -rf {} + || true
 
-      - name: Test + publish signed (core 2.12 + sbt plugin)
-        run: sbt "; project rewriterCore; ++2.12.21 test; ++2.12.21 publishSigned; project sbtPlugin; clean; publishSigned"
+      - name: Test + publish signed (core 2.11/2.12/2.13 + sbt plugin)
+        run: sbt "; project rewriterCore; +test; +publishSigned; project sbtPlugin; clean; publishSigned"
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}

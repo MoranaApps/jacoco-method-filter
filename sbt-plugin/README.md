@@ -35,7 +35,7 @@ The plugin executes the coverage flow by:
 Add to `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "2.0.0")
+addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "2.0.1")
 ```
 
 Enable the plugin in your `build.sbt`:
