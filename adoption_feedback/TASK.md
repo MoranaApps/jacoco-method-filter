@@ -7,33 +7,34 @@ Reference: [SPEC.md](SPEC.md) for full specification and rationale.
 ## Phase 1 — Configuration & Cleanup
 
 ### T1.1 — Update `.github/copilot-instructions.md`
-- [ ] Read `adoption_feedback/copilot-instructions.md` for structural patterns
-- [ ] Merge applicable improvements into `.github/copilot-instructions.md`:
-  - [ ] Add constraint words (Must/Must not/Prefer/Avoid) where missing
-  - [ ] Strengthen output discipline section
-  - [ ] Refine PR body management section
-  - [ ] Review and align coding guidelines section
-- [ ] Add new section: **JMF filtering decision rules** (see SPEC.md §G1), covering:
-  - [ ] Criteria for "filter this method" (compiler-generated, no branching, no logic)
-  - [ ] Criteria for "do NOT filter" (branching, validation, transformation, multi-call)
-  - [ ] Borderline cases and how to resolve them (single-call delegates, trivial negations)
-  - [ ] Verification requirement: `javap -p -verbose` before adding any rule
-  - [ ] Global rule override: use `+` include rules to rescue falsely-filtered methods
-  - [ ] Pointer to official project documentation for adopters
-- [ ] Preserve all Scala/sbt/JMF-specific content
-- [ ] Verify no Python-specific content leaked in
+- [x] Read `adoption_feedback/copilot-instructions.md` for structural patterns
+- [x] Merge applicable improvements into `.github/copilot-instructions.md`:
+  - [x] Add constraint words (Must/Must not/Prefer/Avoid) where missing
+  - [x] Strengthen output discipline section
+  - [x] Refine PR body management section
+  - [x] Review and align coding guidelines section
+- [x] Add new section: **JMF filtering decision rules** (see SPEC.md §G1), covering:
+  - [x] Criteria for "filter this method" (compiler-generated, no branching, no logic)
+  - [x] Criteria for "do NOT filter" (branching, validation, transformation, multi-call)
+  - [x] Borderline cases and how to resolve them (single-call delegates, trivial negations)
+  - [x] Verification requirement: `javap -p -verbose` before adding any rule
+  - [x] Global rule override: use `+` include rules to rescue falsely-filtered methods
+  - [x] Pointer to official project documentation for adopters
+        _(note: copilot instructions reference requirement; actual README/DEVELOPER.md update is a future task)_
+- [x] Preserve all Scala/sbt/JMF-specific content
+- [x] Verify no Python-specific content leaked in
 
 ### T1.2 — Update `.github/copilot-review-rules.md`
-- [ ] Read `adoption_feedback/copilot-review-rules.md` for structural patterns
-- [ ] Merge applicable improvements into `.github/copilot-review-rules.md`:
-  - [ ] Add "Writing style" section if missing
-  - [ ] Strengthen commenting rules (what/why/how format)
-  - [ ] Refine double-check review mode (hidden side effects, safe defaults)
-- [ ] Preserve all JMF-specific high-risk areas and contract outputs
+- [x] Read `adoption_feedback/copilot-review-rules.md` for structural patterns
+- [x] Merge applicable improvements into `.github/copilot-review-rules.md`:
+  - [x] Add "Writing style" section if missing
+  - [x] Strengthen commenting rules (what/why/how format)
+  - [x] Refine double-check review mode (hidden side effects, safe defaults)
+- [x] Preserve all JMF-specific high-risk areas and contract outputs
 
 ### T1.3 — Remove `.github/agents/` folder
-- [ ] Verify folder contents (5 agent files, nothing else)
-- [ ] Remove `.github/agents/` directory entirely
+- [x] Verify folder contents (5 agent files, nothing else)
+- [x] Remove `.github/agents/` directory entirely
 
 ---
 

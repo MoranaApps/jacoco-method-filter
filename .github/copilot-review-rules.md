@@ -4,6 +4,16 @@ Purpose
 - Define consistent review behavior and response formatting for Copilot code reviews
 - Keep responses concise; do not generate long audit reports unless requested
 
+Writing style
+- Use short headings and bullet lists
+- Prefer do/avoid constraints over prose
+- Make checks verifiable: point to file, line range, and impact
+- Keep responses concise; avoid long audit reports unless explicitly requested
+
+Review modes
+- Default review: standard PR risk
+- Double-check review: elevated risk PRs (security, infra, wide refactors, bytecode changes)
+
 Mode: Default review
 
 - Scope
@@ -31,16 +41,23 @@ Mode: Default review
 Mode: Double-check review
 
 - Scope
-  - Higher-risk PRs (security, infra, money flows, wide refactors, data migrations)
+  - Higher-risk PRs (bytecode rewriting changes, rule parsing semantics, CLI contract,
+    sbt/Maven plugin integration, wide refactors)
 - Additional focus
   - Confirm previous review comments were correctly addressed (if applicable)
-  - Re-check high-risk areas: filesystem writes (bytecode rewrite), rule parsing edge cases, backward compatibility
-  - Look for hidden side effects: rollout/upgrade path, failure modes, idempotency
-  - Validate safe defaults: least privilege, secure logging, safe error messages
+  - Re-check high-risk areas: filesystem writes (bytecode rewrite), rule parsing edge
+    cases, backward compatibility of CLI flags and exit codes
+  - Look for hidden side effects: rollout/upgrade path, failure modes, idempotency,
+    backward compatibility, behavior on unexpected inputs
+  - Validate safe defaults: least privilege, secure logging, safe error messages,
+    predictable behavior on missing or malformed inputs
 - Response format
   - Only add comments where risk/impact is non-trivial
   - Avoid repeating minor style notes already covered by default review
-  - Call out "risk acceptance" explicitly if something is left as-is
+  - Call out "risk acceptance" explicitly if something is left as-is:
+    - What risk
+    - Why acceptable
+    - Mitigation (tests/monitoring/flag)
 
 Commenting rules (all modes)
 
@@ -72,7 +89,7 @@ Repo additions
 - Domain-specific high-risk areas:
   - Filesystem writes (bytecode rewriting)
   - Rule parsing/matching semantics
-  - Backward compatibility of CLI flags/exit codes
+  - Backward compatibility of CLI flags and exit codes
 - Contract-sensitive outputs:
   - rules file syntax and matching semantics
   - CLI flags and exit codes
