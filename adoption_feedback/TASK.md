@@ -41,25 +41,33 @@ Reference: [SPEC.md](SPEC.md) for full specification and rationale.
 ## Phase 2 — Global Rules Analysis
 
 ### T2.1 — Identify new global rules from adoption
-- [ ] Compare `adoption_feedback/jmf-rules.txt` globals against `jmf-rules.template.txt`
-- [ ] For each candidate global rule (see SPEC.md §G3):
-  - [ ] Verify the rule pattern is compiler-generated (not user logic)
-  - [ ] Confirm JVM descriptor format is correct
-  - [ ] Classify: safe-global vs needs-warning vs project-only
-- [ ] Document decision for each candidate
+- [x] Compare `adoption_feedback/jmf-rules.txt` globals against `jmf-rules.template.txt`
+- [x] For each candidate global rule (see SPEC.md §G3):
+  - [x] Verify the rule pattern is compiler-generated (not user logic)
+  - [x] Confirm JVM descriptor format is correct
+  - [x] Classify: safe-global vs needs-warning vs project-only
+- [x] Document decision for each candidate
+      _(decisions: $deserializeLambda$ + all $extension + gen-defaults = safe-global;
+      andThen/compose = safe-global with caution note; apply = disabled;
+      name/groups/optionalAttributes = active with domain-collision warning;
+      productElementName/productElementNames = safe-global Scala 2.13+)_
 
 ### T2.2 — Add safety warning for global rules that may over-filter
-- [ ] Draft warning text for `jmf-rules.template.txt` HowTo section
-- [ ] Use `*#apply(*)` as primary example (adopter commented it out)
-- [ ] List other potentially dangerous globals: `*#name()`, `*#groups()`, `*#optionalAttributes()`
-- [ ] Add guidance: "check if global values do not filter out really implemented methods"
-- [ ] Show commented-out examples as illustration
+- [x] Draft warning text for `jmf-rules.template.txt` HowTo section
+- [x] Use `*#apply(*)` as primary example (adopter commented it out)
+- [x] List other potentially dangerous globals: `*#name()`, `*#groups()`, `*#optionalAttributes()`
+- [x] Add guidance: "check if global values do not filter out really implemented methods"
+- [x] Show commented-out examples as illustration
 
 ### T2.3 — Update `jmf-rules.template.txt` with new global rules
-- [ ] Add validated new globals to GLOBALS RULES section
-- [ ] Comment out `*#apply(*)` with warning, or move to examples
-- [ ] Add `*#copy$default$*(*)` note (subsumed by `gen-defaults`)
-- [ ] Ensure every rule has `id:` label
+- [x] Add validated new globals to GLOBALS RULES section
+      _(added: $deserializeLambda$, 10x $extension rules, andThen/compose, gen-defaults,
+      productElementName/productElementNames)_
+- [x] Comment out `*#apply(*)` with warning, or move to examples
+- [x] Add `*#copy$default$*(*)` note (subsumed by `gen-defaults`)
+- [x] Ensure every rule has `id:` label
+- [x] Sync `maven-plugin/src/main/resources/jmf-rules.template.txt` with root template
+      _(sbt-plugin copy is a build artifact — auto-synced via IO.copyFile in build.sbt)_
 
 ---
 
