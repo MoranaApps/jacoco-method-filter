@@ -401,14 +401,15 @@ class RulesLoadSpec extends AnyFunSuite {
   }
 
   test("parseLine emits warning with no line number when lineNum is -1") {
+    val sourcePath = "/path/to/rules.txt"
     val out = new java.io.ByteArrayOutputStream()
     Console.withOut(out) {
-      Rules.parseLine("com.example.*#copy(*)", LocalSource("/path/to/rules.txt"))
+      Rules.parseLine("com.example.*#copy(*)", LocalSource(sourcePath))
     }
-    val output = out.toString
-    assert(output.contains("[warn]"))
-    // Verify no "line N" token appears (safe: the source path /path/to/rules.txt contains no "line NN" pattern)
-    assert(!output.matches("(?s).*\\bline\\s+\\d+\\b.*"), s"Expected no line number, got: $output")
+    val relevantLines = out.toString.linesIterator.filter(_.contains(sourcePath)).mkString("\n")
+    assert(relevantLines.contains("[warn]"), s"Expected [warn] line for $sourcePath, got: ${out.toString}")
+    // Verify no "line N" token appears in lines from this source
+    assert(!relevantLines.matches("(?s).*\\bline\\s+\\d+\\b.*"), s"Expected no line number, got: $relevantLines")
   }
 
   test("no warning for include rule with id: label") {
