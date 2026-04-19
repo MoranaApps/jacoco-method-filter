@@ -232,7 +232,7 @@ Only configure the settings below when you want to:
 | `jmfLocalRulesFile` | `File` | `jmf-rules.txt` | Fallback local rules file used only when both `jmfGlobalRules` and `jmfLocalRules` are `None` |
 | `jmfDryRun` | `Boolean` | `false` | Dry run mode - logs matches without modifying classes |
 | `jmfOutDir` | `File` | `target` | Base output directory; filtered classes are written under `jmfOutDir / "classes-filtered"` |
-| `jmfReportFile` | `Option[File]` | `None` | Write a filtered-methods report to this file. Works with `jmfVerify` and when `jmfDryRun = true`. If not set, output goes to console only. |
+| `jmfReportFile` | `Option[File]` | `None` | Write a filtered-methods report to this file. Works with `jmfVerify` and `jmfRewrite` (including `jmfDryRun = true`). If not set, output goes to console only. |
 | `jmfReportFormat` | `String` | `"txt"` | Report format: `txt` (plain text), `json`, or `csv`. Only used when `jmfReportFile` is set. |
 
 ### Examples

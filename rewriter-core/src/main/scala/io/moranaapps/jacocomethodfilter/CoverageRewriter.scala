@@ -63,6 +63,8 @@ object CoverageRewriter {
     println(s"[info] Processed $files class file(s), marked $marked method(s). dry-run=${cfg.dryRun}")
 
     cfg.reportFile.foreach { path =>
+      // TODO(perf): avoid second scan by collecting MatchedMethod data during the rewrite pass above
+      // (each rewriteClassFile call already invokes RuleResolver.resolve per method)
       val result = VerifyScanner.scan(cfg.in, rules)
       writeReportFile(path, result.formatReport(cfg.reportFormat))
     }

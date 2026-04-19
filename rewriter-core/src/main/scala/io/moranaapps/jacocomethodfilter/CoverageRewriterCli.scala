@@ -48,13 +48,13 @@ private[jacocomethodfilter] object CoverageRewriterCli {
       opt[String]("report-file")
         .optional()
         .action((v, c) => c.copy(reportFile = Some(Paths.get(v))))
-        .text("Write filtered-methods report to this file (useful with --verify or --dry-run)")
+        .text("Write filtered-methods report to this file (works with --verify, --dry-run, and rewrite)")
 
       opt[String]("report-format")
         .optional()
-        .action((v, c) => c.copy(reportFormat = v))
+        .action((v, c) => c.copy(reportFormat = v.toLowerCase))
         .validate(v =>
-          if (Set("txt", "json", "csv").contains(v)) success
+          if (Set("txt", "json", "csv").contains(v.toLowerCase)) success
           else failure("--report-format must be one of: txt, json, csv")
         )
         .text("Report format: txt (default), json, or csv")

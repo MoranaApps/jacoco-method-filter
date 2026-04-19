@@ -524,6 +524,37 @@ class VerifyScannerSpec extends AnyFunSuite {
     assert(txt.contains("Summary: 5 classes scanned, 0 methods excluded, 0 methods rescued"))
   }
 
+  test("formatReport json entries are sorted by (fqcn, methodName, descriptor) for stable output") {
+    // Provide matches in reverse-sorted order; output must be sorted
+    val matches = Seq(
+      MatchedMethod("com.example.Z", "zMethod", "()V", Excluded, Seq("r1"), Seq.empty, Opcodes.ACC_PUBLIC),
+      MatchedMethod("com.example.A", "mMethod", "()V", Excluded, Seq("r2"), Seq.empty, Opcodes.ACC_PUBLIC),
+      MatchedMethod("com.example.A", "aMethod", "()V", Excluded, Seq("r3"), Seq.empty, Opcodes.ACC_PUBLIC)
+    )
+    val result = ScanResult(3, 3, matches)
+    val json = result.formatReport("json")
+    val aPos = json.indexOf("\"com.example.A\"")
+    val zPos = json.lastIndexOf("\"com.example.Z\"")
+    assert(aPos < zPos, "com.example.A entries must appear before com.example.Z in JSON output")
+    // Within com.example.A: aMethod before mMethod
+    val aMethodPos = json.indexOf("\"aMethod\"")
+    val mMethodPos = json.indexOf("\"mMethod\"")
+    assert(aMethodPos < mMethodPos, "aMethod must appear before mMethod in JSON output")
+  }
+
+  test("formatReport csv rows are sorted by (fqcn, methodName, descriptor) for stable output") {
+    val matches = Seq(
+      MatchedMethod("com.example.Z", "zMethod", "()V", Excluded, Seq("r1"), Seq.empty, Opcodes.ACC_PUBLIC),
+      MatchedMethod("com.example.A", "mMethod", "()V", Excluded, Seq("r2"), Seq.empty, Opcodes.ACC_PUBLIC),
+      MatchedMethod("com.example.A", "aMethod", "()V", Excluded, Seq("r3"), Seq.empty, Opcodes.ACC_PUBLIC)
+    )
+    val result = ScanResult(3, 3, matches)
+    val rows = result.formatReport("csv").split("\n").tail // drop header
+    assert(rows(0).contains("com.example.A") && rows(0).contains("aMethod"), "first data row must be A/aMethod")
+    assert(rows(1).contains("com.example.A") && rows(1).contains("mMethod"), "second data row must be A/mMethod")
+    assert(rows(2).contains("com.example.Z") && rows(2).contains("zMethod"), "third data row must be Z/zMethod")
+  }
+
   // Helper to delete directory recursively
   private def deleteRecursively(path: Path): Unit = {
     if (Files.exists(path)) {

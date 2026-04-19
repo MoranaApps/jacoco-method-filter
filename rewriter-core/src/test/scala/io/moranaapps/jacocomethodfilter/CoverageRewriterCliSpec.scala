@@ -191,6 +191,16 @@ class CoverageRewriterCliSpec extends AnyFunSuite {
     assert(result.get.reportFormat == "json")
   }
 
+  test("parse should accept --report-format JSON (case-insensitive)") {
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify",
+        "--report-file", "/tmp/report.json", "--report-format", "JSON")
+    )
+    assert(result.isDefined)
+    assert(result.get.reportFormat == "json", "format must be normalised to lowercase")
+  }
+
   test("parse should accept --report-format csv") {
     val inDir = newTempDir("jmf-in-")
     val result = CoverageRewriterCli.parse(
@@ -199,6 +209,16 @@ class CoverageRewriterCliSpec extends AnyFunSuite {
     )
     assert(result.isDefined)
     assert(result.get.reportFormat == "csv")
+  }
+
+  test("parse should accept --report-format CSV (case-insensitive)") {
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify",
+        "--report-file", "/tmp/report.csv", "--report-format", "CSV")
+    )
+    assert(result.isDefined)
+    assert(result.get.reportFormat == "csv", "format must be normalised to lowercase")
   }
 
   test("parse should reject invalid --report-format value") {

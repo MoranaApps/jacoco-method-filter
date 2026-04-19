@@ -112,8 +112,8 @@ final case class ScanResult(
     def str(s: String): String = s""""${esc(s)}""""
     def strArr(seq: Seq[String]): String = seq.map(str).mkString("[", ", ", "]")
 
-    val excluded = excludedMethods
-    val rescued  = rescuedMethods
+    val excluded = excludedMethods.sortBy(m => (m.fqcn, m.methodName, m.descriptor))
+    val rescued  = rescuedMethods.sortBy(m => (m.fqcn, m.methodName, m.descriptor))
 
     def excludedEntry(m: MatchedMethod): String =
       s"""    {"class": ${str(m.fqcn)}, "method": ${str(m.methodName)}, "descriptor": ${str(m.descriptor)}, "ruleIds": ${strArr(m.exclusionIds)}}"""
@@ -135,8 +135,8 @@ final case class ScanResult(
     def cell(s: String): String =
       if (s.exists(c => c == ',' || c == '"' || c == '\n')) s""""${s.replace("\"", "\"\"")}"""" else s
 
-    val excluded = excludedMethods
-    val rescued  = rescuedMethods
+    val excluded = excludedMethods.sortBy(m => (m.fqcn, m.methodName, m.descriptor))
+    val rescued  = rescuedMethods.sortBy(m => (m.fqcn, m.methodName, m.descriptor))
     val sb       = new StringBuilder
     sb.append("outcome,class,method,descriptor,exclusionRuleIds,inclusionRuleIds\n")
     excluded.foreach { m =>
