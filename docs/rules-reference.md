@@ -541,6 +541,15 @@ Enable the rule, run `--verify`, then rescue false positives:
 +*Factory$#apply(*)  id:keep-factory-apply   # has branching
 ```
 
+**`*#writeReplace(*)  id:case-writereplace`**
+
+Emitted by the Scala compiler on case classes to support Java serialization. The body is a
+single-expression proxy construction — no project logic. Safe to filter globally.
+If a class overrides `writeReplace` with real logic, rescue it:
+```text
++com.example.CustomSerializable#writeReplace(*)  id:keep-writereplace
+```
+
 **`*#name()`, `*#groups()`, `*#optionalAttributes()`**
 
 Added for compiler-generated Scala patterns (e.g., Regex group names, case class fields) but will

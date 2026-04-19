@@ -204,6 +204,16 @@ class RulesBehaviorSpec extends AnyFunSuite {
       "gen-clinit targets only companion $ classes")
   }
 
+  test("global rule covers writeReplace (Java serialization hook on case class)") {
+    val rule = Rules.parseLine("*#writeReplace(*) id:case-writereplace").get
+    val acc  = access(privateA = true)
+
+    assert(Rules.matches(rule, "com.example.User",  "writeReplace", "()Ljava/lang/Object;", acc))
+    assert(Rules.matches(rule, "com.example.Event", "writeReplace", "()Ljava/lang/Object;", acc))
+    assert(!Rules.matches(rule, "com.example.User",  "writeObject", "()V", acc),
+      "must not match writeObject — only writeReplace")
+  }
+
   test("global rules cover companion apply, unapply, toString, readResolve") {
     val acc = access(public = true)
 

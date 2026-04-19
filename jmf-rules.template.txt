@@ -54,6 +54,11 @@
 *$*#toString(*)                                         id:comp-tostring
 *$*#readResolve(*)                                      id:comp-readresolve
 
+# Java serialization hook — compiler-generated on the case class itself (not the companion)
+# Body is a single expression returning a serialization proxy; no project logic.
+# WARNING: if a class overrides writeReplace with custom logic, rescue with + include rule.
+*#writeReplace(*)                                       id:case-writereplace
+
 # anonymous class created by a macro expansion
 *$macro$*#$anonfun$inst$macro$*                         id:macro-inst
 *$macro$*#inst$macro$*                                  id:macro-inst
