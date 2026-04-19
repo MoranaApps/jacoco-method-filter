@@ -444,4 +444,260 @@ class RulesBehaviorSpec extends AnyFunSuite {
         s"colon-prefixed rule ${r.id.getOrElse("?")} should not match real descriptors")
     }
   }
+
+  // Include rules (+ prefix): rescue methods from broad exclusions
+
+  test("+ prefix produces an Include-mode rule") {
+    val rule = Rules.parseLine("+com.example.Config$#apply(*) id:keep-config-apply").get
+    assert(rule.mode == Include)
+    assert(rule.id.contains("keep-config-apply"))
+  }
+
+  test("+ with whitespace after + is still parsed as Include") {
+    val rule = Rules.parseLine("+ com.example.Config$#apply(*) id:keep-config-apply").get
+    assert(rule.mode == Include)
+    assert(Rules.matches(rule, "com.example.Config$", "apply", "(Ljava/lang/String;)V", access(public = true)))
+  }
+
+  test("include rule matches the same method as a corresponding exclude rule") {
+    val excl = Rules.parseLine("*#apply(*) id:case-apply").get
+    val incl = Rules.parseLine("+com.example.Config$#apply(*) id:keep-config-apply").get
+    val acc  = access(public = true)
+
+    assert(Rules.matches(excl, "com.example.Config$", "apply", "(Ljava/lang/String;)Lcom/example/Config;", acc))
+    assert(Rules.matches(incl, "com.example.Config$", "apply", "(Ljava/lang/String;)Lcom/example/Config;", acc))
+  }
+
+  test("include wins over exclude regardless of rule order in file") {
+    val rulesInclFirst = Seq(
+      Rules.parseLine("+com.example.Config$#apply(*) id:keep-config-apply").get,
+      Rules.parseLine("*#apply(*) id:case-apply").get
+    )
+    val rulesExclFirst = Seq(
+      Rules.parseLine("*#apply(*) id:case-apply").get,
+      Rules.parseLine("+com.example.Config$#apply(*) id:keep-config-apply").get
+    )
+    val acc  = access(public = true)
+    val fqcn = "com.example.Config$"
+    val desc = "(Ljava/lang/String;)Lcom/example/Config;"
+
+    assert(RuleResolver.resolve(rulesInclFirst, fqcn, "apply", desc, acc).isRescued, "include-first: rescued")
+    assert(RuleResolver.resolve(rulesExclFirst, fqcn, "apply", desc, acc).isRescued, "exclude-first: rescued")
+  }
+
+  // name-starts: and name-ends: predicates
+
+  test("name-starts: matches only methods whose name begins with prefix") {
+    val rule = Rules.parseLine("*#*(*) name-starts:get id:starts-get").get
+    val acc  = access(public = true)
+
+    assert(Rules.matches(rule, "com.example.Repo", "getById",   "(I)Ljava/lang/Object;", acc))
+    assert(Rules.matches(rule, "com.example.Repo", "getName",   "()Ljava/lang/String;",  acc))
+    assert(!Rules.matches(rule, "com.example.Repo", "setName",  "(Ljava/lang/String;)V", acc))
+    assert(!Rules.matches(rule, "com.example.Repo", "doGet",    "()V",                   acc),
+      "name-starts: must not match mid-name occurrence")
+  }
+
+  test("name-ends: matches only methods whose name ends with suffix") {
+    val rule = Rules.parseLine("*#*(*) name-ends:$eq id:ends-eq").get
+    val acc  = access(public = true)
+
+    assert(Rules.matches(rule, "com.example.Bean", "name_$eq",    "(Ljava/lang/String;)V", acc),
+      "Scala setter name_$eq should match name-ends:$eq")
+    assert(Rules.matches(rule, "com.example.Bean", "value_$eq",   "(I)V",                  acc))
+    assert(!Rules.matches(rule, "com.example.Bean", "$eq_name",   "(Ljava/lang/String;)V", acc),
+      "must not match when suffix appears at start, not end")
+    assert(!Rules.matches(rule, "com.example.Bean", "getValue",   "()Ljava/lang/String;",  acc))
+  }
+
+  test("name-starts: and name-ends: can be combined in one rule") {
+    val rule = Rules.parseLine("*#*(*) name-starts:get name-ends:Id id:starts-get-ends-id").get
+    val acc  = access(public = true)
+
+    assert(Rules.matches(rule, "com.example.Repo", "getById",    "(I)Ljava/lang/Object;", acc))
+    assert(Rules.matches(rule, "com.example.Repo", "getUserId",  "(I)Ljava/lang/Object;", acc))
+    assert(!Rules.matches(rule, "com.example.Repo", "findById",  "(I)Ljava/lang/Object;", acc),
+      "fails name-starts: check")
+    assert(!Rules.matches(rule, "com.example.Repo", "getByName", "(Ljava/lang/String;)Ljava/lang/Object;", acc),
+      "fails name-ends: check")
+  }
+
+  // name-contains: as isolated predicate
+
+  test("name-contains: matches when substring is present in method name") {
+    val rule = Rules.parseLine("*#*(*) name-contains:$anon id:contains-anon").get
+    val acc  = access(public = true)
+
+    assert(Rules.matches(rule, "com.example.Foo", "outer$anon$1", "()V", acc))
+    assert(Rules.matches(rule, "com.example.Foo", "$anonfun$1",   "()V", acc))
+    assert(!Rules.matches(rule, "com.example.Foo", "doWork",      "()V", acc),
+      "must not match when substring is absent")
+    assert(!Rules.matches(rule, "com.example.Foo", "anon",        "()V", acc),
+      "must not match when $ prefix is absent")
+  }
+
+  // Multiple flags combined: AND semantics
+
+  test("multiple flags require all to be present (AND semantics)") {
+    val rule = Rules.parseLine("*#*(*) synthetic bridge id:synth-bridge").get
+
+    assert(Rules.matches(rule, "com.example.Foo", "m", "()V", access(synthetic = true, bridge = true)),
+      "both synthetic and bridge set — should match")
+    assert(!Rules.matches(rule, "com.example.Foo", "m", "()V", access(synthetic = true)),
+      "only synthetic — bridge missing, should not match")
+    assert(!Rules.matches(rule, "com.example.Foo", "m", "()V", access(bridge = true)),
+      "only bridge — synthetic missing, should not match")
+    assert(!Rules.matches(rule, "com.example.Foo", "m", "()V", access(public = true)),
+      "neither flag set — should not match")
+  }
+
+  // Access-level flags as rule-side filters
+
+  test("public flag restricts rule to public methods only") {
+    val rule = Rules.parseLine("*#*(*) public id:pub-only").get
+
+    assert(Rules.matches(rule, "com.example.Foo", "m", "()V", access(public = true)))
+    assert(!Rules.matches(rule, "com.example.Foo", "m", "()V", access(privateA = true)))
+    assert(!Rules.matches(rule, "com.example.Foo", "m", "()V", access(protectedA = true)))
+  }
+
+  test("private flag restricts rule to private methods only") {
+    val rule = Rules.parseLine("*#*(*) private id:priv-only").get
+
+    assert(Rules.matches(rule, "com.example.Foo", "m", "()V", access(privateA = true)))
+    assert(!Rules.matches(rule, "com.example.Foo", "m", "()V", access(public = true)))
+  }
+
+  test("protected flag restricts rule to protected methods only") {
+    val rule = Rules.parseLine("*#*(*) protected id:prot-only").get
+
+    assert(Rules.matches(rule, "com.example.Foo", "m", "()V", access(protectedA = true)))
+    assert(!Rules.matches(rule, "com.example.Foo", "m", "()V", access(public = true)))
+  }
+
+  test("static flag restricts rule to static methods only") {
+    val rule = Rules.parseLine("*#*(*) static id:static-only").get
+
+    assert(Rules.matches(rule, "com.example.Foo", "m", "()V", access(staticA = true)))
+    assert(!Rules.matches(rule, "com.example.Foo", "m", "()V", access(public = true)))
+  }
+
+  test("abstract flag restricts rule to abstract methods only") {
+    val rule = Rules.parseLine("*#*(*) abstract id:abstract-only").get
+
+    assert(Rules.matches(rule, "com.example.Foo", "m", "()V", access(abstractA = true)))
+    assert(!Rules.matches(rule, "com.example.Foo", "m", "()V", access(public = true)))
+  }
+
+  test("bridge flag restricts rule to bridge methods only") {
+    val rule = Rules.parseLine("*#*(*) bridge id:bridge-only").get
+
+    assert(Rules.matches(rule, "com.example.Foo", "m", "()V", access(bridge = true)))
+    assert(!Rules.matches(rule, "com.example.Foo", "m", "()V", access(synthetic = true)),
+      "synthetic alone does not satisfy bridge flag")
+    assert(!Rules.matches(rule, "com.example.Foo", "m", "()V", access(public = true)))
+  }
+
+  // Duplicate predicate tokens: last value wins
+
+  test("duplicate id: tokens — last value wins") {
+    val rule = Rules.parseLine("*#copy(*) id:first id:second").get
+    assert(rule.id.contains("second"), "last id: token should win")
+  }
+
+  test("duplicate name-contains:/name-starts:/name-ends: tokens — last value wins") {
+    val rContains = Rules.parseLine("*#*(*) name-contains:foo name-contains:bar id:dup-contains").get
+    val rStarts   = Rules.parseLine("*#*(*) name-starts:get name-starts:set id:dup-starts").get
+    val rEnds     = Rules.parseLine("*#*(*) name-ends:$eq name-ends:$buf id:dup-ends").get
+    val acc       = access(public = true)
+
+    assert(rContains.nameContains.contains("bar"),  "last name-contains: should win")
+    assert(rStarts.nameStarts.contains("set"),      "last name-starts: should win")
+    assert(rEnds.nameEnds.contains("$buf"),         "last name-ends: should win")
+
+    assert(Rules.matches(rContains, "com.example.Foo", "foobar", "()V", acc), "bar is substring of foobar")
+    assert(!Rules.matches(rContains, "com.example.Foo", "foo",   "()V", acc), "first value overwritten")
+  }
+
+  // ? wildcard in glob: matches exactly one character
+
+  test("? in class selector matches exactly one character") {
+    val rule = Rules.parseLine("com.example.Us?r#copy(*) id:q-cls").get
+    val acc  = access(public = true)
+
+    assert(Rules.matches(rule,  "com.example.User", "copy", "(Ljava/lang/String;)V", acc))
+    assert(!Rules.matches(rule, "com.example.Usr",  "copy", "(Ljava/lang/String;)V", acc),
+      "? requires exactly one char — zero chars should not match")
+    assert(!Rules.matches(rule, "com.example.Userr", "copy", "(Ljava/lang/String;)V", acc),
+      "? requires exactly one char — two chars should not match")
+  }
+
+  test("? in method selector matches exactly one character") {
+    val rule = Rules.parseLine("*#ge?(*) id:q-method").get
+    val acc  = access(public = true)
+
+    assert(Rules.matches(rule,  "com.example.Foo", "get", "()V", acc))
+    assert(!Rules.matches(rule, "com.example.Foo", "ge",  "()V", acc))
+    assert(!Rules.matches(rule, "com.example.Foo", "getX","()V", acc))
+  }
+
+  // Package-scoped class glob
+
+  test("package-scoped class glob matches only classes in that package") {
+    val rule = Rules.parseLine("com.example.model.*#copy(*) id:pkg-scope").get
+    val acc  = access(public = true)
+
+    assert(Rules.matches(rule,  "com.example.model.User",  "copy", "(Ljava/lang/String;)V", acc))
+    assert(Rules.matches(rule,  "com.example.model.Event", "copy", "(Ljava/lang/String;)V", acc))
+    assert(!Rules.matches(rule, "com.example.service.UserService", "copy", "(Ljava/lang/String;)V", acc),
+      "different package — must not match")
+    assert(!Rules.matches(rule, "com.other.model.User", "copy", "(Ljava/lang/String;)V", acc),
+      "different root package — must not match")
+  }
+
+  // Exact dot-form FQCN without wildcards
+
+  test("exact FQCN class selector matches that class and nothing else") {
+    val rule = Rules.parseLine("com.example.Foo#method(*) id:exact-fqcn").get
+    val acc  = access(public = true)
+
+    assert(Rules.matches(rule,  "com.example.Foo",    "method", "()V", acc))
+    assert(!Rules.matches(rule, "com.example.FooBar", "method", "()V", acc),
+      "must not match a class that merely starts with the name")
+    assert(!Rules.matches(rule, "com.other.Foo",      "method", "()V", acc),
+      "must not match same simple name in a different package")
+  }
+
+  // ret: with wildcard and array patterns
+
+  test("ret: wildcard glob matches any return type starting with prefix") {
+    val rule = Rules.parseLine("*#*(*) ret:Lscala/* id:ret-scala-any").get
+    val acc  = access(public = true)
+
+    assert(Rules.matches(rule, "com.example.Foo", "m", "()Lscala/Option;",     acc))
+    assert(Rules.matches(rule, "com.example.Foo", "m", "()Lscala/Some;",       acc))
+    assert(Rules.matches(rule, "com.example.Foo", "m", "()Lscala/collection/Iterator;", acc))
+    assert(!Rules.matches(rule, "com.example.Foo", "m", "()Ljava/lang/String;", acc))
+    assert(!Rules.matches(rule, "com.example.Foo", "m", "()V",                  acc))
+  }
+
+  test("ret: matches primitive array return type [I (int[])") {
+    val rule = Rules.parseLine("*#*(*) ret:[I id:ret-int-array").get
+    val acc  = access(public = true)
+
+    assert(Rules.matches(rule, "com.example.Foo", "m", "()[I",  acc))
+    assert(!Rules.matches(rule, "com.example.Foo", "m", "()[J", acc), "long[] should not match int[]")
+    assert(!Rules.matches(rule, "com.example.Foo", "m", "()I",  acc), "int should not match int[]")
+  }
+
+  test("ret: wildcard [* matches any array return type") {
+    val rule = Rules.parseLine("*#*(*) ret:[* id:ret-any-array").get
+    val acc  = access(public = true)
+
+    assert(Rules.matches(rule, "com.example.Foo", "m", "()[I",                    acc), "int[]")
+    assert(Rules.matches(rule, "com.example.Foo", "m", "()[Ljava/lang/String;",   acc), "String[]")
+    assert(Rules.matches(rule, "com.example.Foo", "m", "()[[I",                   acc), "int[][]")
+    assert(!Rules.matches(rule, "com.example.Foo", "m", "()Ljava/lang/String;",   acc), "non-array")
+    assert(!Rules.matches(rule, "com.example.Foo", "m", "()V",                    acc))
+  }
 }
