@@ -35,7 +35,7 @@ final case class ScanResult(
   }
 
   private def formatUnmatchedRuleEntry(r: MethodRule): String = {
-    val pattern = if (r.rawText.nonEmpty) r.rawText else "(pattern unavailable)"
+    val pattern = if (r.patternText.nonEmpty) r.patternText else "(pattern unavailable)"
     val idStr = r.id.map(id => s"  id:$id").getOrElse("  (no id)")
     val sourceStr = r.source match {
       case GlobalSource(origin)              => s"  [global: $origin]"
@@ -163,7 +163,7 @@ final case class ScanResult(
       s"""    {"class": ${str(m.fqcn)}, "method": ${str(m.methodName)}, "descriptor": ${str(m.descriptor)}, "exclusionRuleIds": ${strArr(m.exclusionIds)}, "inclusionRuleIds": ${strArr(m.inclusionIds)}}"""
 
     def unmatchedEntry(r: MethodRule): String = {
-      val pattern = if (r.rawText.nonEmpty) r.rawText else ""
+      val pattern = if (r.patternText.nonEmpty) r.patternText else ""
       val idVal = r.id.map(str).getOrElse("\"\"")
       val sourceVal = str(r.source match {
         case GlobalSource(origin)               => s"global: $origin"
@@ -200,7 +200,7 @@ final case class ScanResult(
       sb.append(s"RESCUED,${cell(m.fqcn)},${cell(m.methodName)},${cell(m.descriptor)},${cell(m.exclusionIds.mkString("|"))},${cell(m.inclusionIds.mkString("|"))}\n")
     }
     unmatchedRules.foreach { r =>
-      val pattern = if (r.rawText.nonEmpty) r.rawText else ""
+      val pattern = if (r.patternText.nonEmpty) r.patternText else ""
       val id      = r.id.getOrElse("")
       sb.append(s"UNMATCHED_RULE,${cell(pattern)},,,${cell(id)},\n")
     }

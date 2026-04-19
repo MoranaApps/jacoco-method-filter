@@ -42,7 +42,8 @@ final case class MethodRule(
                              mode: RuleMode = Exclude,     // exclude or include
                              source: RuleSource = LocalSource(""), // where this rule came from
                              forwardCompat: Boolean = false, // exempt from unmatched-rule warnings
-                             rawText: String = ""          // original rule line (for display in reports)
+                             rawText: String = "",          // original rule line (for debugging/logging)
+                             patternText: String = ""       // selector-only (cls#method(desc), no tokens) for display
                            )
 
 object Rules {
@@ -89,6 +90,9 @@ object Rules {
     val (main, restTokens) =
       if (firstWs < 0) (lineWithoutPrefix, "")
       else (lineWithoutPrefix.substring(0, firstWs), lineWithoutPrefix.substring(firstWs).trim)
+
+    // patternText = selector-only, no tokens (used for display in UNMATCHED RULES reports)
+    val patternText = if (mode == Include) s"+$main" else main
 
     val parts = main.split("#", 2)
     require(parts.length == 2, s"Missing '#' separator in rule: $raw")
@@ -155,7 +159,8 @@ object Rules {
       mode          = mode,
       source        = source,
       forwardCompat = forwardCompat,
-      rawText       = line
+      rawText       = line,
+      patternText   = patternText
     ))
   }
 

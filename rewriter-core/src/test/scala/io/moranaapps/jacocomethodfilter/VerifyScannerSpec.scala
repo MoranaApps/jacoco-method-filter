@@ -733,15 +733,17 @@ class VerifyScannerSpec extends AnyFunSuite {
     assert(lines.exists(_.contains("missing-copy")))
   }
 
-  test("printReport shows rawText in UNMATCHED RULES section") {
+  test("printReport shows selector pattern in UNMATCHED RULES section") {
     val rule = Rules.parseLine("test.Missing#copy(*) id:missing-copy").get
     val result = ScanResult(1, 0, Seq.empty, Seq(rule))
 
     val lines = scala.collection.mutable.ArrayBuffer[String]()
     result.printReport(line => lines += line)
 
-    // rawText should appear in the unmatched section
+    // selector (without tokens) must appear
     assert(lines.exists(_.contains("test.Missing#copy(*)")))
+    // id must not be duplicated — patternText contains no id: token
+    assert(!lines.exists(_.contains("id:missing-copy  id:missing-copy")), "id token must not appear twice in one line")
   }
 
   test("printReport does not show UNMATCHED RULES section when all rules matched") {
@@ -833,7 +835,9 @@ class VerifyScannerSpec extends AnyFunSuite {
     assert(json.contains("\"id\""))
     assert(json.contains("\"source\""))
     assert(json.contains("copy-rule"))
-    assert(json.contains("test.Missing#copy(*)"))
+    // pattern must be selector-only (no id: token — that would duplicate the separate id field)
+    assert(json.contains("\"test.Missing#copy(*)\""), "pattern value must be selector-only")
+    assert(!json.contains("\"test.Missing#copy(*) id:copy-rule\""), "pattern must not include id: token")
   }
 
   test("formatReport json unmatched entry has empty id string when rule has no id") {
@@ -862,13 +866,15 @@ class VerifyScannerSpec extends AnyFunSuite {
     assert(!csv.contains("UNMATCHED_RULE"))
   }
 
-  test("formatReport csv UNMATCHED_RULE row has rawText in class column and id in exclusionRuleIds column") {
+  test("formatReport csv UNMATCHED_RULE row has selector pattern in class column and id in exclusionRuleIds column") {
     val rule = Rules.parseLine("test.Missing#copy(*) id:missing-copy").get
     val result = ScanResult(1, 0, Seq.empty, Seq(rule))
     val csv = result.formatReport("csv")
     val rows = csv.split("\n")
     val unmatchedRow = rows.find(_.startsWith("UNMATCHED_RULE")).getOrElse(fail("no UNMATCHED_RULE row"))
+    // class column must hold selector-only (no id: token)
     assert(unmatchedRow.contains("test.Missing#copy(*)"))
+    assert(!unmatchedRow.contains("test.Missing#copy(*) id:missing-copy"), "id: token must not appear in selector column")
     assert(unmatchedRow.contains("missing-copy"))
   }
 

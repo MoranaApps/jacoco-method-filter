@@ -318,4 +318,21 @@ class RulesLoadSpec extends AnyFunSuite {
     assert(rules(0).rawText == "com.example.*#copy(*) id:copy-rule")
     assert(rules(1).rawText == "+com.example.Config$#apply(*) id:keep-apply")
   }
+
+  // --- patternText field (selector-only, no tokens) ---
+
+  test("parseLine sets patternText to selector-only for exclude rule") {
+    val rule = Rules.parseLine("com.example.*#copy(*) id:case-copy").get
+    assert(rule.patternText == "com.example.*#copy(*)")
+  }
+
+  test("parseLine sets patternText with + prefix for include rule") {
+    val rule = Rules.parseLine("+com.example.*#apply(*) id:keep-apply").get
+    assert(rule.patternText == "+com.example.*#apply(*)")
+  }
+
+  test("parseLine sets patternText without tokens (id, forward-compat, flags)") {
+    val rule = Rules.parseLine("com.example.*#copy(*) forward-compat synthetic id:synth-copy").get
+    assert(rule.patternText == "com.example.*#copy(*)")
+  }
 }

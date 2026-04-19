@@ -39,6 +39,8 @@ CORE_JAR=$(
 )
 
 SCALA_LIB=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "scala-library-2.12*.jar" 2>/dev/null | head -1 || true)
+ASM_JAR=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "asm-9.*.jar" 2>/dev/null | sort -V | tail -1 || true)
+ASM_COMMONS_JAR=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "asm-commons-9.*.jar" 2>/dev/null | sort -V | tail -1 || true)
 SCOPT_JAR=$(find ~/.cache/coursier ~/Library/Caches/Coursier -name "scopt_2.12-*.jar"        2>/dev/null | head -1 || true)
 
 if [[ -z "$CORE_JAR" || ! -f "$CORE_JAR" ]]; then
@@ -47,11 +49,17 @@ fi
 if [[ -z "$SCALA_LIB" || ! -f "$SCALA_LIB" ]]; then
   fail "$TEST_NAME — Scala library not found in Coursier cache"
 fi
+if [[ -z "$ASM_JAR" || ! -f "$ASM_JAR" ]]; then
+  fail "$TEST_NAME — ASM JAR not found in Coursier cache"
+fi
 if [[ -z "$SCOPT_JAR" || ! -f "$SCOPT_JAR" ]]; then
   fail "$TEST_NAME — scopt JAR not found in Coursier cache"
 fi
 
-CP="$CORE_JAR:$SCALA_LIB:$SCOPT_JAR"
+CP="$CORE_JAR:$SCALA_LIB:$ASM_JAR:$SCOPT_JAR"
+if [[ -n "$ASM_COMMONS_JAR" && -f "$ASM_COMMONS_JAR" ]]; then
+  CP="$CP:$ASM_COMMONS_JAR"
+fi
 
 # ── Helper: run CLI verify with a given rules file ─────────────────────────
 run_verify() {
