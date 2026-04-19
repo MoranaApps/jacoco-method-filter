@@ -38,11 +38,11 @@
 # Scala 2.13+ case class boilerplate — safe to enable; no-op in 2.11/2.12
 *#productElementName(*)                                 id:case-prod-element-name
 *#productElementNames()                                 id:case-prod-element-names
-# WARNING: may collide with domain methods named `name` — verify before enabling
+# WARNING: may collide with domain methods named `name` — rescue with + include rule if needed
 *#name()                                                id:case-name
-# WARNING: may collide with domain methods named `groups` — verify before enabling
+# WARNING: may collide with domain methods named `groups` — rescue with + include rule if needed
 *#groups()                                              id:case-groups
-# WARNING: may collide with domain methods named `optionalAttributes` — verify before enabling
+# WARNING: may collide with domain methods named `optionalAttributes` — rescue with + include rule if needed
 *#optionalAttributes()                                  id:case-optionalAttributes
 
 # Companion objects, constructors, and static definitions
