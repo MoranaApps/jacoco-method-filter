@@ -1,143 +1,143 @@
+Caveman ultra mode active. Max compression. Always on.
+
+Rules:
+• Drop: articles, filler, pleasantries, hedging, conjunctions
+• Abbreviate: DB/auth/config/req/res/fn/impl/sbt/mvn
+• Arrows for causality: X → Y
+• One word when one word enough. Fragments always OK.
+• Technical terms exact. Code unchanged.
+• Pattern: [thing] [action/reason]. [next step].
+
+Auto-Clarity: drop caveman for security warnings, irreversible actions, user confused. Resume after.
+Boundaries: code/docs/commits/PRs written normal.
+
+---
+
 Copilot instructions for jacoco-method-filter
 
 Purpose
-- Scala-based bytecode rewriter and sbt plugin
-- Marks selected methods with an annotation whose simple name contains `Generated`
-- JaCoCo (0.8.2+) ignores such methods in reports
+- Scala bytecode rewriter + sbt plugin
+- Marks methods → annotation w/ `Generated` in name → JaCoCo (0.8.2+) ignores
 
 Structure
-- `build.sbt` – root sbt build
-- `rewriter-core/` – core library and CLI rewriter module
-- `sbt-plugin/` – sbt plugin module
-- `maven-plugin/` – Maven plugin module
-- `rules/` – sample rules files
+- `build.sbt` – root build
+- `rewriter-core/` – core lib + CLI
+- `sbt-plugin/` – sbt plugin
+- `maven-plugin/` – Maven plugin
+- `rules/` – sample rules
 
 Context
-- CLI entrypoint: `io.moranaapps.jacocomethodfilter.CoverageRewriter`
-- Cross-built for Scala 2.11, 2.12, 2.13
+- CLI: `io.moranaapps.jacocomethodfilter.CoverageRewriter`
+- Cross-built: Scala 2.11/2.12/2.13
 
-Coding guidelines
-- Must keep changes small and focused; avoid broad refactors
-- Prefer clear, explicit Scala over clever tricks
-- Must not change externally-visible behavior unless intentional:
-  - rules file syntax and matching semantics (`Rules.load`, `Rules.matches`)
-  - CLI flags and exit codes (`CoverageRewriter`)
-  - published artifact coordinates / cross-build settings (`build.sbt`)
-- Must not make network calls; this project must stay offline-friendly
+Coding
+- Small focused changes; no broad refactors
+- Explicit Scala; no clever tricks
+- No externally-visible behavior change unless intentional:
+  - rules syntax/matching (`Rules.load`, `Rules.matches`)
+  - CLI flags + exit codes (`CoverageRewriter`)
+  - artifact coords / cross-build (`build.sbt`)
+- No network calls; offline-friendly
 
-Output discipline (reduce review time)
-- Must default to concise responses (aim ≤ 10 lines in final recap)
-- Must not paste large file contents or configs; link and summarize deltas
-- Prefer actionable bullets over prose
-- When making code changes, must end with:
-  - What changed
-  - Why
-  - How to verify (commands/tests)
-- Avoid deep rationale unless explicitly requested
+Output
+- ≤ 10 lines recap
+- No large pastes; link + summarize deltas
+- Bullets over prose
+- Code changes → end with: changed / why / verify
+- No deep rationale unless asked
 
-PR Body Management
-- Must treat PR description as a changelog
-- Must not rewrite or replace the entire PR body
-- Must append updates chronologically under a new heading
-- Prefer headings: "## Update [YYYY-MM-DD]" referencing commit hashes
-- Must reference the commit hash that introduced the change
+PR body
+- Treat as changelog
+- No full rewrites; append under new heading
+- Heading: `## Update [YYYY-MM-DD]` + commit hash
 
-Language and style
-- Target: Scala 2.11 / 2.12 / 2.13, JDK 17+
-- Prefer explicit types for public APIs
-- Must use project logging conventions; avoid `println` for real output
-- Must keep imports at top of file; follow standard Scala import ordering
+Lang + style
+- Scala 2.11/2.12/2.13, JDK 17+
+- Explicit types on public APIs
+- Project logging; no `println`
+- Imports at top; standard ordering
 
-Docstrings and comments
-- Must match existing module style
-- Short summary line; optional structured sections
-- Prefer comments for intent/edge cases (the "why")
-- Avoid blocks that restate the code
+Docs/comments
+- Match existing style
+- Short summary line; structured sections optional
+- Comments → intent/edge cases (why)
+- No restate-code blocks
 
 Patterns
-- Error handling: leaf modules throw; CLI entry point translates to exit codes
-- Must keep integration boundaries explicit and mockable
-- Must not make real network calls in unit tests
+- Errors: leaf modules throw; CLI → exit codes
+- Boundaries explicit + mockable
+- No real network calls in unit tests
 
 Testing
-- Tests live in `rewriter-core/src/test/scala` (ScalaTest)
-- Must add/adjust tests when rule parsing/matching behavior changes
-- Tests must be deterministic; must not rely on external services
-- Must mock external services and environment variables in unit tests
+- `rewriter-core/src/test/scala` (ScalaTest)
+- Adjust tests when rule parsing/matching changes
+- Deterministic; no external services
+- Mock env vars in unit tests
+- TDD for rule parsing/matching changes:
+  - Create/update `SPEC.md` in relevant dir before code; list scenarios/inputs/expected outputs
+  - Propose full test cases (name + intent + input + expected output); wait for confirm before code
+  - Ready to add/remove/rename tests on feedback
+  - Failing tests first (red) → implement (green)
+  - Cover all distinct combinations; describe scenario in test name/comment
+  - Update `SPEC.md` after pass with confirmed test table
 
 Tooling
-- Build: sbt
-- Tests: ScalaTest via sbt
-- No additional linter/formatter enforced at this time
+- Build: sbt; Tests: ScalaTest via sbt
+- No enforced linter/formatter
 
 Quality gates
-- Must run before opening a PR:
-  - `sbt "+test"`
+- Before PR: `sbt "+test"`
 
-Common pitfalls to avoid
-- Must not change externally-visible strings/outputs unless intentional
-- Must remove unused variables/imports promptly
-- Must verify Scala cross-version compatibility before adding dependencies
+Pitfalls
+- No externally-visible string changes unless intentional
+- Remove unused vars/imports promptly
+- Verify cross-version compat before adding deps
 
-JMF filtering decision rules
+Learned rules
+- No CLI exit code changes for existing failure scenarios
+- No rule syntax/matching changes without updating tests + CHANGELOG
 
-Use these criteria to decide whether a method belongs in jmf-rules.txt (filtered) or
-should be covered by a test. This is the most important section for adopters writing
-their first rule file.
+JMF filter rules
 
-Filter (add a JMF rule) when ALL of the following hold:
-- The method is compiler-generated: case class boilerplate (`copy`, `equals`, `hashCode`,
+Filter (add rule) when ALL:
+- Compiler-generated: case class boilerplate (`copy`, `equals`, `hashCode`,
   `productElement`, `productArity`, `productPrefix`, `productIterator`, `canEqual`,
-  `toString`, `unapply`), lambda lifts (`$anonfun$*`), default parameter accessors
-  (`$default$*`), value class extension methods (`*$extension`), Iterator trait mixin
-  forwarders, static companion forwarders, implicit wrapper constructors, or
-  `$deserializeLambda$`.
-- The method body contains no branching logic, no validation, no data transformation,
-  and no error handling.
-- The method calls at most one non-trivial dependency (pure single-expression delegation).
+  `toString`, `unapply`), lambda lifts (`$anonfun$*`), default accessors (`$default$*`),
+  value class extensions (`*$extension`), Iterator forwarders, companion forwarders,
+  implicit wrapper ctors, `$deserializeLambda$`
+- No branching, validation, transformation, error handling
+- ≤1 non-trivial dependency call
 
-Do NOT filter (write a test instead) when ANY of the following hold:
-- Must not filter if the method contains an `if`, `match`, `try`, `for`, or any branch.
-- Must not filter if the method calls more than one non-trivial method.
-- Must not filter if removing coverage would hide a real defect.
-- Must not filter if the method is a factory with validation or construction logic
-  (e.g., a companion `apply` that validates inputs or builds state).
+Do NOT filter (test instead) when ANY:
+- Contains `if`/`match`/`try`/`for`/branch
+- Calls >1 non-trivial method
+- Coverage removal hides real defect
+- Factory with validation/construction logic
 
-Borderline cases:
-- Single-call delegates: filter only when the body is provably one expression with no
-  branching and the callee is already tested independently.
-- Trivial negations (e.g., `!hasNext`, `!isEmpty`): filter; a test would only re-test
-  the underlying method.
-- Public `val` getters (Scala accessor compiled to 0-arg method): filter; identity only.
-- When in doubt, prefer writing a test over adding a filter rule.
+Borderline:
+- Single-call delegate → filter only if one expr, no branch, callee tested
+- Trivial negations (`!hasNext`, `!isEmpty`) → filter
+- Public `val` getters → filter; identity only
+- Doubt → test over filter
 
-Verification requirement:
-- Must run `javap -p -verbose <ClassFile.class>` and inspect the bytecode before adding
-  any rule. Never add a rule based on source-level inspection alone.
-- Must confirm the rule matches by running `sbt jacoco` before and after adding the rule
-  and checking that "Marked N methods" increases by the expected count.
-- Must not rely on integration test coverage to assume a filter rule is working — verify
-  with the "Marked N" count.
+Verification:
+- `javap -p -verbose <ClassFile.class>` before adding rule; no source-only inspection
+- Confirm: `sbt jacoco` before+after; "Marked N" increases by expected count
+- No assume from integration tests alone
 
-Global rule override:
-- If a global rule would filter a method that contains real logic, must add a
-  project-level include rule (prefix `+`) to rescue it:
-  - Example: `+*Config$#apply(*)  id:keep-config-apply`
-- Must document why the include rule is needed in a comment directly above it.
-- Must re-run `sbt jacoco` after adding the include rule to confirm the method is
-  now counted as covered (not filtered).
+Global override:
+- Rule filters real logic → add `+` include rule to rescue
+  - e.g. `+*Config$#apply(*)  id:keep-config-apply`
+- Comment above: why include needed
+- Re-run `sbt jacoco`; confirm method counted as covered
 
-Repo additions
-- Project name: `jacoco-method-filter`
-- Entry points: `io.moranaapps.jacocomethodfilter.CoverageRewriter`
-- Contract-sensitive outputs:
-  - rules file syntax and matching semantics
-  - CLI flags and exit codes
-  - sbt plugin keys and integration behavior
-- Commands:
-  - Build (all Scala versions): `sbt +compile`
-  - Test (all Scala versions): `sbt +test`
-  - Publish locally:
-    - `sbt "project rewriterCore" +publishLocal`
-    - `sbt "project sbtPlugin" publishLocal`
-    - Maven plugin: `sbt "project rewriterCore" ++2.12.21 publishM2` then `cd maven-plugin && mvn install`
+Repo
+- Project: `jacoco-method-filter`
+- Entry: `io.moranaapps.jacocomethodfilter.CoverageRewriter`
+- Contract: rules syntax/matching; CLI flags+exit codes; sbt plugin keys
+- Build all: `sbt +compile`
+- Test all: `sbt +test`
+- Publish:
+  - `sbt "project rewriterCore" +publishLocal`
+  - `sbt "project sbtPlugin" publishLocal`
+  - Maven: `sbt "project rewriterCore" ++2.12.21 publishM2` then `cd maven-plugin && mvn install`
