@@ -21,7 +21,7 @@
 # Scala case class helpers
 *#canEqual(*)                                           id:case-canequal
 *#equals(*)                                             id:case-equals
-*#apply(*)                                             id:case-apply
+*#apply(*)                                              id:case-apply
 *#unapply(*)                                            id:case-unapply
 *#hashCode(*)                                           id:case-hashcode
 *#copy(*)                                               id:case-copy
