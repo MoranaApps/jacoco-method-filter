@@ -16,6 +16,7 @@ import java.nio.file.{Files, Path, Paths}
   * @param reportFile Optional path to write the filtered-methods report (txt/json/csv)
   * @param reportFormat Report format: txt (default), json, or csv
   * @param errorOnUnmatched If true, exit non-zero when any rules matched zero methods (requires verify mode)
+  * @param strict If true, exit non-zero when any rules have no id: label
   */
 private[jacocomethodfilter] final case class CliConfig(
   in: Path = Paths.get("."),
@@ -26,7 +27,8 @@ private[jacocomethodfilter] final case class CliConfig(
   verify: Boolean = false,
   reportFile: Option[Path] = None,
   reportFormat: String = "txt",
-  errorOnUnmatched: Boolean = false
+  errorOnUnmatched: Boolean = false,
+  strict: Boolean = false
 )
 
 object CoverageRewriter {
@@ -51,6 +53,12 @@ object CoverageRewriter {
     val rules = Rules.loadAll(cfg.globalRules, cfg.localRules)
     println(s"[info] Loaded ${rules.size} rule(s) from ${rulesSummary(cfg)}")
 
+    val unlabelledCount = rules.count(_.id.isEmpty)
+    if (unlabelledCount > 0 && cfg.strict) {
+      println(s"[error] Aborting: $unlabelledCount rule(s) have no id: label (--strict is set).")
+      sys.exit(1)
+    }
+
     Files.createDirectories(outPath)
     var files = 0
     var marked = 0
@@ -74,6 +82,12 @@ object CoverageRewriter {
 
   private def verify(cfg: CliConfig): Unit = {
     val rules = Rules.loadAll(cfg.globalRules, cfg.localRules)
+
+    val unlabelledCount = rules.count(_.id.isEmpty)
+    if (unlabelledCount > 0 && cfg.strict) {
+      println(s"[error] Aborting: $unlabelledCount rule(s) have no id: label (--strict is set).")
+      sys.exit(1)
+    }
 
     println(s"[verify] Active rules from ${rulesSummary(cfg)}:")
     printRulesListing(rules)

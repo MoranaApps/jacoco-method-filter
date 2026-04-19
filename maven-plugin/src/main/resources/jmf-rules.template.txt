@@ -10,6 +10,9 @@
 # 1) Review the GLOBAL RULES below — they cover compiler-generated boilerplate.
 # 2) Add project-specific patterns in the PROJECT RULES section.
 # 3) Keep rules narrow; add id: labels so logs are readable.
+#    Every rule must have an id:<label>. Unlabelled rules emit a [warn] at load
+#    time. CLI users: pass --strict to enforce id: as a hard CI requirement.
+#    (Sbt/Maven plugins do not yet expose --strict as a configuration key.)
 # 4) Use --verify mode to confirm rules match before committing.
 #
 # ─────────────────────────────────────────────────────────────────────────────

@@ -29,7 +29,9 @@ Full syntax reference, authoring guide, and diagnostic workflows for jacoco-meth
 3. Keep rules narrow (by package), prefer flags (`synthetic`/`bridge`) for compiler artifacts,
    and add `id:` labels so logs are readable.
 4. Use `--verify` mode to confirm rules match what you expect before committing.
-5. **Prefer include rules over commenting out globals.** When a broad global accidentally matches
+5. Add `--strict` to your CI build command (CLI) to fail fast when rules are missing `id:` labels.
+   (The sbt and Maven plugins do not yet expose `--strict` as a configuration key.)
+6. **Prefer include rules over commenting out globals.** When a broad global accidentally matches
    a method with real logic, keep the global active and add a `+` include rule to rescue that
    specific method. Commenting out the global loses filtering for *all* other matching methods.
    See [Exclude and Include Rules](#exclude-and-include-rules).
@@ -65,7 +67,7 @@ RIGHT: *#*(*) synthetic    (space separates flag from descriptor)
 **PREDICATES** — Space-separated key:value pairs. Optional.
 
 - `ret:<glob>` — Match return type only (e.g., `ret:V`, `ret:Lcom/example/*;`)
-- `id:<string>` — Identifier shown in logs/reports (required for traceability)
+- `id:<string>` — Identifier shown in logs/reports (required for traceability; empty value treated as absent)
 - `name-contains:<s>` — Method name must contain `<s>`
 - `name-starts:<s>` — Method name must start with `<s>`
 - `name-ends:<s>` — Method name must end with `<s>`
@@ -166,7 +168,18 @@ WRONG: *#make(*) ret:Lcom/example/model/Id   (missing semicolon)
 RIGHT: *#make(*) ret:Lcom/example/model/Id;  (semicolon required)
 ```
 
-**5.** Every rule should include `id:<label>` for traceability in logs.
+**5.** Every rule should include `id:<label>` for traceability in logs. Rules without `id:` emit
+a `[warn]` message at load time (showing source file and line number) **regardless of whether
+`--strict` is set**. To enforce `id:` as a hard CI requirement, pass `--strict` to the CLI —
+any unlabelled rule causes a non-zero exit:
+
+```bash
+java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
+  --verify \
+  --in target/classes \
+  --local-rules jmf-rules.txt \
+  --strict
+```
 
 **6.** `#` is both the comment marker (start of line) and FQCN/method separator. Inline comments
 after rules are harmless but can be confusing. Best practice: use dedicated comment lines above the rule.
@@ -538,6 +551,22 @@ java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
 
 Exit code is `1` when any unmatched rules exist; `0` when all rules matched.
 
+To enforce that every rule has an `id:` label, add `--strict`:
+
+```bash
+java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
+  --verify \
+  --in target/classes \
+  --local-rules jmf-rules.txt \
+  --strict
+```
+
+Exit code is `1` when any rules lack an `id:` label; `0` when all rules are labelled.
+Both `--error-on-unmatched` and `--strict` can be combined. When combined, the `--strict`
+check runs first; if any rules lack `id:`, the process aborts before scanning for unmatched
+rules. Rules without `id:` also emit a `[warn]` message at load time (regardless of `--strict`),
+making them visible in non-strict runs.
+
 ### Forward-Compatible Rules
 
 Some rules are intentionally written to target classes present in a *production* build but absent
@@ -672,6 +701,7 @@ globally and rescue lazy vals with real logic:
 | `--dry-run` | No | Only print matches; do not modify classes |
 | `--verify` | No | Read-only scan: list all methods that would be excluded by rules |
 | `--error-on-unmatched` | No | Exit non-zero if any rules matched zero methods (requires `--verify`) |
+| `--strict` | No | Exit non-zero if any rules have no `id:` label |
 | `--report-file <path>` | No | Write the filtered-methods report to this file |
 | `--report-format <fmt>` | No | Report format: `txt` (default), `json`, or `csv` (requires `--report-file`) |
 
