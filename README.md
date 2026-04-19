@@ -141,14 +141,17 @@ See plugin READMEs for full defaults and customization options.
 
 ### Customization
 
-See plugin documentation for rules file location, dry-run mode, report file export, and behavior when JaCoCo execution data is missing:
+See plugin documentation for rules file location, dry-run mode, report file export, and behavior when JaCoCo execution
+ data is missing:
 
 - [`sbt-plugin/README.md`](./sbt-plugin/README.md)
 - [`maven-plugin/README.md`](./maven-plugin/README.md)
 
 ### Report File Export
 
-Add `--report-file <path>` (and optionally `--report-format txt|json|csv`) to any `--verify` or `--dry-run` invocation to save filtered-method results to a file. This is useful for CI traceability and downstream automation. The file content mirrors console output; JSON and CSV formats are also available for machine-readable consumption.
+Add `--report-file <path>` (and optionally `--report-format txt|json|csv`) to any `--verify` or `--dry-run` invocation
+ to save filtered-method results to a file. This is useful for CI traceability and downstream automation. The file
+  content mirrors console output; JSON and CSV formats are also available for machine-readable consumption.
 
 | Integration | Setting / Property |
 |-------------|-------------------|

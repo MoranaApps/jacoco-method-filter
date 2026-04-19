@@ -121,7 +121,8 @@ Then run `sbt jmfVerify`; the report is written alongside the usual console outp
 }
 ```
 
-The CSV format uses `outcome,class,method,descriptor,exclusionRuleIds,inclusionRuleIds` as its header row; multiple rule IDs within one cell are separated by `|`.
+The CSV format uses `outcome,class,method,descriptor,exclusionRuleIds,inclusionRuleIds` as its header row; multiple
+ rule IDs within one cell are separated by `|`.
 
 ### `jacocoReport`
 
