@@ -141,11 +141,11 @@ EXCLUDED (10 methods):
     #productIterator()Lscala/collection/Iterator;  rule-id:scala-product-iterator
     #productPrefix()Ljava/lang/String;  rule-id:scala-product-prefix
 
-RESCUED by include rules (1 methods):
+RESCUED by include rules (1 method):
   example.Calculator
     #toString()Ljava/lang/String;  excl:scala-tostring → incl:rescue-calc-tostring
 
-Summary: 3 classes scanned, 10 methods excluded, 1 methods rescued
+Summary: 3 classes scanned, 10 methods excluded, 1 method rescued
 ```
 
 **json**:

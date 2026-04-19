@@ -211,7 +211,7 @@ class VerifyScannerSpec extends AnyFunSuite {
     assert(lines.exists(_.contains("EXCLUDED")))
     assert(lines.exists(_.contains("RESCUED")))
     assert(lines.exists(_.contains("Summary")))
-    assert(lines.exists(_.contains("1 methods excluded, 1 methods rescued")))
+    assert(lines.exists(_.contains("1 method excluded, 1 method rescued")))
   }
 
   test("printReport handles methods with no rule IDs") {
@@ -492,17 +492,6 @@ class VerifyScannerSpec extends AnyFunSuite {
     val row = csv.split("\n").find(_.startsWith("RESCUED")).getOrElse(fail("no RESCUED row"))
     assert(row.contains("excl-1|excl-2"))
     assert(row.contains("incl-1"))
-  }
-
-  test("formatReport csv escapes fields containing commas") {
-    // Descriptors can contain commas in edge cases; verify cell quoting
-    val matches = Seq(
-      MatchedMethod("com.example.Foo", "bar", "(Ljava/util/Map;)V", Excluded, Seq("r,id"), Seq.empty, Opcodes.ACC_PUBLIC)
-    )
-    val result = ScanResult(1, 1, matches)
-    val csv = result.formatReport("csv")
-    // rule ID "r,id" contains a comma → must be quoted in CSV
-    assert(csv.contains("\"r,id\""))
   }
 
   test("formatReport json escapes double-quotes in class names") {

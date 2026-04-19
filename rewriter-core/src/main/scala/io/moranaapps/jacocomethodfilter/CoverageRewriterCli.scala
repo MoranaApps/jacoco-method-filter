@@ -66,6 +66,8 @@ private[jacocomethodfilter] object CoverageRewriterCli {
           failure("--out is required when not in verify mode")
         } else if (cfg.globalRules.isEmpty && cfg.localRules.isEmpty) {
           failure("At least one of --global-rules or --local-rules must be specified")
+        } else if (cfg.reportFile.exists(Files.isDirectory(_))) {
+          failure("--report-file must be a file path, not an existing directory")
         } else {
           success
         }

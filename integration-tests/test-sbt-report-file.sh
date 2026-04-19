@@ -206,11 +206,14 @@ fi
 pass "$TEST_NAME — csv report file content correct"
 
 # ── 4. No report file written when jmfReportFile is None (default) ─────────
+# Run jmfVerify without any jmfReportFile setting (default = None).
+# The sbt output must NOT contain "[info] Report written to:" because no
+# report file path is configured.
 info "$TEST_NAME — verifying no report file written when jmfReportFile = None"
-DEFAULT_OUT="$WORK_DIR/should-not-exist.txt"
-sbt jmfVerify > /dev/null 2>&1 || true
-if [[ -f "$DEFAULT_OUT" ]]; then
-  fail "$TEST_NAME — report file should not be written when jmfReportFile = None"
+DEFAULT_LOG="$WORK_DIR/jmfVerify-default.log"
+sbt jmfVerify > "$DEFAULT_LOG" 2>&1 || true
+if grep -q "Report written to" "$DEFAULT_LOG"; then
+  fail "$TEST_NAME — report file must not be written when jmfReportFile = None"
 fi
 
 pass "$TEST_NAME — no report file written by default"

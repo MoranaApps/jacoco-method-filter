@@ -28,6 +28,11 @@ final case class ScanResult(
   def excludedMethods: Seq[MatchedMethod] = matches.filter(_.outcome == Excluded)
   def rescuedMethods: Seq[MatchedMethod] = matches.filter(_.outcome == Rescued)
 
+  private def plural(n: Int, word: String): String = {
+    val pluralForm = if (word == "class") "classes" else word + "s"
+    if (n == 1) s"$n $word" else s"$n $pluralForm"
+  }
+
   /** Print report to stdout. */
   def printReport(): Unit = printReport(println)
 
@@ -35,7 +40,7 @@ final case class ScanResult(
   def printReport(out: String => Unit): Unit = {
     val excluded = excludedMethods
     if (excluded.nonEmpty) {
-      out(s"[verify] EXCLUDED (${excluded.size} methods):")
+      out(s"[verify] EXCLUDED (${plural(excluded.size, "method")}):")
       val byClass = excluded.groupBy(_.fqcn).toSeq.sortBy(_._1)
       byClass.foreach { case (fqcn, methods) =>
         out(s"[verify]   $fqcn")
@@ -53,7 +58,7 @@ final case class ScanResult(
 
     val rescued = rescuedMethods
     if (rescued.nonEmpty) {
-      out(s"[verify] RESCUED by include rules (${rescued.size} methods):")
+      out(s"[verify] RESCUED by include rules (${plural(rescued.size, "method")}):")
       val byClass = rescued.groupBy(_.fqcn).toSeq.sortBy(_._1)
       byClass.foreach { case (fqcn, methods) =>
         out(s"[verify]   $fqcn")
@@ -66,7 +71,7 @@ final case class ScanResult(
       out("")
     }
 
-    out(s"[verify] Summary: $classesScanned classes scanned, ${excluded.size} methods excluded, ${rescued.size} methods rescued")
+    out(s"[verify] Summary: ${plural(classesScanned, "class")} scanned, ${plural(excluded.size, "method")} excluded, ${plural(rescued.size, "method")} rescued")
   }
 
   /** Format the report as a string in the specified format: txt (default), json, or csv. */
@@ -81,7 +86,7 @@ final case class ScanResult(
     val rescued  = rescuedMethods
     val lines    = scala.collection.mutable.ArrayBuffer.empty[String]
     if (excluded.nonEmpty) {
-      lines += s"EXCLUDED (${excluded.size} methods):"
+      lines += s"EXCLUDED (${plural(excluded.size, "method")}):"
       excluded.groupBy(_.fqcn).toSeq.sortBy(_._1).foreach { case (fqcn, methods) =>
         lines += s"  $fqcn"
         methods.sortBy(m => (m.methodName, m.descriptor)).foreach { m =>
@@ -92,7 +97,7 @@ final case class ScanResult(
       lines += ""
     }
     if (rescued.nonEmpty) {
-      lines += s"RESCUED by include rules (${rescued.size} methods):"
+      lines += s"RESCUED by include rules (${plural(rescued.size, "method")}):"
       rescued.groupBy(_.fqcn).toSeq.sortBy(_._1).foreach { case (fqcn, methods) =>
         lines += s"  $fqcn"
         methods.sortBy(m => (m.methodName, m.descriptor)).foreach { m =>
@@ -103,7 +108,7 @@ final case class ScanResult(
       }
       lines += ""
     }
-    lines += s"Summary: $classesScanned classes scanned, ${excluded.size} methods excluded, ${rescued.size} methods rescued"
+    lines += s"Summary: ${plural(classesScanned, "class")} scanned, ${plural(excluded.size, "method")} excluded, ${plural(rescued.size, "method")} rescued"
     lines.mkString("\n")
   }
 

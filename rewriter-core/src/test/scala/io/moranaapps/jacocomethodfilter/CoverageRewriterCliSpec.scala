@@ -252,4 +252,14 @@ class CoverageRewriterCliSpec extends AnyFunSuite {
     assert(result.get.reportFile.contains(Paths.get("/tmp/dry-run-report.json")))
     assert(result.get.reportFormat == "json")
   }
+
+  test("parse should reject --report-file pointing to an existing directory") {
+    val inDir = newTempDir("jmf-in-")
+    val dirAsReport = newTempDir("jmf-report-dir-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify",
+        "--report-file", dirAsReport.toString)
+    )
+    assert(result.isEmpty, "--report-file pointing to a directory must be rejected")
+  }
 }
