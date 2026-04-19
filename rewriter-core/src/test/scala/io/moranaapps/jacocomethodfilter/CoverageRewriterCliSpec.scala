@@ -170,4 +170,66 @@ class CoverageRewriterCliSpec extends AnyFunSuite {
     val result = CoverageRewriterCli.parse(Array.empty)
     assert(result.isEmpty)
   }
+
+  test("parse should accept --report-file in verify mode") {
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify",
+        "--report-file", "/tmp/report.txt")
+    )
+    assert(result.isDefined)
+    assert(result.get.reportFile.contains(Paths.get("/tmp/report.txt")))
+  }
+
+  test("parse should accept --report-format json") {
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify",
+        "--report-file", "/tmp/report.json", "--report-format", "json")
+    )
+    assert(result.isDefined)
+    assert(result.get.reportFormat == "json")
+  }
+
+  test("parse should accept --report-format csv") {
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify",
+        "--report-file", "/tmp/report.csv", "--report-format", "csv")
+    )
+    assert(result.isDefined)
+    assert(result.get.reportFormat == "csv")
+  }
+
+  test("parse should reject invalid --report-format value") {
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify",
+        "--report-file", "/tmp/report.xml", "--report-format", "xml")
+    )
+    assert(result.isEmpty)
+  }
+
+  test("parse should default reportFile to None and reportFormat to txt") {
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify")
+    )
+    assert(result.isDefined)
+    assert(result.get.reportFile.isEmpty)
+    assert(result.get.reportFormat == "txt")
+  }
+
+  test("parse should accept --report-file with --dry-run") {
+    val inDir  = newTempDir("jmf-in-")
+    val outDir = newTempDir("jmf-out-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--out", outDir.toString, "--global-rules", "rules.txt",
+        "--dry-run", "--report-file", "/tmp/dry-run-report.json", "--report-format", "json")
+    )
+    assert(result.isDefined)
+    assert(result.get.dryRun)
+    assert(result.get.reportFile.contains(Paths.get("/tmp/dry-run-report.json")))
+    assert(result.get.reportFormat == "json")
+  }
 }

@@ -27,13 +27,12 @@ final case class ScanResult(
                             ) {
   def excludedMethods: Seq[MatchedMethod] = matches.filter(_.outcome == Excluded)
   def rescuedMethods: Seq[MatchedMethod] = matches.filter(_.outcome == Rescued)
-  
+
   /** Print report to stdout. */
   def printReport(): Unit = printReport(println)
 
   /** Print a report of matched methods. */
   def printReport(out: String => Unit): Unit = {
-    // Print excluded methods
     val excluded = excludedMethods
     if (excluded.nonEmpty) {
       out(s"[verify] EXCLUDED (${excluded.size} methods):")
@@ -51,8 +50,7 @@ final case class ScanResult(
       }
       out("")
     }
-    
-    // Print rescued methods
+
     val rescued = rescuedMethods
     if (rescued.nonEmpty) {
       out(s"[verify] RESCUED by include rules (${rescued.size} methods):")
@@ -67,8 +65,87 @@ final case class ScanResult(
       }
       out("")
     }
-    
+
     out(s"[verify] Summary: $classesScanned classes scanned, ${excluded.size} methods excluded, ${rescued.size} methods rescued")
+  }
+
+  /** Format the report as a string in the specified format: txt (default), json, or csv. */
+  def formatReport(format: String): String = format.toLowerCase match {
+    case "json" => formatJson()
+    case "csv"  => formatCsv()
+    case _      => formatTxt()
+  }
+
+  private def formatTxt(): String = {
+    val excluded = excludedMethods
+    val rescued  = rescuedMethods
+    val lines    = scala.collection.mutable.ArrayBuffer.empty[String]
+    if (excluded.nonEmpty) {
+      lines += s"EXCLUDED (${excluded.size} methods):"
+      excluded.groupBy(_.fqcn).toSeq.sortBy(_._1).foreach { case (fqcn, methods) =>
+        lines += s"  $fqcn"
+        methods.sortBy(m => (m.methodName, m.descriptor)).foreach { m =>
+          val ruleIdStr = if (m.exclusionIds.nonEmpty) s"  rule-id:${m.exclusionIds.mkString(",")}" else ""
+          lines += s"    #${m.methodName}${m.descriptor}$ruleIdStr"
+        }
+      }
+      lines += ""
+    }
+    if (rescued.nonEmpty) {
+      lines += s"RESCUED by include rules (${rescued.size} methods):"
+      rescued.groupBy(_.fqcn).toSeq.sortBy(_._1).foreach { case (fqcn, methods) =>
+        lines += s"  $fqcn"
+        methods.sortBy(m => (m.methodName, m.descriptor)).foreach { m =>
+          val exclStr = if (m.exclusionIds.nonEmpty) m.exclusionIds.mkString(",") else "(no-id)"
+          val inclStr = if (m.inclusionIds.nonEmpty) m.inclusionIds.mkString(",") else "(no-id)"
+          lines += s"    #${m.methodName}${m.descriptor}  excl:$exclStr \u2192 incl:$inclStr"
+        }
+      }
+      lines += ""
+    }
+    lines += s"Summary: $classesScanned classes scanned, ${excluded.size} methods excluded, ${rescued.size} methods rescued"
+    lines.mkString("\n")
+  }
+
+  private def formatJson(): String = {
+    def esc(s: String): String = s.replace("\\", "\\\\").replace("\"", "\\\"")
+    def str(s: String): String = s""""${esc(s)}""""
+    def strArr(seq: Seq[String]): String = seq.map(str).mkString("[", ", ", "]")
+
+    val excluded = excludedMethods
+    val rescued  = rescuedMethods
+
+    def excludedEntry(m: MatchedMethod): String =
+      s"""    {"class": ${str(m.fqcn)}, "method": ${str(m.methodName)}, "descriptor": ${str(m.descriptor)}, "ruleIds": ${strArr(m.exclusionIds)}}"""
+
+    def rescuedEntry(m: MatchedMethod): String =
+      s"""    {"class": ${str(m.fqcn)}, "method": ${str(m.methodName)}, "descriptor": ${str(m.descriptor)}, "exclusionRuleIds": ${strArr(m.exclusionIds)}, "inclusionRuleIds": ${strArr(m.inclusionIds)}}"""
+
+    val excBlock = if (excluded.isEmpty) "[]" else s"[\n${excluded.map(excludedEntry).mkString(",\n")}\n  ]"
+    val resBlock = if (rescued.isEmpty)  "[]" else s"[\n${rescued.map(rescuedEntry).mkString(",\n")}\n  ]"
+
+    s"""{
+  "classesScanned": $classesScanned,
+  "excluded": $excBlock,
+  "rescued": $resBlock
+}"""
+  }
+
+  private def formatCsv(): String = {
+    def cell(s: String): String =
+      if (s.exists(c => c == ',' || c == '"' || c == '\n')) s""""${s.replace("\"", "\"\"")}"""" else s
+
+    val excluded = excludedMethods
+    val rescued  = rescuedMethods
+    val sb       = new StringBuilder
+    sb.append("outcome,class,method,descriptor,exclusionRuleIds,inclusionRuleIds\n")
+    excluded.foreach { m =>
+      sb.append(s"EXCLUDED,${cell(m.fqcn)},${cell(m.methodName)},${cell(m.descriptor)},${cell(m.exclusionIds.mkString("|"))},\n")
+    }
+    rescued.foreach { m =>
+      sb.append(s"RESCUED,${cell(m.fqcn)},${cell(m.methodName)},${cell(m.descriptor)},${cell(m.exclusionIds.mkString("|"))},${cell(m.inclusionIds.mkString("|"))}\n")
+    }
+    sb.toString()
   }
 }
 

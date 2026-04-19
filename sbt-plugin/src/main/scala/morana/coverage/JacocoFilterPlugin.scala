@@ -140,6 +140,8 @@ object JacocoFilterPlugin extends AutoPlugin {
     jmfDryRun := false,
     jmfEnabled := true,
     jmfInitRulesForce := false,
+    jmfReportFile := None,
+    jmfReportFormat := "txt",
 
     jmfInitRules := {
       val log = streams.value.log
@@ -166,12 +168,14 @@ object JacocoFilterPlugin extends AutoPlugin {
     jmfVerify := {
       val _ = (Compile / compile).value
 
-      val rulesFile   = jmfLocalRulesFile.value
-      val globalRules = jmfGlobalRules.value
-      val localRules  = jmfLocalRules.value
-      val log         = streams.value.log
-      val workDir     = baseDirectory.value
-      val classesIn   = (Compile / classDirectory).value
+      val rulesFile    = jmfLocalRulesFile.value
+      val globalRules  = jmfGlobalRules.value
+      val localRules   = jmfLocalRules.value
+      val log          = streams.value.log
+      val workDir      = baseDirectory.value
+      val classesIn    = (Compile / classDirectory).value
+      val reportFile   = jmfReportFile.value
+      val reportFormat = jmfReportFormat.value
 
       val jmfJars: Seq[File] = (Jmf / update).value.matching(artifactFilter(`type` = "jar")).distinct
       val cpStr = jmfJars.map(_.getAbsolutePath).mkString(java.io.File.pathSeparator)
@@ -210,7 +214,11 @@ object JacocoFilterPlugin extends AutoPlugin {
               Seq("--local-rules", rulesFile.getAbsolutePath)
             }
 
-            val args = baseArgs ++ rulesArgs
+            val reportArgs = reportFile.toSeq.flatMap(f =>
+              Seq("--report-file", f.getAbsolutePath, "--report-format", reportFormat)
+            )
+
+            val args = baseArgs ++ rulesArgs ++ reportArgs
 
             log.info(s"[jmf] verify: ${args.mkString(" ")}")
             val code = scala.sys.process.Process(args, workDir).!
@@ -223,13 +231,15 @@ object JacocoFilterPlugin extends AutoPlugin {
     jmfRewrite := {
       val _ = (Compile / compile).value
 
-      val rulesFile   = jmfLocalRulesFile.value
-      val globalRules = jmfGlobalRules.value
-      val localRules  = jmfLocalRules.value
-      val log         = streams.value.log
-      val workDir     = baseDirectory.value
-      val classesIn   = (Compile / classDirectory).value
-      val enabled     = jacocoPluginEnabled.value
+      val rulesFile    = jmfLocalRulesFile.value
+      val globalRules  = jmfGlobalRules.value
+      val localRules   = jmfLocalRules.value
+      val log          = streams.value.log
+      val workDir      = baseDirectory.value
+      val classesIn    = (Compile / classDirectory).value
+      val enabled      = jacocoPluginEnabled.value
+      val reportFile   = jmfReportFile.value
+      val reportFormat = jmfReportFormat.value
 
       val jmfJars: Seq[File] = (Jmf / update).value.matching(artifactFilter(`type` = "jar")).distinct
       val cpStr = jmfJars.map(_.getAbsolutePath).mkString(java.io.File.pathSeparator)
@@ -277,7 +287,10 @@ object JacocoFilterPlugin extends AutoPlugin {
             }
             
             val dryRunArgs = if (jmfDryRun.value) Seq("--dry-run") else Seq.empty
-            val args = baseArgs ++ rulesArgs ++ dryRunArgs
+            val reportArgs = reportFile.toSeq.flatMap(f =>
+              Seq("--report-file", f.getAbsolutePath, "--report-format", reportFormat)
+            )
+            val args = baseArgs ++ rulesArgs ++ dryRunArgs ++ reportArgs
 
             log.info(s"[jmf] rewrite: ${args.mkString(" ")}")
             val code = scala.sys.process.Process(args, workDir).!

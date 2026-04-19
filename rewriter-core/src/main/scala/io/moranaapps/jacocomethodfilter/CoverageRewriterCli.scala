@@ -45,6 +45,20 @@ private[jacocomethodfilter] object CoverageRewriterCli {
         .action((_, c) => c.copy(verify = true))
         .text("Read-only scan: list all methods that would be excluded by rules")
 
+      opt[String]("report-file")
+        .optional()
+        .action((v, c) => c.copy(reportFile = Some(Paths.get(v))))
+        .text("Write filtered-methods report to this file (useful with --verify or --dry-run)")
+
+      opt[String]("report-format")
+        .optional()
+        .action((v, c) => c.copy(reportFormat = v))
+        .validate(v =>
+          if (Set("txt", "json", "csv").contains(v)) success
+          else failure("--report-format must be one of: txt, json, csv")
+        )
+        .text("Report format: txt (default), json, or csv")
+
       checkConfig { cfg =>
         if (!Files.isDirectory(cfg.in)) {
           failure("--in must exist and be a directory")

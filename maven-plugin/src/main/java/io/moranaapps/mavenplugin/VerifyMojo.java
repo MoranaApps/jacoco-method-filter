@@ -31,6 +31,12 @@ public class VerifyMojo extends AbstractMojo {
     @Parameter(property = "jmf.inputDirectory", defaultValue = "${project.build.outputDirectory}")
     private File inputDirectory;
 
+    @Parameter(property = "jmf.reportFile")
+    private File reportFile;
+
+    @Parameter(property = "jmf.reportFormat", defaultValue = "txt")
+    private String reportFormat;
+
     @Parameter(property = "jmf.skip", defaultValue = "false")
     private boolean skip;
 
@@ -85,6 +91,9 @@ public class VerifyMojo extends AbstractMojo {
         getLog().info("╔═══ JaCoCo Method Filter: Verify Rules Impact ═══");
         getLog().info("║ Classes:     " + inputDirectory.getAbsolutePath());
         logRulesConfig();
+        if (reportFile != null) {
+            getLog().info("║ Report:      " + reportFile.getAbsolutePath() + " (" + reportFormat + ")");
+        }
         getLog().info("╚══════════════════════════════════════════════════");
 
         launchSubprocess(command);
@@ -108,7 +117,13 @@ public class VerifyMojo extends AbstractMojo {
             cmd.add("--local-rules");
             cmd.add(localRules.getAbsolutePath());
         }
-        
+        if (reportFile != null) {
+            cmd.add("--report-file");
+            cmd.add(reportFile.getAbsolutePath());
+            cmd.add("--report-format");
+            cmd.add(reportFormat);
+        }
+
         return cmd;
     }
 

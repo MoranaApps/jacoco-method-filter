@@ -101,6 +101,28 @@ Example output:
 - **Rescued** — matched by an exclusion rule *and* an include rule (`+…`). Because include rules always win, the
  method stays in coverage. The `excl:… → incl:…` trace shows which rules were involved.
 
+To export the results to a file for CI traceability or downstream tooling, set `jmfReportFile`:
+
+```scala
+// build.sbt
+jmfReportFile   := Some(target.value / "jmf-report.json")
+jmfReportFormat := "json"   // or "txt" (default) / "csv"
+```
+
+Then run `sbt jmfVerify`; the report is written alongside the usual console output. The JSON format:
+
+```json
+{
+  "classesScanned": 42,
+  "excluded": [
+    {"class": "com.example.User", "method": "copy", "descriptor": "(I)Lcom/example/User;", "ruleIds": ["case-copy"]}
+  ],
+  "rescued": []
+}
+```
+
+The CSV format uses `outcome,class,method,descriptor,exclusionRuleIds,inclusionRuleIds` as its header row; multiple rule IDs within one cell are separated by `|`.
+
 ### `jacocoReport`
 
 Runs the full coverage pipeline for a single module:
@@ -160,6 +182,8 @@ Only configure the settings below when you want to:
 | `jmfLocalRulesFile` | `File` | `jmf-rules.txt` | Fallback local rules file used only when both `jmfGlobalRules` and `jmfLocalRules` are `None` |
 | `jmfDryRun` | `Boolean` | `false` | Dry run mode - logs matches without modifying classes |
 | `jmfOutDir` | `File` | `target` | Base output directory; filtered classes are written under `jmfOutDir / "classes-filtered"` |
+| `jmfReportFile` | `Option[File]` | `None` | Write a filtered-methods report to this file. Works with `jmfVerify` and when `jmfDryRun = true`. If not set, output goes to console only. |
+| `jmfReportFormat` | `String` | `"txt"` | Report format: `txt` (plain text), `json`, or `csv`. Only used when `jmfReportFile` is set. |
 
 ### Examples
 

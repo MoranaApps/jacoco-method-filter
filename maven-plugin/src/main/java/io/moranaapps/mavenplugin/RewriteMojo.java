@@ -39,6 +39,12 @@ public class RewriteMojo extends AbstractMojo {
     @Parameter(property = "jmf.dryRun", defaultValue = "false")
     private boolean dryRun;
 
+    @Parameter(property = "jmf.reportFile")
+    private File reportFile;
+
+    @Parameter(property = "jmf.reportFormat", defaultValue = "txt")
+    private String reportFormat;
+
     @Parameter(property = "jmf.skip", defaultValue = "false")
     private boolean skip;
 
@@ -95,6 +101,9 @@ public class RewriteMojo extends AbstractMojo {
         getLog().info("║ Destination: " + outputDirectory.getAbsolutePath());
         logRulesConfig();
         getLog().info("║ Dry run:     " + (dryRun ? "YES (no writes)" : "NO"));
+        if (reportFile != null) {
+            getLog().info("║ Report:      " + reportFile.getAbsolutePath() + " (" + reportFormat + ")");
+        }
         getLog().info("╚═══════════════════════════════════════════════");
 
         launchSubprocess(command);
@@ -121,6 +130,12 @@ public class RewriteMojo extends AbstractMojo {
         }
         
         if (dryRun) cmd.add("--dry-run");
+        if (reportFile != null) {
+            cmd.add("--report-file");
+            cmd.add(reportFile.getAbsolutePath());
+            cmd.add("--report-format");
+            cmd.add(reportFormat);
+        }
         return cmd;
     }
 

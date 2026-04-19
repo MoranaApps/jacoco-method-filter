@@ -364,6 +364,89 @@ class VerifyScannerSpec extends AnyFunSuite {
     }
   }
 
+  // --- formatReport tests ---
+
+  test("formatReport txt produces human-readable output without [verify] prefix") {
+    val matches = Seq(
+      MatchedMethod("com.example.Foo", "bar", "()V", Excluded, Seq("rule1"), Seq.empty, Opcodes.ACC_PUBLIC)
+    )
+    val result = ScanResult(1, 1, matches)
+    val txt = result.formatReport("txt")
+    assert(txt.contains("EXCLUDED"))
+    assert(txt.contains("com.example.Foo"))
+    assert(txt.contains("#bar()V"))
+    assert(txt.contains("rule-id:rule1"))
+    assert(txt.contains("Summary:"))
+    assert(!txt.contains("[verify]"))
+  }
+
+  test("formatReport txt includes RESCUED section") {
+    val matches = Seq(
+      MatchedMethod("com.example.Bar", "apply", "()V", Rescued, Seq("excl"), Seq("incl"), Opcodes.ACC_PUBLIC)
+    )
+    val result = ScanResult(1, 1, matches)
+    val txt = result.formatReport("txt")
+    assert(txt.contains("RESCUED"))
+    assert(txt.contains("excl:excl"))
+    assert(txt.contains("incl:incl"))
+  }
+
+  test("formatReport json produces valid JSON structure") {
+    val matches = Seq(
+      MatchedMethod("com.example.Foo", "bar", "()V", Excluded, Seq("rule1"), Seq.empty, Opcodes.ACC_PUBLIC),
+      MatchedMethod("com.example.Baz", "run", "()V", Rescued, Seq("excl-id"), Seq("incl-id"), Opcodes.ACC_PUBLIC)
+    )
+    val result = ScanResult(2, 2, matches)
+    val json = result.formatReport("json")
+    assert(json.contains("\"classesScanned\": 2"))
+    assert(json.contains("\"excluded\""))
+    assert(json.contains("\"rescued\""))
+    assert(json.contains("\"com.example.Foo\""))
+    assert(json.contains("\"bar\""))
+    assert(json.contains("\"rule1\""))
+    assert(json.contains("\"com.example.Baz\""))
+    assert(json.contains("\"excl-id\""))
+    assert(json.contains("\"incl-id\""))
+  }
+
+  test("formatReport json handles empty excluded and rescued") {
+    val result = ScanResult(3, 0, Seq.empty)
+    val json = result.formatReport("json")
+    assert(json.contains("\"classesScanned\": 3"))
+    assert(json.contains("\"excluded\": []"))
+    assert(json.contains("\"rescued\": []"))
+  }
+
+  test("formatReport csv has correct header and rows") {
+    val matches = Seq(
+      MatchedMethod("com.example.Foo", "bar", "()V", Excluded, Seq("rule1"), Seq.empty, Opcodes.ACC_PUBLIC),
+      MatchedMethod("com.example.Baz", "run", "()V", Rescued, Seq("excl-id"), Seq("incl-id"), Opcodes.ACC_PUBLIC)
+    )
+    val result = ScanResult(2, 2, matches)
+    val csv = result.formatReport("csv")
+    val lines = csv.split("\n")
+    assert(lines(0) == "outcome,class,method,descriptor,exclusionRuleIds,inclusionRuleIds")
+    assert(lines.exists(l => l.startsWith("EXCLUDED,com.example.Foo,bar")))
+    assert(lines.exists(l => l.startsWith("RESCUED,com.example.Baz,run")))
+    assert(lines.exists(l => l.contains("rule1")))
+    assert(lines.exists(l => l.contains("excl-id") && l.contains("incl-id")))
+  }
+
+  test("formatReport csv has only header when no matches") {
+    val result = ScanResult(1, 0, Seq.empty)
+    val csv = result.formatReport("csv")
+    val lines = csv.split("\n").filter(_.nonEmpty)
+    assert(lines.length == 1)
+    assert(lines(0) == "outcome,class,method,descriptor,exclusionRuleIds,inclusionRuleIds")
+  }
+
+  test("formatReport defaults to txt for unknown format") {
+    val result = ScanResult(1, 0, Seq.empty)
+    val output = result.formatReport("unknown")
+    assert(output.contains("Summary:"))
+    assert(!output.contains("{"))
+  }
+
   // Helper to delete directory recursively
   private def deleteRecursively(path: Path): Unit = {
     if (Files.exists(path)) {
