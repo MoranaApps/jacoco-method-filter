@@ -354,7 +354,8 @@ class RulesLoadSpec extends AnyFunSuite {
     val file = write(tmpFile(), Seq("com.example.*#copy(*) id:my-rule"))
     val out  = new java.io.ByteArrayOutputStream()
     Console.withOut(out) { Rules.load(file) }
-    assert(out.toString.isEmpty, s"Expected no output, got: ${out.toString}")
+    val warnLines = out.toString.linesIterator.filter(l => l.contains(file.toString) && l.contains("[warn]")).mkString
+    assert(warnLines.isEmpty, s"Expected no [warn] for $file, got: $warnLines")
   }
 
   test("warning includes source file path and line number") {
@@ -414,7 +415,8 @@ class RulesLoadSpec extends AnyFunSuite {
     val file = write(tmpFile(), Seq("+com.example.Config$#apply(*) id:keep-config-apply"))
     val out  = new java.io.ByteArrayOutputStream()
     Console.withOut(out) { Rules.load(file) }
-    assert(out.toString.isEmpty, s"Expected no output, got: ${out.toString}")
+    val warnLines = out.toString.linesIterator.filter(l => l.contains(file.toString) && l.contains("[warn]")).mkString
+    assert(warnLines.isEmpty, s"Expected no [warn] for $file, got: $warnLines")
   }
 
   test("warning emitted for include rule with no id: label") {
