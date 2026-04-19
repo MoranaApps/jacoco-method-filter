@@ -262,4 +262,34 @@ class CoverageRewriterCliSpec extends AnyFunSuite {
     )
     assert(result.isEmpty, "--report-file pointing to a directory must be rejected")
   }
+
+  test("parse should reject --report-format without --report-file") {
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify",
+        "--report-format", "json")
+    )
+    assert(result.isEmpty, "--report-format without --report-file must be rejected")
+  }
+
+  test("parse should accept --report-format txt without --report-file (default no-op)") {
+    // txt is the default; specifying it explicitly without a file path is redundant but not an error
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify",
+        "--report-format", "txt")
+    )
+    assert(result.isDefined, "--report-format txt without --report-file is allowed (no-op)")
+  }
+
+  test("parse should accept --report-format TXT (uppercase) without --report-file (default no-op)") {
+    // uppercase TXT normalises to txt before checkConfig; must be treated same as lowercase txt
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify",
+        "--report-format", "TXT")
+    )
+    assert(result.isDefined, "--report-format TXT without --report-file is allowed (normalised to txt)")
+    assert(result.get.reportFormat == "txt", "TXT must be normalised to lowercase txt")
+  }
 }

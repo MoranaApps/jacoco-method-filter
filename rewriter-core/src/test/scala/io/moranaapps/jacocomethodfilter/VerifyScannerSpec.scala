@@ -403,10 +403,14 @@ class VerifyScannerSpec extends AnyFunSuite {
     assert(json.contains("\"rescued\""))
     assert(json.contains("\"com.example.Foo\""))
     assert(json.contains("\"bar\""))
+    // Both excluded and rescued entries must use "exclusionRuleIds" (consistent schema)
+    assert(json.contains("\"exclusionRuleIds\""), "excluded entries must use exclusionRuleIds key")
+    assert(!json.contains("\"ruleIds\""), "legacy ruleIds key must not appear")
     assert(json.contains("\"rule1\""))
     assert(json.contains("\"com.example.Baz\""))
     assert(json.contains("\"excl-id\""))
     assert(json.contains("\"incl-id\""))
+    assert(json.contains("\"inclusionRuleIds\""), "rescued entries must use inclusionRuleIds key")
   }
 
   test("formatReport json handles empty excluded and rescued") {
@@ -440,11 +444,20 @@ class VerifyScannerSpec extends AnyFunSuite {
     assert(lines(0) == "outcome,class,method,descriptor,exclusionRuleIds,inclusionRuleIds")
   }
 
-  test("formatReport defaults to txt for unknown format") {
+  test("formatReport throws IllegalArgumentException for unknown format") {
     val result = ScanResult(1, 0, Seq.empty)
-    val output = result.formatReport("unknown")
-    assert(output.contains("Summary:"))
-    assert(!output.contains("{"))
+    val ex = intercept[IllegalArgumentException] {
+      result.formatReport("unknown")
+    }
+    assert(ex.getMessage.contains("unknown"))
+    assert(ex.getMessage.contains("Supported"))
+  }
+
+  test("formatReport throws IllegalArgumentException for empty format string") {
+    val result = ScanResult(1, 0, Seq.empty)
+    intercept[IllegalArgumentException] {
+      result.formatReport("")
+    }
   }
 
   test("formatReport is case-insensitive for txt") {
@@ -503,6 +516,25 @@ class VerifyScannerSpec extends AnyFunSuite {
     // The class name contains a quote; must be escaped as \" in JSON string
     assert(json.contains("\\\"inner\\\""))
     assert(!json.contains("\"inner\""))  // raw unescaped quote would break JSON
+  }
+
+  test("formatReport json escapes backslash in field values") {
+    val matches = Seq(
+      MatchedMethod("com.example.Foo", "bar\\baz", "()V", Excluded, Seq("r1"), Seq.empty, Opcodes.ACC_PUBLIC)
+    )
+    val result = ScanResult(1, 1, matches)
+    val json = result.formatReport("json")
+    assert(json.contains("\"bar\\\\baz\""), "backslash must be escaped to \\\\ in JSON")
+  }
+
+  test("formatReport json escapes newline in field values") {
+    val matches = Seq(
+      MatchedMethod("com.example.Foo", "bar\nbaz", "()V", Excluded, Seq("r1"), Seq.empty, Opcodes.ACC_PUBLIC)
+    )
+    val result = ScanResult(1, 1, matches)
+    val json = result.formatReport("json")
+    assert(json.contains("\"bar\\nbaz\""), "newline must be escaped to \\n in JSON")
+    assert(!json.contains("\n  ]") || !json.contains("bar\nbaz"), "raw newline in string value would break JSON")
   }
 
   test("formatReport txt empty result shows only summary line") {

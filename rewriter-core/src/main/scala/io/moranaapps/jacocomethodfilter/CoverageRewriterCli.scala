@@ -68,6 +68,8 @@ private[jacocomethodfilter] object CoverageRewriterCli {
           failure("At least one of --global-rules or --local-rules must be specified")
         } else if (cfg.reportFile.exists(Files.isDirectory(_))) {
           failure("--report-file must be a file path, not an existing directory")
+        } else if (cfg.reportFile.isEmpty && cfg.reportFormat != "txt") {
+          failure("--report-format requires --report-file to be set")
         } else {
           success
         }

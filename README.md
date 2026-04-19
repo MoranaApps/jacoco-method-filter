@@ -149,7 +149,7 @@ See plugin documentation for rules file location, dry-run mode, report file expo
 
 ### Report File Export
 
-Add `--report-file <path>` (and optionally `--report-format txt|json|csv`) to any `--verify` or `--dry-run` invocation
+Add `--report-file <path>` (and optionally `--report-format txt|json|csv`) to any rewrite, `--verify`, or `--dry-run` invocation
 to save filtered-method results to a file. This is useful for CI traceability and downstream automation. The file
 content mirrors console output; JSON and CSV formats are also available for machine-readable consumption.
 

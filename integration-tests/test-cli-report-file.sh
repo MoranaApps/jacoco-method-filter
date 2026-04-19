@@ -148,4 +148,12 @@ assert_file_exists "$NESTED_REPORT" \
 
 pass "$TEST_NAME — nested parent directory created automatically"
 
+# ── 6. --report-format without --report-file is rejected ─────────────────
+info "$TEST_NAME — verifying --report-format without --report-file is rejected"
+if $CLI --verify --in "$IN" --local-rules "$RULES" --report-format json > /dev/null 2>&1; then
+  fail "$TEST_NAME — CLI must reject --report-format without --report-file"
+fi
+
+pass "$TEST_NAME — --report-format without --report-file rejected correctly"
+
 pass "$TEST_NAME"

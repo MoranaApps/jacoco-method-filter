@@ -154,8 +154,8 @@ Summary: 3 classes scanned, 10 methods excluded, 1 method rescued
 {
   "classesScanned": 3,
   "excluded": [
-    {"class": "example.Calculator", "method": "add", "descriptor": "(DD)D", "ruleIds": ["local-calc-add"]},
-    {"class": "example.Calculator", "method": "copy", "descriptor": "(I)Lexample/Calculator;", "ruleIds": ["scala-copy"]}
+    {"class": "example.Calculator", "method": "add", "descriptor": "(DD)D", "exclusionRuleIds": ["local-calc-add"]},
+    {"class": "example.Calculator", "method": "copy", "descriptor": "(I)Lexample/Calculator;", "exclusionRuleIds": ["scala-copy"]}
   ],
   "rescued": [
     {"class": "example.Calculator", "method": "toString", "descriptor": "()Ljava/lang/String;", "exclusionRuleIds": ["scala-tostring"], "inclusionRuleIds": ["rescue-calc-tostring"]}

@@ -147,6 +147,11 @@ assert_file_contains "$REPORT_JSON" '"exclusionRuleIds"' \
 assert_file_contains "$REPORT_JSON" '"inclusionRuleIds"' \
   "$TEST_NAME — json rescued entries have inclusionRuleIds key"
 
+# excluded entries must also use exclusionRuleIds (not legacy ruleIds)
+if grep -q '"ruleIds"' "$REPORT_JSON"; then
+  fail "$TEST_NAME — json report must not use legacy 'ruleIds' key; expected 'exclusionRuleIds'"
+fi
+
 pass "$TEST_NAME — json report file content correct"
 
 # ── 3. csv format ──────────────────────────────────────────────────────────

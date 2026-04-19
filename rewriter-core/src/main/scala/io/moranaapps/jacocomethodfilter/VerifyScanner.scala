@@ -74,11 +74,15 @@ final case class ScanResult(
     out(s"[verify] Summary: ${plural(classesScanned, "class")} scanned, ${plural(excluded.size, "method")} excluded, ${plural(rescued.size, "method")} rescued")
   }
 
-  /** Format the report as a string in the specified format: txt (default), json, or csv. */
+  /** Format the report as a string in the specified format: txt, json, or csv.
+    *
+    * @throws IllegalArgumentException if format is not one of: txt, json, csv
+    */
   def formatReport(format: String): String = format.toLowerCase match {
+    case "txt"  => formatTxt()
     case "json" => formatJson()
     case "csv"  => formatCsv()
-    case _      => formatTxt()
+    case other  => throw new IllegalArgumentException(s"Unknown report format: '$other'. Supported: txt, json, csv")
   }
 
   private def formatTxt(): String = {
@@ -113,7 +117,14 @@ final case class ScanResult(
   }
 
   private def formatJson(): String = {
-    def esc(s: String): String = s.replace("\\", "\\\\").replace("\"", "\\\"")
+    def esc(s: String): String = s
+      .replace("\\", "\\\\")
+      .replace("\"", "\\\"")
+      .replace("\n", "\\n")
+      .replace("\r", "\\r")
+      .replace("\t", "\\t")
+      .replace("\b", "\\b")
+      .replace("\f", "\\f")
     def str(s: String): String = s""""${esc(s)}""""
     def strArr(seq: Seq[String]): String = seq.map(str).mkString("[", ", ", "]")
 
@@ -121,7 +132,7 @@ final case class ScanResult(
     val rescued  = rescuedMethods.sortBy(m => (m.fqcn, m.methodName, m.descriptor))
 
     def excludedEntry(m: MatchedMethod): String =
-      s"""    {"class": ${str(m.fqcn)}, "method": ${str(m.methodName)}, "descriptor": ${str(m.descriptor)}, "ruleIds": ${strArr(m.exclusionIds)}}"""
+      s"""    {"class": ${str(m.fqcn)}, "method": ${str(m.methodName)}, "descriptor": ${str(m.descriptor)}, "exclusionRuleIds": ${strArr(m.exclusionIds)}}"""
 
     def rescuedEntry(m: MatchedMethod): String =
       s"""    {"class": ${str(m.fqcn)}, "method": ${str(m.methodName)}, "descriptor": ${str(m.descriptor)}, "exclusionRuleIds": ${strArr(m.exclusionIds)}, "inclusionRuleIds": ${strArr(m.inclusionIds)}}"""
