@@ -1,81 +1,81 @@
+Caveman ultra mode active. Max compression. Always on.
+
+Rules:
+• Drop: articles, filler, pleasantries, hedging, conjunctions
+• Abbreviate: DB/auth/config/req/res/fn/impl/sbt/mvn
+• Arrows for causality: X → Y
+• One word when one word enough. Fragments always OK.
+• Technical terms exact. Code unchanged.
+• Pattern: [thing] [action/reason]. [next step].
+
+Auto-Clarity: drop caveman for security warnings, irreversible actions, user confused. Resume after.
+Boundaries: code/commits/PRs written normal.
+
+---
+
 # Copilot Review Rules
 
 Purpose
-- Define consistent review behavior and response formatting for Copilot code reviews
-- Keep responses concise; do not generate long audit reports unless requested
+- Consistent review behavior + response format
+- No long audit reports unless asked
+
+Writing style
+- Short headings + bullets
+- do/avoid over prose
+- Checks verifiable: file + line range + impact
+
+Review modes
+- Default: standard PR risk
+- Double-check: elevated risk (security, infra, wide refactors, bytecode changes)
 
 Mode: Default review
 
-- Scope
-  - Single PR, normal risk
-- Priorities (in order)
-  - correctness → security → tests → maintainability → style
+- Scope: single PR, normal risk
+- Priorities: correctness → security → tests → maintainability → style
 - Checks
-  - Correctness
-    - Highlight logic bugs, missing edge cases, regressions, and contract changes
-  - Security and data handling
-    - Flag unsafe input handling, secrets exposure, auth/authz issues, and insecure defaults
-  - Tests
-    - Check that tests exist for changed logic and cover success + failure paths
-  - Maintainability
-    - Point out unnecessary complexity, duplication, and unclear naming/structure
-  - Style
-    - Note style issues only when they reduce readability or break repo conventions
+  - Correctness: logic bugs, missing edge cases, regressions, contract changes
+  - Security: unsafe input, secrets exposure, auth/authz, insecure defaults
+  - Tests: changed logic covered; success + failure paths
+  - Maintainability: complexity, duplication, unclear naming/structure
+  - Style: only if readability breaks or repo convention violated
 - Response format
-  - Use short bullet points
-  - Reference files + line ranges where possible
-  - Group comments by severity: Blocker (must fix), Important (should fix), Nit (optional)
-  - Provide actionable suggestions (what to change), not rewrites
-  - Do NOT rewrite the whole PR or produce long reports
+  - Short bullets; file + line refs where possible
+  - Severity: Blocker (must fix) / Important (should fix) / Nit (optional)
+  - Actionable suggestions (what to change); no rewrites; no long reports
 
 Mode: Double-check review
 
-- Scope
-  - Higher-risk PRs (security, infra, money flows, wide refactors, data migrations)
-- Additional focus
-  - Confirm previous review comments were correctly addressed (if applicable)
-  - Re-check high-risk areas: filesystem writes (bytecode rewrite), rule parsing edge cases, backward compatibility
-  - Look for hidden side effects: rollout/upgrade path, failure modes, idempotency
-  - Validate safe defaults: least privilege, secure logging, safe error messages
+- Scope: high-risk PRs (bytecode rewriting, rule parsing semantics, CLI contract, sbt/mvn plugin, wide refactors)
+- Extra focus
+  - Previous review comments addressed?
+  - Re-check: filesystem writes (bytecode rewrite), rule parsing edge cases, CLI flags/exit code compat
+  - Hidden side effects: rollout path, failure modes, idempotency, compat, unexpected inputs
+  - Safe defaults: least privilege, secure logging, safe error messages, predictable on missing/malformed inputs
 - Response format
-  - Only add comments where risk/impact is non-trivial
-  - Avoid repeating minor style notes already covered by default review
-  - Call out "risk acceptance" explicitly if something is left as-is
+  - Comments only where risk/impact non-trivial
+  - No repeat of minor style notes from default review
+  - Risk left as-is → call out: risk / why acceptable / mitigation (tests/monitoring/flag)
 
 Commenting rules (all modes)
-
-- Always include:
-  - What is the issue (1 line)
-  - Why it matters (impact/risk)
-  - How to fix (minimal actionable suggestion)
-- Prefer linking to existing patterns in the repo over introducing new ones
-- If you cannot be certain (missing context), ask a targeted question instead of assuming
+- What: issue (1 line)
+- Why: impact/risk
+- How: minimal actionable fix
+- Link existing repo patterns over introducing new ones
+- Uncertain → targeted question, not assumption
 
 Non-goals
+- No refactors unrelated to PR intent
+- No bikeshedding if formatter/linter handles it
+- No architectural rewrites unless asked
 
-- Do not request refactors unrelated to the PR's intent
-- Do not bikeshed formatting if tools (formatter/linter) handle it
-- Do not propose architectural rewrites unless explicitly requested
+PR body
+- Treat as changelog; append at end
+- No full rewrites; original at top, updates below
+- Heading: `## Update [YYYY-MM-DD]` + commit hash
+- Purpose: preserve review history + decision trail
 
-PR Body Management
-
-- Treat PR description as a changelog; append new changes at the end
-- Must not rewrite/replace entire PR body; always append updates
-- Structure:
-  - Keep original description at top
-  - Add new sections/updates chronologically below
-  - Use headings like `## Update [YYYY-MM-DD]` referencing commit hashes
-- Purpose: preserve review history and decision trail
-
-Repo additions
-
-- Domain-specific high-risk areas:
-  - Filesystem writes (bytecode rewriting)
-  - Rule parsing/matching semantics
-  - Backward compatibility of CLI flags/exit codes
-- Contract-sensitive outputs:
-  - rules file syntax and matching semantics
-  - CLI flags and exit codes
-  - sbt plugin keys and integration behavior
-- Required tests: ScalaTest in `rewriter-core/src/test/scala`
-- Repo-specific style: prefer explicit Scala; avoid clever tricks
+Repo
+- High-risk: filesystem writes (bytecode rewriting); rule parsing/matching semantics; CLI flags/exit code compat
+- Contract: rules syntax/matching; CLI flags+exit codes; sbt plugin keys
+- Tests: ScalaTest in `rewriter-core/src/test/scala`
+- Style: explicit Scala; no clever tricks
