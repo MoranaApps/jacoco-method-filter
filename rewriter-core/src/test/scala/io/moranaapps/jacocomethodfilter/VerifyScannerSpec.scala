@@ -447,6 +447,83 @@ class VerifyScannerSpec extends AnyFunSuite {
     assert(!output.contains("{"))
   }
 
+  test("formatReport is case-insensitive for txt") {
+    val result = ScanResult(1, 0, Seq.empty)
+    val output = result.formatReport("TXT")
+    assert(output.contains("Summary:"))
+  }
+
+  test("formatReport is case-insensitive for json") {
+    val result = ScanResult(1, 0, Seq.empty)
+    val output = result.formatReport("JSON")
+    assert(output.contains("\"classesScanned\""))
+  }
+
+  test("formatReport is case-insensitive for csv") {
+    val result = ScanResult(1, 0, Seq.empty)
+    val output = result.formatReport("CSV")
+    assert(output.contains("outcome,class,method,descriptor"))
+  }
+
+  test("formatReport txt shows multiple rule IDs comma-separated") {
+    val matches = Seq(
+      MatchedMethod("com.example.Foo", "copy", "()V", Excluded, Seq("rule-a", "rule-b", "rule-c"), Seq.empty, Opcodes.ACC_PUBLIC)
+    )
+    val result = ScanResult(1, 1, matches)
+    val txt = result.formatReport("txt")
+    assert(txt.contains("rule-id:rule-a,rule-b,rule-c"))
+  }
+
+  test("formatReport csv multiple exclusion rule IDs are pipe-separated") {
+    val matches = Seq(
+      MatchedMethod("com.example.Foo", "copy", "()V", Excluded, Seq("rule-a", "rule-b"), Seq.empty, Opcodes.ACC_PUBLIC)
+    )
+    val result = ScanResult(1, 1, matches)
+    val csv = result.formatReport("csv")
+    assert(csv.contains("rule-a|rule-b"))
+  }
+
+  test("formatReport csv rescued row has both exclusion and inclusion rule IDs pipe-separated") {
+    val matches = Seq(
+      MatchedMethod("com.example.Bar", "apply", "()V", Rescued, Seq("excl-1", "excl-2"), Seq("incl-1"), Opcodes.ACC_PUBLIC)
+    )
+    val result = ScanResult(1, 1, matches)
+    val csv = result.formatReport("csv")
+    val row = csv.split("\n").find(_.startsWith("RESCUED")).getOrElse(fail("no RESCUED row"))
+    assert(row.contains("excl-1|excl-2"))
+    assert(row.contains("incl-1"))
+  }
+
+  test("formatReport csv escapes fields containing commas") {
+    // Descriptors can contain commas in edge cases; verify cell quoting
+    val matches = Seq(
+      MatchedMethod("com.example.Foo", "bar", "(Ljava/util/Map;)V", Excluded, Seq("r,id"), Seq.empty, Opcodes.ACC_PUBLIC)
+    )
+    val result = ScanResult(1, 1, matches)
+    val csv = result.formatReport("csv")
+    // rule ID "r,id" contains a comma → must be quoted in CSV
+    assert(csv.contains("\"r,id\""))
+  }
+
+  test("formatReport json escapes double-quotes in class names") {
+    val matches = Seq(
+      MatchedMethod("com.example.Foo$\"inner\"", "bar", "()V", Excluded, Seq("r1"), Seq.empty, Opcodes.ACC_PUBLIC)
+    )
+    val result = ScanResult(1, 1, matches)
+    val json = result.formatReport("json")
+    // The class name contains a quote; must be escaped as \" in JSON string
+    assert(json.contains("\\\"inner\\\""))
+    assert(!json.contains("\"inner\""))  // raw unescaped quote would break JSON
+  }
+
+  test("formatReport txt empty result shows only summary line") {
+    val result = ScanResult(5, 0, Seq.empty)
+    val txt = result.formatReport("txt")
+    assert(!txt.contains("EXCLUDED"))
+    assert(!txt.contains("RESCUED"))
+    assert(txt.contains("Summary: 5 classes scanned, 0 methods excluded, 0 methods rescued"))
+  }
+
   // Helper to delete directory recursively
   private def deleteRecursively(path: Path): Unit = {
     if (Files.exists(path)) {
