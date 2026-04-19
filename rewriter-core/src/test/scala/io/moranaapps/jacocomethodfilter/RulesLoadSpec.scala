@@ -354,7 +354,7 @@ class RulesLoadSpec extends AnyFunSuite {
     val file = write(tmpFile(), Seq("com.example.*#copy(*) id:my-rule"))
     val out  = new java.io.ByteArrayOutputStream()
     Console.withOut(out) { Rules.load(file) }
-    val warnLines = out.toString.linesIterator.filter(l => l.contains(file.toString) && l.contains("[warn]")).mkString
+    val warnLines = out.toString.split("\\r?\\n", -1).iterator.filter(l => l.contains(file.toString) && l.contains("[warn]")).mkString
     assert(warnLines.isEmpty, s"Expected no [warn] for $file, got: $warnLines")
   }
 
@@ -406,7 +406,7 @@ class RulesLoadSpec extends AnyFunSuite {
     Console.withOut(out) {
       Rules.parseLine("com.example.*#copy(*)", LocalSource(sourcePath))
     }
-    val relevantLines = out.toString.linesIterator.filter(_.contains(sourcePath)).mkString("\n")
+    val relevantLines = out.toString.split("\\r?\\n", -1).iterator.filter(_.contains(sourcePath)).mkString("\n")
     assert(relevantLines.contains("[warn]"), s"Expected [warn] line for $sourcePath, got: ${out.toString}")
     // Verify no "line N" token appears in lines from this source
     assert(!relevantLines.matches("(?s).*\\bline\\s+\\d+\\b.*"), s"Expected no line number, got: $relevantLines")
@@ -416,7 +416,7 @@ class RulesLoadSpec extends AnyFunSuite {
     val file = write(tmpFile(), Seq("+com.example.Config$#apply(*) id:keep-config-apply"))
     val out  = new java.io.ByteArrayOutputStream()
     Console.withOut(out) { Rules.load(file) }
-    val warnLines = out.toString.linesIterator.filter(l => l.contains(file.toString) && l.contains("[warn]")).mkString
+    val warnLines = out.toString.split("\\r?\\n", -1).iterator.filter(l => l.contains(file.toString) && l.contains("[warn]")).mkString
     assert(warnLines.isEmpty, s"Expected no [warn] for $file, got: $warnLines")
   }
 
