@@ -109,20 +109,68 @@ jmfReportFile   := Some(target.value / "jmf-report.json")
 jmfReportFormat := "json"   // or "txt" (default) / "csv"
 ```
 
-Then run `sbt jmfVerify`; the report is written alongside the usual console output. The JSON format:
+Then run `sbt jmfVerify`; the report is written alongside the usual console output.
+
+The examples below use a rules file with all three rule kinds:
+
+```
+# Global rule (matches any class)
+*#copy(*)                               id:scala-copy
+*#toString(*)                           id:scala-tostring
+# ... other global rules ...
+
+# Local rule (class-specific)
+example.Calculator#add(*)               id:local-calc-add
+
+# Include rule (rescues toString from the global exclusion above)
++example.Calculator#toString(*)         id:rescue-calc-tostring
+```
+
+**txt** (default):
+
+```
+EXCLUDED (10 methods):
+  example.Calculator
+    #add(DD)D  rule-id:local-calc-add
+    #canEqual(Ljava/lang/Object;)Z  rule-id:scala-canequal
+    #copy(I)Lexample/Calculator;  rule-id:scala-copy
+    #equals(Ljava/lang/Object;)Z  rule-id:scala-equals
+    #hashCode()I  rule-id:scala-hashcode
+    #productArity()I  rule-id:scala-product-arity
+    #productElement(I)Ljava/lang/Object;  rule-id:scala-product-element
+    #productIterator()Lscala/collection/Iterator;  rule-id:scala-product-iterator
+    #productPrefix()Ljava/lang/String;  rule-id:scala-product-prefix
+
+RESCUED by include rules (1 methods):
+  example.Calculator
+    #toString()Ljava/lang/String;  excl:scala-tostring → incl:rescue-calc-tostring
+
+Summary: 3 classes scanned, 10 methods excluded, 1 methods rescued
+```
+
+**json**:
 
 ```json
 {
-  "classesScanned": 42,
+  "classesScanned": 3,
   "excluded": [
-    {"class": "com.example.User", "method": "copy", "descriptor": "(I)Lcom/example/User;", "ruleIds": ["case-copy"]}
+    {"class": "example.Calculator", "method": "add", "descriptor": "(DD)D", "ruleIds": ["local-calc-add"]},
+    {"class": "example.Calculator", "method": "copy", "descriptor": "(I)Lexample/Calculator;", "ruleIds": ["scala-copy"]}
   ],
-  "rescued": []
+  "rescued": [
+    {"class": "example.Calculator", "method": "toString", "descriptor": "()Ljava/lang/String;", "exclusionRuleIds": ["scala-tostring"], "inclusionRuleIds": ["rescue-calc-tostring"]}
+  ]
 }
 ```
 
-The CSV format uses `outcome,class,method,descriptor,exclusionRuleIds,inclusionRuleIds` as its header row; multiple
- rule IDs within one cell are separated by `|`.
+**csv** — header row is `outcome,class,method,descriptor,exclusionRuleIds,inclusionRuleIds`; multiple rule IDs within one cell are separated by `|`:
+
+```csv
+outcome,class,method,descriptor,exclusionRuleIds,inclusionRuleIds
+EXCLUDED,example.Calculator,add,(DD)D,local-calc-add,
+EXCLUDED,example.Calculator,copy,(I)Lexample/Calculator;,scala-copy,
+RESCUED,example.Calculator,toString,()Ljava/lang/String;,scala-tostring,rescue-calc-tostring
+```
 
 ### `jacocoReport`
 
