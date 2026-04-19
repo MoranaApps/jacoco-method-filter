@@ -335,4 +335,122 @@ class RulesLoadSpec extends AnyFunSuite {
     val rule = Rules.parseLine("com.example.*#copy(*) forward-compat synthetic id:synth-copy").get
     assert(rule.patternText == "com.example.*#copy(*)")
   }
+
+  // --- no-id warning ---
+
+  test("warns when rule has no id: label") {
+    val file = write(tmpFile(), Seq("com.example.*#copy(*)"))
+    val out  = new java.io.ByteArrayOutputStream()
+    Console.withOut(out) { Rules.load(file) }
+    val output = out.toString
+    assert(output.contains("[warn]"), s"Expected [warn] in output, got: $output")
+    assert(output.contains("no id: label"), s"Expected 'no id: label' in output, got: $output")
+    assert(output.contains("com.example.*#copy(*)"), s"Expected pattern in output, got: $output")
+    assert(output.contains(file.toString), s"Expected file path in output, got: $output")
+    assert(output.contains("line 1"), s"Expected 'line 1' in output, got: $output")
+  }
+
+  test("no warning emitted for rule with id: label") {
+    val file = write(tmpFile(), Seq("com.example.*#copy(*) id:my-rule"))
+    val out  = new java.io.ByteArrayOutputStream()
+    Console.withOut(out) { Rules.load(file) }
+    val warnLines = out.toString.split("\\r?\\n", -1).iterator.filter(l => l.contains(file.toString) && l.contains("[warn]")).mkString
+    assert(warnLines.isEmpty, s"Expected no [warn] for $file, got: $warnLines")
+  }
+
+  test("warning includes source file path and line number") {
+    val file = write(tmpFile(), Seq(
+      "# comment",                              // line 1 — skipped
+      "com.example.*#foo(*) id:labelled",        // line 2 — no warning
+      "com.example.*#bar(*)"                     // line 3 — no id → warn
+    ))
+    val out = new java.io.ByteArrayOutputStream()
+    Console.withOut(out) { Rules.load(file) }
+    val output = out.toString
+    assert(output.contains(file.toString), s"Expected file path in output, got: $output")
+    assert(output.contains("line 3"), s"Expected 'line 3' in output, got: $output")
+  }
+
+  test("warning message includes Add id label hint") {
+    val file = write(tmpFile(), Seq("com.example.*#bar(*)"))
+    val out  = new java.io.ByteArrayOutputStream()
+    Console.withOut(out) { Rules.load(file) }
+    assert(out.toString.contains("Add id:"), s"Expected 'Add id:' hint in output, got: ${out.toString}")
+  }
+
+  test("parseLine emits warning for unlabelled rule called directly") {
+    val out = new java.io.ByteArrayOutputStream()
+    Console.withOut(out) {
+      Rules.parseLine("com.example.*#copy(*)", LocalSource("/path/to/rules.txt"), lineNum = 5)
+    }
+    val output = out.toString
+    assert(output.contains("[warn]"))
+    assert(output.contains("/path/to/rules.txt"))
+    assert(output.contains("line 5"))
+  }
+
+  test("parseLine emits warning with GlobalSource origin") {
+    val out = new java.io.ByteArrayOutputStream()
+    Console.withOut(out) {
+      Rules.parseLine("com.example.*#copy(*)", GlobalSource("https://example.com/rules.txt"), lineNum = 2)
+    }
+    val output = out.toString
+    assert(output.contains("[warn]"))
+    assert(output.contains("https://example.com/rules.txt"))
+    assert(output.contains("line 2"))
+  }
+
+  test("parseLine emits warning with no line number when lineNum is -1") {
+    val sourcePath = "/path/to/rules.txt"
+    val out = new java.io.ByteArrayOutputStream()
+    Console.withOut(out) {
+      Rules.parseLine("com.example.*#copy(*)", LocalSource(sourcePath))
+    }
+    val relevantLines = out.toString.split("\\r?\\n", -1).iterator.filter(_.contains(sourcePath)).mkString("\n")
+    assert(relevantLines.contains("[warn]"), s"Expected [warn] line for $sourcePath, got: ${out.toString}")
+    // Verify no "line N" token appears in lines from this source
+    assert(!relevantLines.matches("(?s).*\\bline\\s+\\d+\\b.*"), s"Expected no line number, got: $relevantLines")
+  }
+
+  test("no warning for include rule with id: label") {
+    val file = write(tmpFile(), Seq("+com.example.Config$#apply(*) id:keep-config-apply"))
+    val out  = new java.io.ByteArrayOutputStream()
+    Console.withOut(out) { Rules.load(file) }
+    val warnLines = out.toString.split("\\r?\\n", -1).iterator.filter(l => l.contains(file.toString) && l.contains("[warn]")).mkString
+    assert(warnLines.isEmpty, s"Expected no [warn] for $file, got: $warnLines")
+  }
+
+  test("warning emitted for include rule with no id: label") {
+    val file = write(tmpFile(), Seq("+com.example.Config$#apply(*)"))
+    val out  = new java.io.ByteArrayOutputStream()
+    Console.withOut(out) { Rules.load(file) }
+    val output = out.toString
+    assert(output.contains("[warn]"), s"Expected [warn] in output, got: $output")
+    assert(output.contains("+com.example.Config$#apply(*)"), s"Expected pattern in output, got: $output")
+  }
+
+  test("warning emitted for rule with empty id: value (id: with no label)") {
+    val file = write(tmpFile(), Seq("com.example.*#copy(*) id:"))
+    val out  = new java.io.ByteArrayOutputStream()
+    val rules = Console.withOut(out) { Rules.load(file) }
+    val output = out.toString
+    assert(output.contains("[warn]"), s"Expected [warn] when id: has empty value, got: $output")
+    // Rule is still valid and returned (empty id treated as no id)
+    assert(rules.head.id.isEmpty, "id with empty value must be treated as absent")
+  }
+
+  test("no warning emitted for rule with non-empty id: value") {
+    val rule = Rules.parseLine("com.example.*#copy(*) id:my-label").get
+    assert(rule.id.contains("my-label"))
+  }
+
+  test("loadAll emits warning for unlabelled rule from global source") {
+    val globalFile = write(tmpFile("global-"), Seq("com.example.*#foo(*)")) // no id
+    val localFile  = write(tmpFile("local-"),  Seq("com.example.*#bar(*) id:local-rule"))
+    val out  = new java.io.ByteArrayOutputStream()
+    Console.withOut(out) { Rules.loadAll(Some(globalFile.toString), Some(localFile)) }
+    val output = out.toString
+    assert(output.contains("[warn]"), s"Expected [warn] for global unlabelled rule, got: $output")
+    assert(output.contains(globalFile.toString), s"Expected global file path in [warn], got: $output")
+  }
 }

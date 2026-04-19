@@ -49,6 +49,10 @@ private[jacocomethodfilter] object CoverageRewriterCli {
         .action((_, c) => c.copy(errorOnUnmatched = true))
         .text("Exit non-zero if any rules matched zero methods (requires --verify)")
 
+      opt[Unit]("strict")
+        .action((_, c) => c.copy(strict = true))
+        .text("Exit non-zero if any rules have no id: label (unlabelled-rule enforcement)")
+
       opt[String]("report-file")
         .optional()
         .action((v, c) => c.copy(reportFile = Some(Paths.get(v))))

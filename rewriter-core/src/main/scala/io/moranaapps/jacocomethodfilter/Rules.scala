@@ -71,10 +71,10 @@ object Rules {
       throw new java.nio.file.NoSuchFileException(path.toString, null, "Rules file not found")
     val lines = Files.readAllLines(path).asScala.toVector
     val source = LocalSource(path.toString)
-    lines.flatMap(line => parseLine(line, source))
+    lines.zipWithIndex.flatMap { case (line, idx) => parseLine(line, source, idx + 1) }
   }
 
-  private[jacocomethodfilter] def parseLine(raw: String, source: RuleSource = LocalSource("")): Option[MethodRule] = {
+  private[jacocomethodfilter] def parseLine(raw: String, source: RuleSource = LocalSource(""), lineNum: Int = -1): Option[MethodRule] = {
     val line = raw.trim
     if (line.isEmpty || line.startsWith("#")) return None
 
@@ -126,7 +126,7 @@ object Rules {
       case t @ ("public" | "protected" | "private" | "synthetic" | "bridge" | "static" | "abstract") =>
         flags += t
       case kv if kv.startsWith("ret:")            => retGlob      = Some(Selectors.globToRegex(kv.stripPrefix("ret:")))
-      case kv if kv.startsWith("id:")             => id           = Some(kv.stripPrefix("id:"))
+      case kv if kv.startsWith("id:")             => id           = Some(kv.stripPrefix("id:")).filter(_.nonEmpty)
       case kv if kv.startsWith("name-contains:")  => nameContains = Some(kv.stripPrefix("name-contains:"))
       case kv if kv.startsWith("name-starts:")    => nameStarts   = Some(kv.stripPrefix("name-starts:"))
       case kv if kv.startsWith("name-ends:")      => nameEnds     = Some(kv.stripPrefix("name-ends:"))
@@ -145,6 +145,15 @@ object Rules {
     ensureNoRegex(clsSel,    "class")
     ensureNoRegex(methodSel, "method")
     ensureNoRegex(descSel,   "descriptor")
+
+    if (id.isEmpty) {
+      val lineInfo  = if (lineNum > 0) s" line $lineNum" else ""
+      val sourceStr = source match {
+        case LocalSource(p)  => if (p.nonEmpty) p else "<unknown>"
+        case GlobalSource(o) => o
+      }
+      println(s"[warn] $sourceStr$lineInfo: rule has no id: label ($patternText). Add id:<label> for traceability.")
+    }
 
     Some(MethodRule(
       cls           = Selectors.globToRegex(clsSel),
@@ -253,7 +262,7 @@ object Rules {
           lines += line
           line = reader.readLine()
         }
-        lines.toVector.flatMap(line => parseLine(line, ruleSource))
+        lines.toVector.zipWithIndex.flatMap { case (rawLine, idx) => parseLine(rawLine, ruleSource, idx + 1) }
       } finally {
         reader.close()
       }
@@ -266,7 +275,7 @@ object Rules {
     if (!Files.exists(path))
       throw new java.nio.file.NoSuchFileException(path.toString, null, "Rules file not found")
     val lines = Files.readAllLines(path).asScala.toVector
-    lines.flatMap(line => parseLine(line, ruleSource))
+    lines.zipWithIndex.flatMap { case (line, idx) => parseLine(line, ruleSource, idx + 1) }
   }
 
   /**

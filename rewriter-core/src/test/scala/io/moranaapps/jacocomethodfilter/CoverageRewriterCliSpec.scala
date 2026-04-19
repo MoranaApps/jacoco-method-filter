@@ -333,4 +333,46 @@ class CoverageRewriterCliSpec extends AnyFunSuite {
     assert(result.get.errorOnUnmatched)
     assert(result.get.reportFormat == "json")
   }
+
+  // --- --strict ---
+
+  test("parse should accept --strict flag") {
+    val inDir  = newTempDir("jmf-in-")
+    val outDir = newTempDir("jmf-out-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--out", outDir.toString, "--global-rules", "rules.txt", "--strict")
+    )
+    assert(result.isDefined)
+    assert(result.get.strict)
+  }
+
+  test("parse should default strict to false") {
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify")
+    )
+    assert(result.isDefined)
+    assert(!result.get.strict)
+  }
+
+  test("parse should accept --strict with --verify") {
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify", "--strict")
+    )
+    assert(result.isDefined)
+    assert(result.get.strict)
+    assert(result.get.verify)
+  }
+
+  test("parse should accept --strict combined with --error-on-unmatched") {
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify",
+        "--strict", "--error-on-unmatched")
+    )
+    assert(result.isDefined)
+    assert(result.get.strict)
+    assert(result.get.errorOnUnmatched)
+  }
 }
