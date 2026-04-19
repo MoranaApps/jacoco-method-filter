@@ -38,7 +38,7 @@ Full syntax reference, authoring guide, and diagnostic workflows for jacoco-meth
 
 ## Rule Anatomy
 
-```
+```text
 <FQCN_glob>#<method_glob>(<descriptor_glob>)  [FLAGS]  [PREDICATES]  id:<label>
 ```
 
@@ -56,12 +56,14 @@ Omitting the descriptor entirely is equivalent to `(*)*`.
 **FLAGS** — Space-separated. Optional.
 `public | protected | private | synthetic | bridge | static | abstract`
 IMPORTANT: flags must be space-separated from the descriptor.
-```
+
+```text
 WRONG: *#*(*):synthetic    (colon makes it part of the descriptor)
 RIGHT: *#*(*) synthetic    (space separates flag from descriptor)
 ```
 
 **PREDICATES** — Space-separated key:value pairs. Optional.
+
 - `ret:<glob>` — Match return type only (e.g., `ret:V`, `ret:Lcom/example/*;`)
 - `id:<string>` — Identifier shown in logs/reports (required for traceability)
 - `name-contains:<s>` — Method name must contain `<s>`
@@ -69,12 +71,14 @@ RIGHT: *#*(*) synthetic    (space separates flag from descriptor)
 - `name-ends:<s>` — Method name must end with `<s>`
 
 IMPORTANT: predicates must be space-separated from the descriptor.
-```
+
+```text
 WRONG: *#*(*):ret:V    (colon makes it part of the descriptor)
 RIGHT: *#*(*) ret:V    (space separates predicate from descriptor)
 ```
 
 > **Notes**
+>
 > - Regex selectors (`re:`) are not supported — globs only.
 > - Always use dot-form (`com.example.Foo`) for class names.
 > - Comments (`# …`) and blank lines are ignored.
@@ -130,7 +134,8 @@ To target a specific overload, use an explicit descriptor: `*#myMethod()V` (actu
 ## Common Pitfalls
 
 **1. FQCN wildcard prefix required for qualified class names:**
-```
+
+```text
 WRONG: QueryResult#noMore()  id:qr-nomore
        (matches only unqualified "QueryResult", not "com.example...QueryResult")
 RIGHT: *QueryResult#noMore() id:qr-nomore
@@ -138,13 +143,15 @@ RIGHT: *QueryResult#noMore() id:qr-nomore
 ```
 
 **2. Use JVM descriptors, not source types:**
-```
+
+```text
 WRONG: *#apply(int)*   (human-readable — silently never matches)
 RIGHT: *#apply(I)*     (JVM format)
 ```
 
 **3. Flags and predicates must be SPACE-separated from descriptor:**
-```
+
+```text
 WRONG: *#*(*):synthetic      (colon makes ":synthetic" part of descriptor)
 RIGHT: *#*(*) synthetic      (space separates — flag parsed correctly)
 WRONG: *#*(*):ret:V          (colon makes ":ret:V" part of descriptor)
@@ -152,7 +159,8 @@ RIGHT: *#*(*) ret:V          (space separates — predicate parsed correctly)
 ```
 
 **4. Object return types in `ret:` globs need trailing semicolon:**
-```
+
+```text
 WRONG: *#make(*) ret:Lcom/example/model/Id   (missing semicolon)
 RIGHT: *#make(*) ret:Lcom/example/model/Id;  (semicolon required)
 ```
@@ -163,9 +171,11 @@ RIGHT: *#make(*) ret:Lcom/example/model/Id;  (semicolon required)
 after rules are harmless but can be confusing. Best practice: use dedicated comment lines above the rule.
 
 **7.** Audit your rules for human-readable descriptors:
+
 ```bash
 grep -n '[a-z]\.[A-Z]' jmf-rules.txt | grep -v '^#'
 ```
+
 Any matches likely contain human-readable class names in descriptors.
 
 ---
@@ -198,6 +208,7 @@ Use `javap -p classfile` to confirm the exact bytecode name before writing a glo
 ```text
 *#*(*)
 ```
+
 Match EVERY method in EVERY class (any package).
 **DO NOT commit this rule** — it suppresses all JaCoCo coverage and produces artificially inflated
 (up to 100%) coverage numbers, silently masking regressions. Use only for one-off diagnostics and
@@ -206,6 +217,7 @@ remove immediately.
 ```text
 *.dto.*#*(*)
 ```
+
 Match every method on any class under any package segment named `dto`. Good when you treat DTOs as
 generated/boilerplate.
 
@@ -265,6 +277,7 @@ generated/boilerplate.
 ### Lazy val compute methods
 
 Scala compiles `lazy val foo = expr` into two methods:
+
 - `foo()` — the accessor (checks bitmap flag, calls `$lzycompute` if unset)
 - `foo$lzycompute()` — the actual initializer body (contains `expr`)
 
@@ -339,6 +352,7 @@ Prefix a rule with `+` to mark it as an inclusion:
 ```
 
 **Resolution logic:**
+
 - A method is **excluded** if any exclusion rule matches AND no inclusion rule matches.
 - A method is **rescued** (kept in coverage) if both exclusion and inclusion rules match — **include always wins**.
 - A method is **unaffected** if no exclusion rule matches.
@@ -366,6 +380,7 @@ The `+` rule also serves as explicit documentation: a future reader sees that th
 reviewed and confirmed to contain real logic.
 
 **When commenting out is appropriate:**
+
 - The rule causes widespread false positives across many unrelated classes (writing dozens of
   include rules would be noisier than disabling the global).
 - The rule pattern is fundamentally wrong for this project (e.g., a naming collision on a domain
@@ -392,12 +407,14 @@ Most users can start with a **single local rules file**.
 | **Local**  | Project-specific overrides and additions             | Local file   |
 
 **sbt:**
+
 ```scala
 jmfGlobalRules := Some("https://myorg.com/scala-defaults.txt")
 jmfLocalRules := Some(baseDirectory.value / "jmf-local-rules.txt")
 ```
 
 **Maven:**
+
 ```xml
 <configuration>
   <globalRules>https://myorg.com/scala-defaults.txt</globalRules>
@@ -406,6 +423,7 @@ jmfLocalRules := Some(baseDirectory.value / "jmf-local-rules.txt")
 ```
 
 **CLI:**
+
 ```bash
 java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
   --in target/classes \
@@ -425,6 +443,7 @@ When using global and local rules:
 3. During evaluation, **any include rule overrides any exclude rule** for the same method.
 
 This lets you:
+
 - Define broad exclusions globally (e.g., `*#copy(*)`)
 - Override selectively in local rules (e.g., `+com.example.Config$#copy(*)`)
 
@@ -442,16 +461,19 @@ methods that **actually exist after compilation**.
 > (e.g., `apply`). Use include rules (`+...`) to rescue those methods.
 
 **sbt:**
+
 ```bash
 sbt jmfVerify
 ```
 
 **Maven:**
+
 ```bash
 mvn jacoco-method-filter:verify
 ```
 
 **CLI:**
+
 ```bash
 java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
   --verify \
@@ -460,6 +482,7 @@ java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
 ```
 
 **Example output:**
+
 ```text
 [verify] EXCLUDED (15 methods):
 [verify]   com.example.User
@@ -484,11 +507,13 @@ java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
 When JaCoCo reports missed instructions after you believe you have a rule:
 
 1. **Find the method in jacoco.xml:**
+
    ```bash
    grep -A2 'name="myMethod"' target/scala-2.12/jacoco/jacoco.xml
    ```
 
 2. **Get the actual bytecode descriptor:**
+
    ```bash
    javap -p -verbose target/scala-2.12/classes/com/.../MyClass.class | grep -A4 "myMethod"
    ```
@@ -503,6 +528,7 @@ When JaCoCo reports missed instructions after you believe you have a rule:
 Before committing any new JMF rule:
 
 1. **Baseline:** note "Marked N methods" in build output.
+
    ```bash
    # sbt
    sbt '++2.12.18; jacoco'
@@ -515,6 +541,7 @@ Before committing any new JMF rule:
 3. **Re-run:** "Marked N+k methods" confirms the rule matched.
 
 4. **Use `--verify` mode** for a detailed matching report:
+
    ```bash
    java -jar jmf.jar --in classes/ --local-rules rules.txt --verify
    ```
@@ -535,6 +562,7 @@ conservative default — but the recommended approach is to enable it and rescue
 with `+` include rules rather than leaving it off entirely.
 
 Enable the rule, run `--verify`, then rescue false positives:
+
 ```text
 *#apply(*)           id:case-apply
 +*Config$#apply(*)   id:keep-config-apply    # has validation logic
@@ -546,6 +574,7 @@ Enable the rule, run `--verify`, then rescue false positives:
 Emitted by the Scala compiler on case classes to support Java serialization. The body is a
 single-expression proxy construction — no project logic. Safe to filter globally.
 If a class overrides `writeReplace` with real logic, rescue it:
+
 ```text
 +com.example.CustomSerializable#writeReplace(*)  id:keep-writereplace
 ```
@@ -561,6 +590,7 @@ include rules for any that contain real logic.
 The `$lzycompute` method body IS the lazy val initializer — filtering it hides whatever the lazy
 val computes. Shipped disabled. Recommended approach: enable selectively per class or enable
 globally and rescue lazy vals with real logic:
+
 ```text
 *#*$lzycompute(*)                id:scala-lzycompute
 +*MyService#cache$lzycompute(*)  id:keep-cache-lzycompute   # complex initializer

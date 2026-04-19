@@ -87,6 +87,7 @@ See **[docs/rules-reference.md](docs/rules-reference.md)** for:
 - CLI reference
 
 **Ready-to-use rules template:**
+
 - sbt: [`jmf-rules.template.txt`](./jmf-rules.template.txt)
 - Maven: [`maven-plugin/src/main/resources/jmf-rules.template.txt`](./maven-plugin/src/main/resources/jmf-rules.template.txt)
 
