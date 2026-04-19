@@ -113,7 +113,7 @@ Then run `sbt jmfVerify`; the report is written alongside the usual console outp
 
 The examples below use a rules file with all three rule kinds:
 
-```
+```text
 # Global rule (matches any class)
 *#copy(*)                               id:scala-copy
 *#toString(*)                           id:scala-tostring
@@ -128,7 +128,7 @@ example.Calculator#add(*)               id:local-calc-add
 
 **txt** (default):
 
-```
+```text
 EXCLUDED (10 methods):
   example.Calculator
     #add(DD)D  rule-id:local-calc-add
@@ -163,7 +163,8 @@ Summary: 3 classes scanned, 10 methods excluded, 1 methods rescued
 }
 ```
 
-**csv** — header row is `outcome,class,method,descriptor,exclusionRuleIds,inclusionRuleIds`; multiple rule IDs within one cell are separated by `|`:
+**csv** — header row is `outcome,class,method,descriptor,exclusionRuleIds,inclusionRuleIds`; multiple rule IDs within
+ one cell are separated by `|`:
 
 ```csv
 outcome,class,method,descriptor,exclusionRuleIds,inclusionRuleIds
