@@ -21,8 +21,7 @@
 # Scala case class helpers
 *#canEqual(*)                                           id:case-canequal
 *#equals(*)                                             id:case-equals
-# DISABLED — companion apply may contain real factory/validation logic (see safety warning)
-#*#apply(*)                                             id:case-apply
+*#apply(*)                                             id:case-apply
 *#unapply(*)                                            id:case-unapply
 *#hashCode(*)                                           id:case-hashcode
 *#copy(*)                                               id:case-copy
@@ -61,6 +60,15 @@
 
 # lambda
 *#*  synthetic name-contains:$anonfun$                  id:scala-anonfun
+
+# Lazy val compute — compiler-generated synchronization wrapper
+# Scala compiles `lazy val foo = expr` into an accessor + a `foo$lzycompute()` method.
+# The $lzycompute method body IS the lazy initializer (expr). If the initializer contains
+# real business logic, filtering this method hides it. Only enable when the lazy val is a
+# trivial constant, a boundary call not unit-testable, or an already-tested computation.
+# Rescue any lazy vals with real logic via + include rules.
+# DISABLED — enable with + include rules to rescue lazy vals whose initializer has real logic
+#*#*$lzycompute(*)                                      id:scala-lzycompute
 
 # Lambda serialization helper — compiler-generated private static method
 # Emitted by scalac/javac to support SerializedLambda deserialization.

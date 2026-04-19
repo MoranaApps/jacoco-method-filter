@@ -29,6 +29,10 @@ Full syntax reference, authoring guide, and diagnostic workflows for jacoco-meth
 3. Keep rules narrow (by package), prefer flags (`synthetic`/`bridge`) for compiler artifacts,
    and add `id:` labels so logs are readable.
 4. Use `--verify` mode to confirm rules match what you expect before committing.
+5. **Prefer include rules over commenting out globals.** When a broad global accidentally matches
+   a method with real logic, keep the global active and add a `+` include rule to rescue that
+   specific method. Commenting out the global loses filtering for *all* other matching methods.
+   See [Exclude and Include Rules](#exclude-and-include-rules).
 
 ---
 
@@ -258,6 +262,65 @@ generated/boilerplate.
 - Always use dot-form (`com.example.Foo`) for PACKAGE separators (not slash-form `com/example/Foo`).
 - The `$` character IS required for inner classes (`Foo$Bar`) and companion objects (`Foo$`).
 
+### Lazy val compute methods
+
+Scala compiles `lazy val foo = expr` into two methods:
+- `foo()` — the accessor (checks bitmap flag, calls `$lzycompute` if unset)
+- `foo$lzycompute()` — the actual initializer body (contains `expr`)
+
+The `$lzycompute` method body IS the lazy initializer, so filtering it hides whatever `expr` does.
+Only filter when the initializer is a trivial constant, a boundary call not unit-testable (e.g.,
+`DriverManager.getConnection`), or an already-covered computation. Rescue with `+` include rules
+for any lazy val that contains real logic.
+
+```text
+# CAUTION: only enable after verifying each lazy val's body is trivial or boundary-only
+*#*$lzycompute(*)    id:scala-lzycompute
+
+# Rescue a lazy val whose initializer contains real logic
++*MyService#cache$lzycompute(*)    id:keep-cache-lzycompute
+```
+
+The template ships this rule **disabled** (commented out). Enable it per class or enable globally
+with include-rule rescues.
+
+### Static companion forwarders
+
+When Scala compiles a companion object, the compiler emits static forwarder methods on the main
+class (`Foo`) that delegate to `Foo$.MODULE$.method()`. Each forwarder is a single-call delegate
+with no logic of its own. There is no general glob to isolate them (they look like any public
+static method), so rules must be class-specific:
+
+```text
+# Static forwarder on Foo delegates to Foo$.MODULE$.apply(...)
+*Foo#apply(*)        id:foo-apply-fwd
+*Foo#fromString(*)   id:foo-fromstring-fwd
+```
+
+Verify with `javap -p Foo.class` — forwarders appear as `public static` methods with a body of
+`return Foo$.MODULE$.methodName(args)`.
+
+### Iterator / trait mixin forwarders
+
+When a class extends `Iterator` (or another large trait), the Scala compiler generates ~80+
+forwarding methods on the implementing class, each delegating to the trait default implementation.
+None contain project logic. Since the class name is project-specific, rules must be scoped to it:
+
+```text
+# QueryResult extends Iterator[Row] — filter all trait-generated forwarders
+*QueryResult#to*(*)       id:qr-iter-to
+*QueryResult#mk*(*)       id:qr-iter-mk
+*QueryResult#map(*)       id:qr-iter-map
+*QueryResult#flatMap(*)   id:qr-iter-flatmap
+*QueryResult#filter*(*)   id:qr-iter-filter
+*QueryResult#fold*(*)     id:qr-iter-fold
+*QueryResult#reduce*(*)   id:qr-iter-reduce
+# ... add remaining Iterator methods as needed
+```
+
+Use `javap -p ClassName.class | grep 'public'` to enumerate all forwarders, then write
+scoped rules for the ones you want to filter.
+
 ---
 
 ## Exclude and Include Rules
@@ -279,6 +342,35 @@ Prefix a rule with `+` to mark it as an inclusion:
 - A method is **excluded** if any exclusion rule matches AND no inclusion rule matches.
 - A method is **rescued** (kept in coverage) if both exclusion and inclusion rules match — **include always wins**.
 - A method is **unaffected** if no exclusion rule matches.
+
+### Preferred strategy: rescue, don't comment out
+
+When a broad global rule accidentally matches a method with real logic, the preferred response is
+to **keep the global active and add a `+` include rule** for the exception — not to comment out
+the global.
+
+Commenting out a global loses the filtering benefit for *every* other class it matched. A `+`
+include rule is surgical: it rescues exactly the method that needs coverage while leaving all
+other matches filtered.
+
+```text
+# BAD: commenting out the global loses filtering for ALL copy methods everywhere
+#*#copy(*)   id:case-copy
+
+# GOOD: keep the global, rescue the one method that has real logic
+*#copy(*)    id:case-copy
++com.example.MutableRecord#copy(*)   id:keep-mutablerecord-copy
+```
+
+The `+` rule also serves as explicit documentation: a future reader sees that this method was
+reviewed and confirmed to contain real logic.
+
+**When commenting out is appropriate:**
+- The rule causes widespread false positives across many unrelated classes (writing dozens of
+  include rules would be noisier than disabling the global).
+- The rule pattern is fundamentally wrong for this project (e.g., a naming collision on a domain
+  term used everywhere).
+- You are still evaluating a candidate global and have not yet committed to enabling it.
 
 ---
 
@@ -432,24 +524,38 @@ Before committing any new JMF rule:
 ## Global Rule Safety Warning
 
 Global rules match **ALL classes in ALL packages**. Some rules in the template are intentionally
-broad — verify they do not accidentally filter methods that contain real project logic.
+broad. Before committing, use `--verify` to check what they match, then add `+` include rules to
+rescue any methods with real logic — rather than commenting the global out entirely.
+See [Exclude and Include Rules](#exclude-and-include-rules) for the recommended strategy.
 
 **`*#apply(*)  id:case-apply`**
 
-Adoption finding: companion `apply` methods often contain validation or factory logic. This rule
-was disabled in production use because it silently suppressed coverage for a real factory method.
-If you enable it, verify with `javap` that every matched `apply` is a trivial forwarder. Use a
-`+` include rule to rescue any apply that contains real logic:
+Companion `apply` methods often contain validation or factory logic. Shipped commented-out as a
+conservative default — but the recommended approach is to enable it and rescue false positives
+with `+` include rules rather than leaving it off entirely.
+
+Enable the rule, run `--verify`, then rescue false positives:
 ```text
-+*MyModel$#apply(*)  id:keep-mymodel-apply
+*#apply(*)           id:case-apply
++*Config$#apply(*)   id:keep-config-apply    # has validation logic
++*Factory$#apply(*)  id:keep-factory-apply   # has branching
 ```
 
 **`*#name()`, `*#groups()`, `*#optionalAttributes()`**
 
-These match any zero-arg-style method with those names in any class. They were added for specific
-compiler-generated Scala patterns (e.g., Regex group names, case class fields) but will also match
-domain methods with those names. If your project defines such methods with real logic, rescue them
-with `+` include rules or remove these globals.
+Added for compiler-generated Scala patterns (e.g., Regex group names, case class fields) but will
+also match domain methods with those names. Run `--verify` to check collisions; rescue with `+`
+include rules for any that contain real logic.
+
+**`*#*$lzycompute(*)`** (disabled in template)
+
+The `$lzycompute` method body IS the lazy val initializer — filtering it hides whatever the lazy
+val computes. Shipped disabled. Recommended approach: enable selectively per class or enable
+globally and rescue lazy vals with real logic:
+```text
+*#*$lzycompute(*)                id:scala-lzycompute
++*MyService#cache$lzycompute(*)  id:keep-cache-lzycompute   # complex initializer
+```
 
 ---
 
