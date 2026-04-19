@@ -1,326 +1,27 @@
-# jacoco-method-filter — Default Rules & HowTo (Scala)
+# jacoco-method-filter — Rules Template (Scala / Maven)
 # [jmf:1.0.0]
 #
-# This file defines which methods should be annotated as *Generated so JaCoCo ignores them.
-# One rule per line.
-#
-# ─────────────────────────────────────────────────────────────────────────────
-# TABLE OF CONTENTS
-# ─────────────────────────────────────────────────────────────────────────────
-#
-#   §1  HOW TO USE
-#   §2  RULE ANATOMY (quick reference)
-#   §3  JVM DESCRIPTOR TYPE MAPPING
-#   §4  DESCRIPTOR NORMALIZATION
-#   §5  COMMON PITFALLS
-#   §6  SCALA NAME MANGLING
-#   §7  DIAGNOSTIC WORKFLOW
-#   §8  VERIFICATION WORKFLOW
-#   §9  QUICK EXAMPLES
-#   §10 GLOBAL RULE SAFETY WARNING
-#   §11 GLOBALS RULES
-#   §12 INCLUDE RULES (whitelist/rescue)
-#   §13 PROJECT RULES
+# Syntax reference, pitfalls, examples, and workflows: docs/rules-reference.md
 #
 # ─────────────────────────────────────────────────────────────────────────────
 # HOW TO USE
 # ─────────────────────────────────────────────────────────────────────────────
 #
-# 1) Review the GLOBAL RULES below — they cover compiler-generated boilerplate
-#    (case class methods, lambdas, value class extensions, default parameters).
+# 1) Review the GLOBAL RULES below — they cover compiler-generated boilerplate.
 # 2) Add project-specific patterns in the PROJECT RULES section.
-# 3) Keep rules narrow (by package), prefer flags (synthetic/bridge) for
-#    compiler artifacts, and add `id:` labels so logs are readable.
-# 4) Use `--verify` mode to confirm rules match what you expect before committing.
-#
-# ─────────────────────────────────────────────────────────────────────────────
-# RULE ANATOMY (quick reference)
-# ─────────────────────────────────────────────────────────────────────────────
-#
-#   <FQCN_glob>#<method_glob>(<descriptor_glob>)  [FLAGS]  [PREDICATES]  id:<label>
-#
-#   FQCN_glob     Class name in dot-form with globs.
-#                 Examples: *MyClass, *.model.*, com.example.*
-#                 Use $ for inner classes (Foo$Bar) and companions (Foo$).
-#
-#   method_glob   Method name with globs.
-#                 Examples: copy, get*, $anonfun$*, *_$eq
-#
-#   descriptor    JVM descriptor in (args)ret format with globs.
-#                 Examples: (I)V, (Ljava/lang/String;)*, (*)*
-#                 Omitting the descriptor entirely is equivalent to (*)*
-#
-#   FLAGS         Space or comma separated. Optional.
-#                 public | protected | private | synthetic | bridge | static | abstract
-#                 IMPORTANT: flags must be space-separated from the descriptor.
-#                 WRONG: *#*(*):synthetic    (colon makes it part of the descriptor)
-#                 RIGHT: *#*(*) synthetic    (space separates flag from descriptor)
-#
-#   PREDICATES    Space-separated key:value pairs. Optional.
-#                 ret:<glob>          Match return type only (e.g., ret:V, ret:Lcom/example/*;)
-#                 id:<string>         Identifier shown in logs/reports (required for traceability)
-#                 name-contains:<s>   Method name must contain <s>
-#                 name-starts:<s>     Method name must start with <s>
-#                 name-ends:<s>       Method name must end with <s>
-#                 IMPORTANT: predicates must be space-separated from the descriptor.
-#                 WRONG: *#*(*):ret:V    (colon makes it part of the descriptor)
-#                 RIGHT: *#*(*) ret:V    (space separates predicate from descriptor)
-#
-# ─────────────────────────────────────────────────────────────────────────────
-# JVM DESCRIPTOR TYPE MAPPING
-# ─────────────────────────────────────────────────────────────────────────────
-#
-# JMF matches against raw JVM bytecode descriptors, NOT source-level types.
-# Writing human-readable types (e.g., "int", "java.lang.String") will produce
-# rules that load successfully but silently never match.
-#
-#   Source type       JVM descriptor
-#   ──────────────    ─────────────────────────
-#   int               I
-#   boolean           Z
-#   long              J
-#   double            D
-#   float             F
-#   byte              B
-#   char              C
-#   short             S
-#   void / Unit       V
-#   String            Ljava/lang/String;
-#   Option[A]         Lscala/Option;
-#   Object            Ljava/lang/Object;
-#   Array[Int]        [I
-#   Array[String]     [Ljava/lang/String;
-#
-# Use `javap -p -verbose <ClassFile.class>` to see actual descriptors.
-#
-# ─────────────────────────────────────────────────────────────────────────────
-# DESCRIPTOR NORMALIZATION
-# ─────────────────────────────────────────────────────────────────────────────
-#
-# Short/empty descriptor forms are all equivalent wildcards:
-#
-#   What you write    What JMF uses    Matches
-#   ──────────────    ─────────────    ────────────────────────────
-#   (omitted)         (*)*             any args, any return
-#   ()                (*)*             any args, any return
-#   (*)               (*)*             any args, any return
-#   (I)V              (I)V             exactly int->void
-#
-# WARNING: *#productElement() LOOKS like "no-arg method" but actually
-# matches ALL overloads (including productElement(I)Ljava/lang/Object;)
-# because () normalizes to (*)*. To target a specific overload, use an
-# explicit descriptor: *#myMethod()V  (actually no-arg, returns void)
-#
-# ─────────────────────────────────────────────────────────────────────────────
-# COMMON PITFALLS
-# ─────────────────────────────────────────────────────────────────────────────
-#
-# 1. FQCN wildcard prefix required for qualified class names:
-#    WRONG: QueryResult#noMore()  id:qr-nomore
-#           (matches only unqualified "QueryResult", not "com.example...QueryResult")
-#    RIGHT: *QueryResult#noMore() id:qr-nomore
-#           (* prefix matches any package prefix)
-#
-# 2. Use JVM descriptors, not source types:
-#    WRONG: *#apply(int)*   (human-readable — silently never matches)
-#    RIGHT: *#apply(I)*     (JVM format)
-#
-# 3. Flags and predicates must be SPACE-separated from descriptor:
-#    WRONG: *#*(*):synthetic      (colon makes ":synthetic" part of descriptor)
-#    RIGHT: *#*(*) synthetic      (space separates — flag parsed correctly)
-#    WRONG: *#*(*):ret:V          (colon makes ":ret:V" part of descriptor)
-#    RIGHT: *#*(*) ret:V          (space separates — predicate parsed correctly)
-#
-# 4. Object return types in ret: globs need trailing semicolon:
-#    WRONG: *#make(*) ret:Lcom/example/model/Id   (missing semicolon)
-#    RIGHT: *#make(*) ret:Lcom/example/model/Id;  (semicolon required)
-#
-# 5. Every rule should include id:<label> for traceability in logs.
-#
-# 6. # is both the comment marker (start of line) and FQCN/method separator.
-#    Inline comments after rules are harmless but can be confusing.
-#    Best practice: use dedicated comment lines above the rule.
-#
-# 7. Audit your rules for human-readable descriptors:
-#    grep -n '[a-z]\.[A-Z]' jmf-rules.txt | grep -v '^#'
-#    Any matches likely contain human-readable class names in descriptors.
-#
-# ─────────────────────────────────────────────────────────────────────────────
-# SCALA NAME MANGLING
-# ─────────────────────────────────────────────────────────────────────────────
-#
-# JMF operates on bytecodes — globs must use the compiled method name,
-# not the source name. Common Scala name-mangling patterns:
-#
-#   Source name        Bytecode name
-#   ──────────────     ─────────────────────
-#   name_= (setter)    name_$eq
-#   a_+_b (operator)   a_$plus_b
-#   ?                  $qmark
-#   !                  $bang
-#   ++                 $plus$plus
-#   ::                 $colon$colon
-#   Inner class Foo.Bar   Foo$Bar
-#   Companion object Foo  Foo$
-#   Lambda from foo       $anonfun$foo$1
-#
-# Use `javap -p classfile` to confirm the exact bytecode name before writing a glob.
-#
-# ─────────────────────────────────────────────────────────────────────────────
-# DIAGNOSTIC WORKFLOW
-# ─────────────────────────────────────────────────────────────────────────────
-#
-# When JaCoCo reports missed instructions after you believe you have a rule:
-#
-# 1. Find the method in jacoco.xml:
-#    grep -A2 'name="myMethod"' target/scala-2.12/jacoco/jacoco.xml
-#
-# 2. Get the actual bytecode descriptor:
-#    javap -p -verbose target/scala-2.12/classes/com/.../MyClass.class | grep -A4 "myMethod"
-#
-# 3. Compare the descriptor in your rule against the bytecode output.
-#    Common mistakes: (int) vs (I), missing ; after object types, * vs explicit return
-#
-# ─────────────────────────────────────────────────────────────────────────────
-# VERIFICATION WORKFLOW
-# ─────────────────────────────────────────────────────────────────────────────
-#
-# Before committing any new JMF rule:
-#
-# 1. Baseline: note "Marked N methods" in sbt output
-#    sbt '++2.12.18; jacoco'
-#
-# 2. Add the new rule to your rules file
-#
-# 3. Re-run: "Marked N+k methods" confirms the rule matched
-#    sbt '++2.12.18; jacoco'
-#
-# 4. Use --verify mode for detailed matching report:
-#    java -jar jmf.jar --in classes/ --local-rules rules.txt --verify
-#
-# ─────────────────────────────────────────────────────────────────────────────
-# QUICK EXAMPLES
-# ─────────────────────────────────────────────────────────────────────────────
-#
-# Simple wildcards
-#   *#*(*)
-#     Match EVERY method in EVERY class (any package).
-#     DO NOT commit this rule — it suppresses all JaCoCo coverage and produces
-#     artificially inflated (up to 100%) coverage numbers, silently masking regressions.
-#     Use only for one-off diagnostics and remove immediately.
-#
-#   *.dto.*#*(*)
-#     Match every method on any class under any package segment named "dto".
-#     Good when you treat DTOs as generated/boilerplate.
-
-# Scala case class helpers
-#   *.model.*#copy(*)
-#     Matches Scala case-class `copy` methods under `*.model.*`.
-#     Hides boilerplate clones with any parameter list and any return.
-#
-#   *.model.*#productArity()
-#     Matches `productArity` under `*.model.*`.
-#     NOTE: () normalizes to (*)* — matches ALL overloads, not just zero-arg.
-#
-#   *.model.*#productElement(*)
-#     Matches `productElement` (JVM signature: (I)Ljava/lang/Object;) on case classes.
-#
-#   *.model.*#productPrefix()
-#     Matches `productPrefix` — returns the case class name as a String.
-
-# Companion objects and defaults
-#   *.model.*$*#apply(*)
-#     Matches companion `apply` factories under `*.model.*` (any args).
-#     BE CAREFUL: can hide real factory logic; keep the package scope narrow.
-#
-#   *.model.*$*#unapply(*)
-#     Matches extractor `unapply` methods in companions under `*.model.*`.
-#
-#   *#*$default$*(*)
-#     Matches Scala-generated default-argument helpers everywhere.
-#     Safe to keep enabled; they're compiler-synthesized.
-
-# Anonymous / synthetic / bridge
-#   *#$anonfun$*
-#     Matches any method whose name contains `$anonfun$` (Scala lambdas).
-#     Consider adding `synthetic` and/or a package scope in real configs.
-#
-#   *#*(*) synthetic                       id:any-synthetic
-#     Matches ANY method marked ACC_SYNTHETIC (compiler-generated).
-#     Powerful; scope by package to avoid hiding intentional glue code.
-#     NOTE: flags are space-separated, NOT colon-prefixed.
-#
-#   *#*(*) bridge                          id:any-bridge
-#     Matches Java generic bridge methods the compiler inserts.
-#     Usually safe globally, but scoping is still recommended.
-
-# Setters / fluent APIs
-#   *.dto.*#*_$eq(*)
-#     Matches Scala var setters in DTO packages.
-#     Source-level `name_=` is compiled to `name_$eq` in bytecode (name mangling).
-#     Using the source form `*_=(*)` would silently never match.
-#
-#   *.builder.*#with*(*)
-#     Matches builder-style fluent setters (`withXxx(...)`) in builder pkgs.
-#
-#   *.client.*#with*(*) ret:Lcom/api/client/*;
-#     Like above but ONLY when the return type matches your client package.
-#     NOTE: trailing semicolon is required for object return type globs.
-
-# Return-type constraints
-#   *.jobs.*#*(*) ret:V                    id:jobs-void
-#     Any method under `*.jobs.*` returning void (V). Often orchestration.
-#
-#   *.math.*#*(*) ret:I                    id:math-int
-#     Any method under `*.math.*` returning primitive int (I).
-#
-#   *.model.*#*(*) ret:Lcom/example/model/*;  id:model-ret
-#     Any method under `*.model.*` that returns a type in `com.example.model`.
-#     NOTE: trailing semicolon required for object type globs.
-
-# Notes
-# - Always use dot-form (com.example.Foo) for PACKAGE separators (not slash-form com/example/Foo).
-#   The $ character IS required for inner classes (Foo$Bar) and companion objects (Foo$).
-# - Comments (lines starting with #) and blank lines are ignored.
-#   Inline # after a rule is harmless but best avoided — use dedicated comment lines.
-
-# ─────────────────────────────────────────────────────────────────────────────
-# GLOBAL RULE SAFETY WARNING
-# ─────────────────────────────────────────────────────────────────────────────
-#
-# Global rules match ALL classes in ALL packages. Some of the rules below are
-# intentionally broad — verify they do not accidentally filter methods that
-# contain real project logic before committing them.
-#
-# Rules known to cause false positives in real projects (commented out below):
-#
-#   *#apply(*)   id:case-apply
-#     Adoption finding: companion `apply` methods often contain validation or
-#     factory logic. This rule was disabled in production use because it silently
-#     suppressed coverage for a real factory method. If you enable it, verify
-#     with `javap` that every matched `apply` is a trivial forwarder.
-#     Use a `+` include rule to rescue any apply that contains real logic:
-#       +*MyModel$#apply(*)  id:keep-mymodel-apply
-#
-# Rules that may collide with domain method names:
-#
-#   *#name()  *#groups()  *#optionalAttributes()
-#     These match any zero-arg-style method named `name`, `groups`, or
-#     `optionalAttributes` in any class. They were added for specific
-#     compiler-generated Scala patterns (e.g., Regex group names, case class
-#     fields) but will also match domain methods with those names.
-#     If your project defines methods with these names that contain real logic,
-#     rescue them with `+` include rules or remove these globals.
+# 3) Keep rules narrow; add id: labels so logs are readable.
+# 4) Use --verify mode to confirm rules match before committing.
 #
 # ─────────────────────────────────────────────────────────────────────────────
 # GLOBALS RULES
 # ─────────────────────────────────────────────────────────────────────────────
-# ** all case class boilerplate
+# Global rules match ALL packages. Verify they do not suppress real logic.
+# See docs/rules-reference.md#global-rule-safety-warning for details.
 
 # Scala case class helpers
 *#canEqual(*)                                           id:case-canequal
 *#equals(*)                                             id:case-equals
-# DISABLED — companion apply may contain real factory/validation logic (see SAFETY WARNING above)
+# DISABLED — companion apply may contain real factory/validation logic (see safety warning)
 #*#apply(*)                                             id:case-apply
 *#unapply(*)                                            id:case-unapply
 *#hashCode(*)                                           id:case-hashcode
@@ -397,19 +98,13 @@
 *#*$default$*(*)                                        id:gen-defaults
 
 # ─────────────────────────────────────────────────────────────────────────────
-# INCLUDE RULES (whitelist/rescue specific methods from exclusions)
+# INCLUDE RULES (rescue methods from broad exclusions above)
 # ─────────────────────────────────────────────────────────────────────────────
-# Prefix a rule with "+" to mark it as an inclusion.
-# Include rules always win over exclude rules for the same method.
-# Use these to keep methods with custom business logic that would otherwise
-# be excluded by broad patterns above.
+# Prefix a rule with "+" to rescue a method. Include always wins over exclude.
 #
-# Example: Keep a specific companion apply method with custom validation
 # +com.example.model.Config$#apply(*)                    id:keep-config-apply
-#
-# Example: Keep a specific anonymous function with business logic
 # +com.example.service.Handler#$anonfun$process$1(*)    id:keep-handler-fn
-#
+
 # ─────────────────────────────────────────────────────────────────────────────
 # PROJECT RULES
 # ─────────────────────────────────────────────────────────────────────────────
