@@ -5,6 +5,24 @@
 # One rule per line.
 #
 # ─────────────────────────────────────────────────────────────────────────────
+# TABLE OF CONTENTS
+# ─────────────────────────────────────────────────────────────────────────────
+#
+#   §1  HOW TO USE
+#   §2  RULE ANATOMY (quick reference)
+#   §3  JVM DESCRIPTOR TYPE MAPPING
+#   §4  DESCRIPTOR NORMALIZATION
+#   §5  COMMON PITFALLS
+#   §6  SCALA NAME MANGLING
+#   §7  DIAGNOSTIC WORKFLOW
+#   §8  VERIFICATION WORKFLOW
+#   §9  QUICK EXAMPLES
+#   §10 GLOBAL RULE SAFETY WARNING
+#   §11 GLOBALS RULES
+#   §12 INCLUDE RULES (whitelist/rescue)
+#   §13 PROJECT RULES
+#
+# ─────────────────────────────────────────────────────────────────────────────
 # HOW TO USE
 # ─────────────────────────────────────────────────────────────────────────────
 #
@@ -99,7 +117,7 @@
 #
 # 1. FQCN wildcard prefix required for qualified class names:
 #    WRONG: QueryResult#noMore()  id:qr-nomore
-#           (matches only unqualified "QueryResult", not "za.co.absa...QueryResult")
+#           (matches only unqualified "QueryResult", not "com.example...QueryResult")
 #    RIGHT: *QueryResult#noMore() id:qr-nomore
 #           (* prefix matches any package prefix)
 #

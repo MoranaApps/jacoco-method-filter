@@ -155,7 +155,7 @@ object Rules {
 
   def matches(
                r: MethodRule,
-               fqcn: String, // e.g., "za.co.absa.Foo$Bar"
+               fqcn: String, // e.g., "com.example.Foo$Bar"
                methodName: String, // e.g., "copy", "$anonfun$...", "contextSearch"
                desc: String, // full JVM method descriptor: "(args...)ret"
                access: Int

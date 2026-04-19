@@ -17,7 +17,7 @@ class AdoptionObservationsSpec extends AnyFunSuite {
     val rule = Rules.parseLine("*QueryResultRow#apply(int)* id:s1-human").get
     val acc = access(public = true)
 
-    assert(!Rules.matches(rule, "za.co.absa.QueryResultRow", "apply", "(I)Ljava/lang/Object;", acc),
+    assert(!Rules.matches(rule, "com.example.QueryResultRow", "apply", "(I)Ljava/lang/Object;", acc),
       "human-readable 'int' should NOT match JVM descriptor 'I'")
   }
 
@@ -25,7 +25,7 @@ class AdoptionObservationsSpec extends AnyFunSuite {
     val rule = Rules.parseLine("*QueryResultRow#apply(I)* id:s1-jvm").get
     val acc = access(public = true)
 
-    assert(Rules.matches(rule, "za.co.absa.QueryResultRow", "apply", "(I)Ljava/lang/Object;", acc),
+    assert(Rules.matches(rule, "com.example.QueryResultRow", "apply", "(I)Ljava/lang/Object;", acc),
       "JVM descriptor 'I' should match")
   }
 
@@ -33,7 +33,7 @@ class AdoptionObservationsSpec extends AnyFunSuite {
     val rule = Rules.parseLine("*#getAs(java.lang.String,*)* id:s1-str-human").get
     val acc = access(public = true)
 
-    assert(!Rules.matches(rule, "za.co.absa.QueryResultRow", "getAs",
+    assert(!Rules.matches(rule, "com.example.QueryResultRow", "getAs",
       "(Ljava/lang/String;Lscala/reflect/ClassTag;)Ljava/lang/Object;", acc),
       "human-readable 'java.lang.String' should NOT match JVM format")
   }
@@ -42,7 +42,7 @@ class AdoptionObservationsSpec extends AnyFunSuite {
     val rule = Rules.parseLine("*#getAs(Ljava/lang/String;*)* id:s1-str-jvm").get
     val acc = access(public = true)
 
-    assert(Rules.matches(rule, "za.co.absa.QueryResultRow", "getAs",
+    assert(Rules.matches(rule, "com.example.QueryResultRow", "getAs",
       "(Ljava/lang/String;Lscala/reflect/ClassTag;)Ljava/lang/Object;", acc),
       "JVM format 'Ljava/lang/String;' should match")
   }
@@ -55,7 +55,7 @@ class AdoptionObservationsSpec extends AnyFunSuite {
     val rule = Rules.parseLine("QueryResult#noMore() id:s2-bare").get
     val acc = access(public = true)
 
-    assert(!Rules.matches(rule, "za.co.absa.db.balta.classes.QueryResult", "noMore", "()V", acc),
+    assert(!Rules.matches(rule, "com.example.db.balta.classes.QueryResult", "noMore", "()V", acc),
       "bare 'QueryResult' should NOT match fully-qualified name")
   }
 
@@ -63,7 +63,7 @@ class AdoptionObservationsSpec extends AnyFunSuite {
     val rule = Rules.parseLine("*QueryResult#noMore() id:s2-wildcard").get
     val acc = access(public = true)
 
-    assert(Rules.matches(rule, "za.co.absa.db.balta.classes.QueryResult", "noMore", "()V", acc),
+    assert(Rules.matches(rule, "com.example.db.balta.classes.QueryResult", "noMore", "()V", acc),
       "'*QueryResult' should match fully-qualified name")
   }
 

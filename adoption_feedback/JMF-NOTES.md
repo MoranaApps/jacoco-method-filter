@@ -48,7 +48,7 @@ QueryResult#noMore()   id:qr-nomore
 ```
 
 Without the leading `*`, the glob is matched literally and will never match
-`za.co.absa.db.balta.classes.QueryResult`.
+`com.example.db.balta.classes.QueryResult`.
 
 ---
 
@@ -215,7 +215,7 @@ Never use `:ret:` (double colon, colon-prefixed).
 All Quick Examples use fully-anchored package globs like `*.model.*#copy(*)`, which
 implicitly start with `*`. The tutorial never states that a bare class name
 (`QueryResult#noMore()`) will NOT match a fully-qualified name
-(`za.co.absa.db.balta.classes.QueryResult`).
+(`com.example.db.balta.classes.QueryResult`).
 
 This silence has caused real bugs: rules written as `ClassName#method()` compile and load,
 appear in the "N rules loaded" count, but never filter anything.

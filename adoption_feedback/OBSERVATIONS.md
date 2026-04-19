@@ -53,7 +53,7 @@ This is a living document tracking all observations from the first real-world ad
 | **Classification** | User guidance |
 | **Source** | JMF-NOTES.md section 2 |
 | **What changed** | `jmf-rules.template.txt` — added FQCN wildcard prefix warning to HowTo section; `AdoptionObservationsSpec.scala` — 3 new tests |
-| **Why** | Glob matching is exact: `QueryResult` only matches the literal string "QueryResult", not "za.co.absa.db.balta.classes.QueryResult". Users must prefix with `*` to match across packages. No code fix is feasible because bare class names are valid for classes in the default package. |
+| **Why** | Glob matching is exact: `QueryResult` only matches the literal string "QueryResult", not "com.example.db.balta.classes.QueryResult". Users must prefix with `*` to match across packages. No code fix is feasible because bare class names are valid for classes in the default package. |
 | **How to verify** | `sbt "rewriterCore/testOnly *AdoptionObservationsSpec" -- -t "section 2"` |
 | **Status** | Doc-only |
 
