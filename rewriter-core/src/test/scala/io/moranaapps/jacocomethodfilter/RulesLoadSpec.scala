@@ -255,4 +255,67 @@ class RulesLoadSpec extends AnyFunSuite {
     val rules = Rules.loadAll(Some(globalFile.toString), Some(localFile))
     assert(rules.size == 2)
   }
+
+  // --- forward-compat marker ---
+
+  test("forward-compat token sets forwardCompat = true") {
+    val rule = Rules.parseLine("com.example.*#copy(*) id:case-copy forward-compat").get
+    assert(rule.forwardCompat)
+    assert(rule.id.contains("case-copy"))
+  }
+
+  test("rule without forward-compat has forwardCompat = false by default") {
+    val rule = Rules.parseLine("com.example.*#copy(*) id:case-copy").get
+    assert(!rule.forwardCompat)
+  }
+
+  test("forward-compat can appear before other tokens") {
+    val rule = Rules.parseLine("com.example.*#copy(*) forward-compat id:case-copy").get
+    assert(rule.forwardCompat)
+    assert(rule.id.contains("case-copy"))
+  }
+
+  test("forward-compat can appear in combination with flags and predicates") {
+    val rule = Rules.parseLine("com.example.*#copy(*) synthetic forward-compat id:synth-copy").get
+    assert(rule.forwardCompat)
+    assert(rule.flags.contains("synthetic"))
+    assert(rule.id.contains("synth-copy"))
+  }
+
+  test("forward-compat is parsed for include rules") {
+    val rule = Rules.parseLine("+com.example.*#apply(*) forward-compat id:keep-apply").get
+    assert(rule.forwardCompat)
+    assert(rule.mode == Include)
+  }
+
+  // --- rawText field ---
+
+  test("parseLine stores original line text in rawText") {
+    val line = "com.example.*#copy(*) id:case-copy"
+    val rule = Rules.parseLine(line).get
+    assert(rule.rawText == line)
+  }
+
+  test("parseLine stores rawText including + prefix for include rules") {
+    val line = "+com.example.*#apply(*) id:keep-apply"
+    val rule = Rules.parseLine(line).get
+    assert(rule.rawText == line)
+  }
+
+  test("parseLine stores rawText with forward-compat token") {
+    val line = "com.example.*#copy(*) forward-compat id:case-copy"
+    val rule = Rules.parseLine(line).get
+    assert(rule.rawText == line)
+  }
+
+  test("load sets rawText for each rule from file") {
+    val file = write(tmpFile(), Seq(
+      "com.example.*#copy(*) id:copy-rule",
+      "+com.example.Config$#apply(*) id:keep-apply"
+    ))
+    val rules = Rules.load(file)
+    assert(rules.size == 2)
+    assert(rules(0).rawText == "com.example.*#copy(*) id:copy-rule")
+    assert(rules(1).rawText == "+com.example.Config$#apply(*) id:keep-apply")
+  }
 }

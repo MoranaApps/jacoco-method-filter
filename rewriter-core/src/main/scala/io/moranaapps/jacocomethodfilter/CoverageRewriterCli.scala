@@ -45,6 +45,10 @@ private[jacocomethodfilter] object CoverageRewriterCli {
         .action((_, c) => c.copy(verify = true))
         .text("Read-only scan: list all methods that would be excluded by rules")
 
+      opt[Unit]("error-on-unmatched")
+        .action((_, c) => c.copy(errorOnUnmatched = true))
+        .text("Exit non-zero if any rules matched zero methods (requires --verify)")
+
       opt[String]("report-file")
         .optional()
         .action((v, c) => c.copy(reportFile = Some(Paths.get(v))))
@@ -70,6 +74,8 @@ private[jacocomethodfilter] object CoverageRewriterCli {
           failure("--report-file must be a file path, not an existing directory")
         } else if (cfg.reportFile.isEmpty && cfg.reportFormat != "txt") {
           failure("--report-format requires --report-file to be set")
+        } else if (cfg.errorOnUnmatched && !cfg.verify) {
+          failure("--error-on-unmatched requires --verify")
         } else {
           success
         }

@@ -15,6 +15,7 @@ import java.nio.file.{Files, Path, Paths}
   * @param verify If true, run read-only scan mode
   * @param reportFile Optional path to write the filtered-methods report (txt/json/csv)
   * @param reportFormat Report format: txt (default), json, or csv
+  * @param errorOnUnmatched If true, exit non-zero when any rules matched zero methods (requires verify mode)
   */
 private[jacocomethodfilter] final case class CliConfig(
   in: Path = Paths.get("."),
@@ -24,7 +25,8 @@ private[jacocomethodfilter] final case class CliConfig(
   dryRun: Boolean = false,
   verify: Boolean = false,
   reportFile: Option[Path] = None,
-  reportFormat: String = "txt"
+  reportFormat: String = "txt",
+  errorOnUnmatched: Boolean = false
 )
 
 object CoverageRewriter {
@@ -81,8 +83,17 @@ object CoverageRewriter {
 
     println(s"[info] Verification complete: scanned ${result.classesScanned} class file(s), found ${result.totalMatched} method(s) matched by rules.")
 
+    if (result.unmatchedRules.nonEmpty && !cfg.errorOnUnmatched) {
+      println(s"[warn] ${result.unmatchedRules.size} rule(s) matched zero methods. Use --error-on-unmatched to enforce this as a build error.")
+    }
+
     cfg.reportFile.foreach { path =>
       writeReportFile(path, result.formatReport(cfg.reportFormat))
+    }
+
+    if (cfg.errorOnUnmatched && result.unmatchedRules.nonEmpty) {
+      println(s"[error] Aborting: ${result.unmatchedRules.size} unmatched rule(s) found (--error-on-unmatched is set).")
+      sys.exit(1)
     }
   }
 
@@ -174,11 +185,12 @@ object CoverageRewriter {
       }
       val idStr = rule.id.map(id => s"id:$id").getOrElse("(no id)")
       val flagsStr = if (rule.flags.nonEmpty) s" [${rule.flags.mkString(",")}]" else ""
+      val fwdCompatStr = if (rule.forwardCompat) " (forward-compat)" else ""
       val sourceStr = rule.source match {
         case GlobalSource(origin) => s" [global: $origin]"
         case LocalSource(path)    => s" [local: $path]"
         case _                    => ""
       }
-      println(s"[verify]   ${idx + 1}. [$modeStr] $idStr$flagsStr$sourceStr")
+      println(s"[verify]   ${idx + 1}. [$modeStr] $idStr$flagsStr$fwdCompatStr$sourceStr")
     }
 }

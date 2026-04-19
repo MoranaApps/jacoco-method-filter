@@ -292,4 +292,45 @@ class CoverageRewriterCliSpec extends AnyFunSuite {
     assert(result.isDefined, "--report-format TXT without --report-file is allowed (normalised to txt)")
     assert(result.get.reportFormat == "txt", "TXT must be normalised to lowercase txt")
   }
+
+  // --- --error-on-unmatched ---
+
+  test("parse should accept --error-on-unmatched with --verify") {
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify", "--error-on-unmatched")
+    )
+    assert(result.isDefined)
+    assert(result.get.errorOnUnmatched)
+    assert(result.get.verify)
+  }
+
+  test("parse should reject --error-on-unmatched without --verify") {
+    val inDir  = newTempDir("jmf-in-")
+    val outDir = newTempDir("jmf-out-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--out", outDir.toString, "--global-rules", "rules.txt", "--error-on-unmatched")
+    )
+    assert(result.isEmpty, "--error-on-unmatched without --verify must be rejected")
+  }
+
+  test("parse should default errorOnUnmatched to false") {
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify")
+    )
+    assert(result.isDefined)
+    assert(!result.get.errorOnUnmatched)
+  }
+
+  test("parse should accept --error-on-unmatched combined with --report-file") {
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify",
+        "--error-on-unmatched", "--report-file", "/tmp/report.json", "--report-format", "json")
+    )
+    assert(result.isDefined)
+    assert(result.get.errorOnUnmatched)
+    assert(result.get.reportFormat == "json")
+  }
 }

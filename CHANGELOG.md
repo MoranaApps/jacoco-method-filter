@@ -6,6 +6,20 @@ This project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Unmatched rules report** in `--verify` mode — after scanning, prints an `UNMATCHED RULES`
+  section listing every rule that matched zero methods in the scanned class directory.
+  Covers both exclusion and include rules.
+- **`--error-on-unmatched` CLI flag** — when combined with `--verify`, exits with code `1` if
+  any rules are unmatched. Enables CI enforcement of rule hygiene.
+- **`forward-compat` rule marker** — annotate a rule with `forward-compat` to exempt it from
+  the unmatched-rule warning. Use for rules targeting classes present in production builds
+  but absent from the current module's test classpath. Forward-compat rules are labelled
+  `(forward-compat)` in the `--verify` active-rules listing for easy identification.
+- Report formats (txt, json, csv) include unmatched rule information: txt/printReport add an
+  `UNMATCHED RULES` block, JSON adds an `unmatchedRules` array, CSV adds `UNMATCHED_RULE` rows.
+
 ## [2.0.1] — 2026-02-14
 
 ### Fixed
