@@ -419,6 +419,7 @@ class VerifyScannerSpec extends AnyFunSuite {
     assert(json.contains("\"classesScanned\": 3"))
     assert(json.contains("\"excluded\": []"))
     assert(json.contains("\"rescued\": []"))
+    assert(json.contains("\"unmatchedRules\": []"), "empty unmatchedRules must produce an empty JSON array key")
   }
 
   test("formatReport csv has correct header and rows") {
@@ -574,6 +575,307 @@ class VerifyScannerSpec extends AnyFunSuite {
     assert(rows(0).contains("com.example.A") && rows(0).contains("aMethod"), "first data row must be A/aMethod")
     assert(rows(1).contains("com.example.A") && rows(1).contains("mMethod"), "second data row must be A/mMethod")
     assert(rows(2).contains("com.example.Z") && rows(2).contains("zMethod"), "third data row must be Z/zMethod")
+  }
+
+  // --- UNMATCHED RULES section ---
+
+  test("scan reports unmatched rules when no class matches the rule pattern") {
+    val dir = Files.createTempDirectory("verify-unmatched-")
+    try {
+      createTestClass(dir, "test.Existing", Seq(("doWork", "()V", Opcodes.ACC_PUBLIC)))
+
+      val rulesFile = tmpFile()
+      write(rulesFile, Seq(
+        "test.Existing#doWork(*) id:matched-rule",
+        "test.NonExistent#copy(*) id:unmatched-rule"
+      ))
+      val rules = Rules.load(rulesFile)
+
+      val result = VerifyScanner.scan(dir, rules)
+
+      assert(result.unmatchedRules.size == 1)
+      assert(result.unmatchedRules.head.id.contains("unmatched-rule"))
+    } finally {
+      deleteRecursively(dir)
+    }
+  }
+
+  test("scan reports no unmatched rules when all rules match at least one method") {
+    val dir = Files.createTempDirectory("verify-all-matched-")
+    try {
+      createTestClass(dir, "test.Example", Seq(
+        ("copy", "()V", Opcodes.ACC_PUBLIC),
+        ("apply", "()V", Opcodes.ACC_PUBLIC)
+      ))
+
+      val rulesFile = tmpFile()
+      write(rulesFile, Seq(
+        "test.Example#copy(*) id:copy-rule",
+        "test.Example#apply(*) id:apply-rule"
+      ))
+      val rules = Rules.load(rulesFile)
+
+      val result = VerifyScanner.scan(dir, rules)
+
+      assert(result.unmatchedRules.isEmpty)
+    } finally {
+      deleteRecursively(dir)
+    }
+  }
+
+  test("scan with empty rules list has empty unmatchedRules") {
+    val dir = Files.createTempDirectory("verify-empty-rules-")
+    try {
+      createTestClass(dir, "test.Foo", Seq(("bar", "()V", Opcodes.ACC_PUBLIC)))
+      val result = VerifyScanner.scan(dir, Seq.empty)
+      assert(result.unmatchedRules.isEmpty)
+    } finally {
+      deleteRecursively(dir)
+    }
+  }
+
+  test("scan exempts forward-compat rules from unmatched reporting") {
+    val dir = Files.createTempDirectory("verify-fwd-compat-")
+    try {
+      createTestClass(dir, "test.Existing", Seq(("doWork", "()V", Opcodes.ACC_PUBLIC)))
+
+      val rulesFile = tmpFile()
+      write(rulesFile, Seq(
+        "test.FutureClass#copy(*) forward-compat id:future-rule",
+        "test.AnotherMissing#foo(*) id:plain-unmatched"
+      ))
+      val rules = Rules.load(rulesFile)
+
+      val result = VerifyScanner.scan(dir, rules)
+
+      // forward-compat rule is exempt; plain unmatched is reported
+      assert(result.unmatchedRules.size == 1)
+      assert(result.unmatchedRules.head.id.contains("plain-unmatched"))
+      assert(!result.unmatchedRules.exists(_.id.contains("future-rule")))
+    } finally {
+      deleteRecursively(dir)
+    }
+  }
+
+  test("scan with all-forward-compat unmatched rules reports empty unmatchedRules") {
+    val dir = Files.createTempDirectory("verify-all-fwd-")
+    try {
+      createTestClass(dir, "test.Existing", Seq(("doWork", "()V", Opcodes.ACC_PUBLIC)))
+
+      val rulesFile = tmpFile()
+      write(rulesFile, Seq(
+        "test.FutureClassA#copy(*) forward-compat id:future-a",
+        "test.FutureClassB#apply(*) forward-compat id:future-b"
+      ))
+      val rules = Rules.load(rulesFile)
+
+      val result = VerifyScanner.scan(dir, rules)
+
+      assert(result.unmatchedRules.isEmpty)
+    } finally {
+      deleteRecursively(dir)
+    }
+  }
+
+  test("include rule that matches a method is not reported as unmatched") {
+    val dir = Files.createTempDirectory("verify-include-matched-")
+    try {
+      createTestClass(dir, "test.Config$", Seq(
+        ("apply", "(Ljava/lang/Object;)Ltest/Config;", Opcodes.ACC_PUBLIC)
+      ))
+
+      val rulesFile = tmpFile()
+      write(rulesFile, Seq(
+        "test.*$#apply(*) id:comp-apply",
+        "+test.Config$#apply(*) id:keep-config-apply"
+      ))
+      val rules = Rules.load(rulesFile)
+
+      val result = VerifyScanner.scan(dir, rules)
+
+      // Both rules matched — neither should be in unmatchedRules
+      assert(result.unmatchedRules.isEmpty)
+    } finally {
+      deleteRecursively(dir)
+    }
+  }
+
+  test("include rule that matches no methods is reported as unmatched") {
+    val dir = Files.createTempDirectory("verify-include-unmatched-")
+    try {
+      createTestClass(dir, "test.Foo", Seq(("bar", "()V", Opcodes.ACC_PUBLIC)))
+
+      val rulesFile = tmpFile()
+      write(rulesFile, Seq(
+        "+test.NonExistent$#apply(*) id:ghost-include"
+      ))
+      val rules = Rules.load(rulesFile)
+
+      val result = VerifyScanner.scan(dir, rules)
+
+      assert(result.unmatchedRules.size == 1)
+      assert(result.unmatchedRules.head.id.contains("ghost-include"))
+    } finally {
+      deleteRecursively(dir)
+    }
+  }
+
+  // --- UNMATCHED RULES in printReport ---
+
+  test("printReport shows UNMATCHED RULES section when rules are unmatched") {
+    val rule = Rules.parseLine("test.Missing#copy(*) id:missing-copy").get
+    val result = ScanResult(1, 0, Seq.empty, Seq(rule))
+
+    val lines = scala.collection.mutable.ArrayBuffer[String]()
+    result.printReport(line => lines += line)
+
+    assert(lines.exists(_.contains("UNMATCHED RULES")))
+    assert(lines.exists(_.contains("missing-copy")))
+  }
+
+  test("printReport shows selector pattern in UNMATCHED RULES section") {
+    val rule = Rules.parseLine("test.Missing#copy(*) id:missing-copy").get
+    val result = ScanResult(1, 0, Seq.empty, Seq(rule))
+
+    val lines = scala.collection.mutable.ArrayBuffer[String]()
+    result.printReport(line => lines += line)
+
+    // selector (without tokens) must appear
+    assert(lines.exists(_.contains("test.Missing#copy(*)")))
+    // id must not be duplicated — patternText contains no id: token
+    assert(!lines.exists(_.contains("id:missing-copy  id:missing-copy")), "id token must not appear twice in one line")
+  }
+
+  test("printReport does not show UNMATCHED RULES section when all rules matched") {
+    val result = ScanResult(1, 0, Seq.empty, Seq.empty)
+
+    val lines = scala.collection.mutable.ArrayBuffer[String]()
+    result.printReport(line => lines += line)
+
+    assert(!lines.exists(_.contains("UNMATCHED RULES")))
+  }
+
+  test("printReport UNMATCHED RULES uses [verify] prefix") {
+    val rule = Rules.parseLine("test.X#foo(*) id:foo-rule").get
+    val result = ScanResult(0, 0, Seq.empty, Seq(rule))
+
+    val lines = scala.collection.mutable.ArrayBuffer[String]()
+    result.printReport(line => lines += line)
+
+    val unmatchedLine = lines.find(_.contains("UNMATCHED RULES")).getOrElse(fail("missing section header"))
+    assert(unmatchedLine.startsWith("[verify]"))
+  }
+
+  test("printReport includes forward-compat rules when explicitly placed in unmatchedRules") {
+    val rule = Rules.parseLine("test.Future#copy(*) forward-compat id:future-rule").get
+    // Normally forward-compat rules won't be in unmatchedRules (exempted by scan),
+    // but if explicitly passed in ScanResult, they should still display.
+    val result = ScanResult(0, 0, Seq.empty, Seq(rule))
+
+    val lines = scala.collection.mutable.ArrayBuffer[String]()
+    result.printReport(line => lines += line)
+
+    assert(lines.exists(_.contains("UNMATCHED RULES")))
+    assert(lines.exists(_.contains("future-rule")))
+  }
+
+  test("printReport shows source info for global rules in UNMATCHED section") {
+    val rule = Rules.parseLine("test.X#foo(*) id:foo-rule", GlobalSource("https://example.com/rules.txt")).get
+    val result = ScanResult(0, 0, Seq.empty, Seq(rule))
+
+    val lines = scala.collection.mutable.ArrayBuffer[String]()
+    result.printReport(line => lines += line)
+
+    val ruleEntry = lines.find(_.contains("foo-rule")).getOrElse(fail("rule entry missing"))
+    assert(ruleEntry.contains("global:") || ruleEntry.contains("[global"))
+  }
+
+  // --- UNMATCHED RULES in formatReport txt ---
+
+  test("formatReport txt includes UNMATCHED RULES section") {
+    val rule = Rules.parseLine("test.Missing#copy(*) id:missing-copy").get
+    val result = ScanResult(1, 0, Seq.empty, Seq(rule))
+    val txt = result.formatReport("txt")
+
+    assert(txt.contains("UNMATCHED RULES"))
+    assert(txt.contains("missing-copy"))
+    assert(!txt.contains("[verify]"), "txt format must not have [verify] prefix")
+  }
+
+  test("formatReport txt does not include UNMATCHED RULES section when empty") {
+    val result = ScanResult(1, 0, Seq.empty, Seq.empty)
+    val txt = result.formatReport("txt")
+    assert(!txt.contains("UNMATCHED RULES"))
+  }
+
+  // --- UNMATCHED RULES in formatReport json ---
+
+  test("formatReport json includes unmatchedRules array") {
+    val rule = Rules.parseLine("test.Missing#copy(*) id:missing-copy").get
+    val result = ScanResult(1, 0, Seq.empty, Seq(rule))
+    val json = result.formatReport("json")
+
+    assert(json.contains("\"unmatchedRules\""))
+    assert(json.contains("\"missing-copy\""))
+  }
+
+  test("formatReport json has empty unmatchedRules array when no unmatched rules") {
+    val result = ScanResult(1, 0, Seq.empty, Seq.empty)
+    val json = result.formatReport("json")
+
+    assert(json.contains("\"unmatchedRules\": []"))
+  }
+
+  test("formatReport json unmatched entry has pattern, id, and source fields") {
+    val rule = Rules.parseLine("test.Missing#copy(*) id:copy-rule", LocalSource("/path/rules.txt")).get
+    val result = ScanResult(1, 0, Seq.empty, Seq(rule))
+    val json = result.formatReport("json")
+
+    assert(json.contains("\"pattern\""))
+    assert(json.contains("\"id\""))
+    assert(json.contains("\"source\""))
+    assert(json.contains("copy-rule"))
+    // pattern must be selector-only (no id: token — that would duplicate the separate id field)
+    assert(json.contains("\"test.Missing#copy(*)\""), "pattern value must be selector-only")
+    assert(!json.contains("\"test.Missing#copy(*) id:copy-rule\""), "pattern must not include id: token")
+  }
+
+  test("formatReport json unmatched entry has empty id string when rule has no id") {
+    val rule = Rules.parseLine("test.Missing#copy(*)").get
+    val result = ScanResult(1, 0, Seq.empty, Seq(rule))
+    val json = result.formatReport("json")
+
+    // id field should be present with empty value
+    assert(json.contains("\"id\": \"\""))
+  }
+
+  // --- UNMATCHED RULES in formatReport csv ---
+
+  test("formatReport csv includes UNMATCHED_RULE rows") {
+    val rule = Rules.parseLine("test.Missing#copy(*) id:missing-copy").get
+    val result = ScanResult(1, 0, Seq.empty, Seq(rule))
+    val csv = result.formatReport("csv")
+
+    assert(csv.contains("UNMATCHED_RULE"))
+    assert(csv.contains("missing-copy"))
+  }
+
+  test("formatReport csv has no UNMATCHED_RULE rows when no unmatched rules") {
+    val result = ScanResult(1, 0, Seq.empty, Seq.empty)
+    val csv = result.formatReport("csv")
+    assert(!csv.contains("UNMATCHED_RULE"))
+  }
+
+  test("formatReport csv UNMATCHED_RULE row has selector pattern in class column and id in exclusionRuleIds column") {
+    val rule = Rules.parseLine("test.Missing#copy(*) id:missing-copy").get
+    val result = ScanResult(1, 0, Seq.empty, Seq(rule))
+    val csv = result.formatReport("csv")
+    val rows = csv.split("\n")
+    val unmatchedRow = rows.find(_.startsWith("UNMATCHED_RULE")).getOrElse(fail("no UNMATCHED_RULE row"))
+    // class column must hold selector-only (no id: token)
+    assert(unmatchedRow.contains("test.Missing#copy(*)"))
+    assert(!unmatchedRow.contains("test.Missing#copy(*) id:missing-copy"), "id: token must not appear in selector column")
+    assert(unmatchedRow.contains("missing-copy"))
   }
 
   // Helper to delete directory recursively

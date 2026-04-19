@@ -23,7 +23,8 @@ final case class MatchedMethod(
 final case class ScanResult(
                               classesScanned: Int,
                               totalMatched: Int,
-                              matches: Seq[MatchedMethod]
+                              matches: Seq[MatchedMethod],
+                              unmatchedRules: Seq[MethodRule] = Seq.empty
                             ) {
   def excludedMethods: Seq[MatchedMethod] = matches.filter(_.outcome == Excluded)
   def rescuedMethods: Seq[MatchedMethod] = matches.filter(_.outcome == Rescued)
@@ -31,6 +32,17 @@ final case class ScanResult(
   private def plural(n: Int, word: String): String = {
     val pluralForm = if (word == "class") "classes" else word + "s"
     if (n == 1) s"$n $word" else s"$n $pluralForm"
+  }
+
+  private def formatUnmatchedRuleEntry(r: MethodRule): String = {
+    val pattern = if (r.patternText.nonEmpty) r.patternText else "(pattern unavailable)"
+    val idStr = r.id.map(id => s"  id:$id").getOrElse("  (no id)")
+    val sourceStr = r.source match {
+      case GlobalSource(origin)              => s"  [global: $origin]"
+      case LocalSource(path) if path.nonEmpty => s"  [local: $path]"
+      case _                                 => ""
+    }
+    s"$pattern$idStr$sourceStr"
   }
 
   /** Print report to stdout. */
@@ -68,6 +80,13 @@ final case class ScanResult(
           out(s"[verify]     #${m.methodName}${m.descriptor}  excl:$exclStr → incl:$inclStr")
         }
       }
+      out("")
+    }
+
+    val unmatched = unmatchedRules
+    if (unmatched.nonEmpty) {
+      out(s"[verify] UNMATCHED RULES (${plural(unmatched.size, "rule")} matched zero methods):")
+      unmatched.foreach(r => out(s"[verify]   ${formatUnmatchedRuleEntry(r)}"))
       out("")
     }
 
@@ -112,6 +131,12 @@ final case class ScanResult(
       }
       lines += ""
     }
+    val unmatched = unmatchedRules
+    if (unmatched.nonEmpty) {
+      lines += s"UNMATCHED RULES (${plural(unmatched.size, "rule")} matched zero methods):"
+      unmatched.foreach(r => lines += s"  ${formatUnmatchedRuleEntry(r)}")
+      lines += ""
+    }
     lines += s"Summary: ${plural(classesScanned, "class")} scanned, ${plural(excluded.size, "method")} excluded, ${plural(rescued.size, "method")} rescued"
     lines.mkString("\n")
   }
@@ -137,13 +162,26 @@ final case class ScanResult(
     def rescuedEntry(m: MatchedMethod): String =
       s"""    {"class": ${str(m.fqcn)}, "method": ${str(m.methodName)}, "descriptor": ${str(m.descriptor)}, "exclusionRuleIds": ${strArr(m.exclusionIds)}, "inclusionRuleIds": ${strArr(m.inclusionIds)}}"""
 
-    val excBlock = if (excluded.isEmpty) "[]" else s"[\n${excluded.map(excludedEntry).mkString(",\n")}\n  ]"
-    val resBlock = if (rescued.isEmpty)  "[]" else s"[\n${rescued.map(rescuedEntry).mkString(",\n")}\n  ]"
+    def unmatchedEntry(r: MethodRule): String = {
+      val pattern = if (r.patternText.nonEmpty) r.patternText else ""
+      val idVal = r.id.map(str).getOrElse("\"\"")
+      val sourceVal = str(r.source match {
+        case GlobalSource(origin)               => s"global: $origin"
+        case LocalSource(path) if path.nonEmpty => s"local: $path"
+        case _                                  => ""
+      })
+      s"""    {"pattern": ${str(pattern)}, "id": $idVal, "source": $sourceVal}"""
+    }
+
+    val excBlock  = if (excluded.isEmpty) "[]" else s"[\n${excluded.map(excludedEntry).mkString(",\n")}\n  ]"
+    val resBlock  = if (rescued.isEmpty)  "[]" else s"[\n${rescued.map(rescuedEntry).mkString(",\n")}\n  ]"
+    val unmBlock  = if (unmatchedRules.isEmpty) "[]" else s"[\n${unmatchedRules.map(unmatchedEntry).mkString(",\n")}\n  ]"
 
     s"""{
   "classesScanned": $classesScanned,
   "excluded": $excBlock,
-  "rescued": $resBlock
+  "rescued": $resBlock,
+  "unmatchedRules": $unmBlock
 }"""
   }
 
@@ -161,6 +199,11 @@ final case class ScanResult(
     rescued.foreach { m =>
       sb.append(s"RESCUED,${cell(m.fqcn)},${cell(m.methodName)},${cell(m.descriptor)},${cell(m.exclusionIds.mkString("|"))},${cell(m.inclusionIds.mkString("|"))}\n")
     }
+    unmatchedRules.foreach { r =>
+      val pattern = if (r.patternText.nonEmpty) r.patternText else ""
+      val id      = r.id.getOrElse("")
+      sb.append(s"UNMATCHED_RULE,${cell(pattern)},,,${cell(id)},\n")
+    }
     sb.toString()
   }
 }
@@ -169,6 +212,9 @@ object VerifyScanner {
   def scan(classesDir: Path, rules: Seq[MethodRule]): ScanResult = {
     var classesScanned = 0
     val matchedMethods = mutable.ListBuffer.empty[MatchedMethod]
+    // Track every rule that matched at least one method during the scan.
+    // Uses reference identity via case-class equals (Pattern fields use reference equals).
+    val matchedRuleSet = mutable.HashSet.empty[MethodRule]
 
     using(Files.walk(classesDir)) { stream =>
       val it = stream.iterator().asScala
@@ -190,7 +236,11 @@ object VerifyScanner {
           override def visitMethod(access: Int, name: String, desc: String, signature: String, exceptions: Array[String]): MethodVisitor = {
             // Use RuleResolver to determine outcome
             val resolution = RuleResolver.resolve(rules, fqcnDots, name, desc, access)
-            
+
+            // Track every rule that matched this method (regardless of outcome).
+            matchedRuleSet ++= resolution.exclusions
+            matchedRuleSet ++= resolution.inclusions
+
             if (resolution.shouldExclude) {
               val exclusionIds = resolution.exclusions.flatMap(_.id)
               matchedMethods += MatchedMethod(fqcnDots, name, desc, Excluded, exclusionIds, Seq.empty, access)
@@ -207,6 +257,9 @@ object VerifyScanner {
       }
     }
 
-    ScanResult(classesScanned, matchedMethods.size, matchedMethods.toSeq)
+    // Rules that never produced a match and are not marked forward-compat.
+    val unmatchedRules = rules.filterNot(r => matchedRuleSet.contains(r) || r.forwardCompat)
+
+    ScanResult(classesScanned, matchedMethods.size, matchedMethods.toSeq, unmatchedRules)
   }
 }

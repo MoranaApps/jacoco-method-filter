@@ -40,7 +40,10 @@ final case class MethodRule(
                              nameStarts: Option[String],   // name-starts:<s>
                              nameEnds: Option[String],     // name-ends:<s>
                              mode: RuleMode = Exclude,     // exclude or include
-                             source: RuleSource = LocalSource("") // where this rule came from
+                             source: RuleSource = LocalSource(""), // where this rule came from
+                             forwardCompat: Boolean = false, // exempt from unmatched-rule warnings
+                             rawText: String = "",          // original rule line (for debugging/logging)
+                             patternText: String = ""       // selector-only (cls#method(desc), no tokens) for display
                            )
 
 object Rules {
@@ -88,6 +91,9 @@ object Rules {
       if (firstWs < 0) (lineWithoutPrefix, "")
       else (lineWithoutPrefix.substring(0, firstWs), lineWithoutPrefix.substring(firstWs).trim)
 
+    // patternText = selector-only, no tokens (used for display in UNMATCHED RULES reports)
+    val patternText = if (mode == Include) s"+$main" else main
+
     val parts = main.split("#", 2)
     require(parts.length == 2, s"Missing '#' separator in rule: $raw")
     val clsSel = parts(0)
@@ -114,6 +120,7 @@ object Rules {
     var nameContains = Option.empty[String]
     var nameStarts   = Option.empty[String]
     var nameEnds     = Option.empty[String]
+    var forwardCompat = false
 
     restTokens.replace(",", " ").split("\\s+").filter(_.nonEmpty).foreach {
       case t @ ("public" | "protected" | "private" | "synthetic" | "bridge" | "static" | "abstract") =>
@@ -123,6 +130,7 @@ object Rules {
       case kv if kv.startsWith("name-contains:")  => nameContains = Some(kv.stripPrefix("name-contains:"))
       case kv if kv.startsWith("name-starts:")    => nameStarts   = Some(kv.stripPrefix("name-starts:"))
       case kv if kv.startsWith("name-ends:")      => nameEnds     = Some(kv.stripPrefix("name-ends:"))
+      case "forward-compat"                        => forwardCompat = true
       case _ => () // ignore unknown tokens for forward-compat
     }
 
@@ -139,17 +147,20 @@ object Rules {
     ensureNoRegex(descSel,   "descriptor")
 
     Some(MethodRule(
-      cls          = Selectors.globToRegex(clsSel),
-      method       = Selectors.globToRegex(methodSel),
-      desc         = Selectors.globToRegex(descSel),
-      flags        = flags,
-      retGlob      = retGlob,     // note: still a glob
-      id           = id,
-      nameContains = nameContains,
-      nameStarts   = nameStarts,
-      nameEnds     = nameEnds,
-      mode         = mode,
-      source       = source
+      cls           = Selectors.globToRegex(clsSel),
+      method        = Selectors.globToRegex(methodSel),
+      desc          = Selectors.globToRegex(descSel),
+      flags         = flags,
+      retGlob       = retGlob,     // note: still a glob
+      id            = id,
+      nameContains  = nameContains,
+      nameStarts    = nameStarts,
+      nameEnds      = nameEnds,
+      mode          = mode,
+      source        = source,
+      forwardCompat = forwardCompat,
+      rawText       = line,
+      patternText   = patternText
     ))
   }
 

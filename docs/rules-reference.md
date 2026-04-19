@@ -69,6 +69,7 @@ RIGHT: *#*(*) synthetic    (space separates flag from descriptor)
 - `name-contains:<s>` — Method name must contain `<s>`
 - `name-starts:<s>` — Method name must start with `<s>`
 - `name-ends:<s>` — Method name must end with `<s>`
+- `forward-compat` — Exempt from the *unmatched rules* warning (see [Verify: Unmatched Rules](#unmatched-rules))
 
 IMPORTANT: predicates must be space-separated from the descriptor.
 
@@ -177,6 +178,14 @@ grep -n '[a-z]\.[A-Z]' jmf-rules.txt | grep -v '^#'
 ```
 
 Any matches likely contain human-readable class names in descriptors.
+
+**8.** Use `--verify --error-on-unmatched` in CI to catch rules that silently stopped matching
+(e.g. after a rename or refactor). Rules that intentionally target classes absent from the current
+build should be marked `forward-compat` to suppress the warning:
+
+```text
+*com.example.ProdOnlyService#copy(*) forward-compat id:prod-only-copy
+```
 
 ---
 
@@ -500,6 +509,60 @@ java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
 - **Rescued** — matched by an exclusion rule *and* an include rule (`+…`). Include always wins.
   The `excl:… → incl:…` trace shows which rules were involved.
 
+### Unmatched Rules
+
+After the EXCLUDED / RESCUED sections, `--verify` prints an **UNMATCHED RULES** section listing
+every rule that matched zero methods in the scanned class directory:
+
+```text
+[verify] UNMATCHED RULES (2 rules matched zero methods):
+[verify]   *com.example.DoesNotExist#copy(*)  id:ghost-copy  [local: jmf-rules.txt]
+[verify]   *QueryResult#noMore()  (no id)  [local: jmf-rules.txt]
+```
+
+An unmatched rule almost always indicates a misconfiguration:
+
+- Wrong FQCN prefix (missing `*`, wrong package, stale class name).
+- Human-readable descriptor instead of JVM format (`int` → should be `I`).
+- Method was removed but the rule was never cleaned up.
+
+To treat unmatched rules as a hard CI failure, add `--error-on-unmatched`:
+
+```bash
+java -cp ... io.moranaapps.jacocomethodfilter.CoverageRewriter \
+  --verify \
+  --in target/classes \
+  --local-rules jmf-rules.txt \
+  --error-on-unmatched
+```
+
+Exit code is `1` when any unmatched rules exist; `0` when all rules matched.
+
+### Forward-Compatible Rules
+
+Some rules are intentionally written to target classes present in a *production* build but absent
+from a given module's test classpath. These rules would always appear in UNMATCHED RULES without
+any real misconfiguration.
+
+Mark such rules with the `forward-compat` token to exempt them from the unmatched check:
+
+```text
+# This service exists in production but is not compiled in the payment module.
+*com.example.OrderService#copy(*) forward-compat id:order-copy
+```
+
+Forward-compat rules are still active — if the class later appears in the build, they filter
+normally. They are only excluded from the "zero-match" warning.
+
+In the `--verify` active-rules listing, forward-compat rules are labelled `(forward-compat)`
+so you can identify them at a glance:
+
+```text
+[verify] Active rules from local: jmf-rules.txt:
+[verify]   1. [-] id:order-copy (forward-compat)  [local: jmf-rules.txt]
+[verify]   2. [-] id:prod-copy  [local: jmf-rules.txt]
+```
+
 ---
 
 ## Diagnostic Workflow
@@ -608,6 +671,9 @@ globally and rescue lazy vals with real logic:
 | `--local-rules <path>` | At least one of the two | Local rules file path |
 | `--dry-run` | No | Only print matches; do not modify classes |
 | `--verify` | No | Read-only scan: list all methods that would be excluded by rules |
+| `--error-on-unmatched` | No | Exit non-zero if any rules matched zero methods (requires `--verify`) |
+| `--report-file <path>` | No | Write the filtered-methods report to this file |
+| `--report-format <fmt>` | No | Report format: `txt` (default), `json`, or `csv` (requires `--report-file`) |
 
 In rewrite mode, `--out` is required (omit only when using `--verify`).
 
