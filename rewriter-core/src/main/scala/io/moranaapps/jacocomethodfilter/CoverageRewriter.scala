@@ -53,11 +53,7 @@ object CoverageRewriter {
     val rules = Rules.loadAll(cfg.globalRules, cfg.localRules)
     println(s"[info] Loaded ${rules.size} rule(s) from ${rulesSummary(cfg)}")
 
-    val unlabelledCount = rules.count(_.id.isEmpty)
-    if (unlabelledCount > 0 && cfg.strict) {
-      println(s"[error] Aborting: $unlabelledCount rule(s) have no id: label (--strict is set).")
-      sys.exit(1)
-    }
+    abortIfUnlabelled(rules, cfg)
 
     Files.createDirectories(outPath)
     var files = 0
@@ -83,11 +79,7 @@ object CoverageRewriter {
   private def verify(cfg: CliConfig): Unit = {
     val rules = Rules.loadAll(cfg.globalRules, cfg.localRules)
 
-    val unlabelledCount = rules.count(_.id.isEmpty)
-    if (unlabelledCount > 0 && cfg.strict) {
-      println(s"[error] Aborting: $unlabelledCount rule(s) have no id: label (--strict is set).")
-      sys.exit(1)
-    }
+    abortIfUnlabelled(rules, cfg)
 
     println(s"[verify] Active rules from ${rulesSummary(cfg)}:")
     printRulesListing(rules)
@@ -114,6 +106,16 @@ object CoverageRewriter {
   // ---------------------------------------------------------------------------
   // Private helpers
   // ---------------------------------------------------------------------------
+
+  private def abortIfUnlabelled(rules: Seq[MethodRule], cfg: CliConfig): Unit = {
+    if (cfg.strict) {
+      val unlabelledCount = rules.count(_.id.isEmpty)
+      if (unlabelledCount > 0) {
+        println(s"[error] Aborting: $unlabelledCount rule(s) have no id: label (--strict is set).")
+        sys.exit(1)
+      }
+    }
+  }
 
   private def writeReportFile(path: Path, content: String): Unit = {
     Option(path.getParent).foreach(Files.createDirectories(_))
