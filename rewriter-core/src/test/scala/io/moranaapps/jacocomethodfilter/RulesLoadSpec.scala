@@ -429,11 +429,11 @@ class RulesLoadSpec extends AnyFunSuite {
   test("warning emitted for rule with empty id: value (id: with no label)") {
     val file = write(tmpFile(), Seq("com.example.*#copy(*) id:"))
     val out  = new java.io.ByteArrayOutputStream()
-    Console.withOut(out) { Rules.load(file) }
+    val rules = Console.withOut(out) { Rules.load(file) }
     val output = out.toString
     assert(output.contains("[warn]"), s"Expected [warn] when id: has empty value, got: $output")
     // Rule is still valid and returned (empty id treated as no id)
-    assert(Rules.load(file).head.id.isEmpty, "id with empty value must be treated as absent")
+    assert(rules.head.id.isEmpty, "id with empty value must be treated as absent")
   }
 
   test("no warning emitted for rule with non-empty id: value") {
