@@ -135,6 +135,8 @@ Rewrites compiled class files to add `@CoverageGenerated` annotations to methods
 | `jmf.inputDirectory` | `File` | `${project.build.outputDirectory}` | Input classes directory. |
 | `jmf.outputDirectory` | `File` | `${project.build.directory}/classes-filtered` | Output classes directory. |
 | `jmf.dryRun` | `boolean` | `false` | Dry run mode — no files modified. |
+| `jmf.reportFile` | `File` | — | Write filtered-methods report to this file. Useful with `dryRun=true` or the `verify` goal. If not set, output goes to console only. |
+| `jmf.reportFormat` | `String` | `"txt"` | Report format: `txt` (plain text), `json`, or `csv`. Only used when `reportFile` is set. |
 | `jmf.skip` | `boolean` | `false` | Skip execution. |
 
 > **Note:** `globalRules` and `localRules` can be used together; global rules are loaded first,
@@ -190,12 +192,20 @@ Scans compiled classes and reports which methods would be matched by the configu
 | `jmf.globalRules` | `String` | — | Global rules source (path or URL). Can be combined with `localRules`. |
 | `jmf.localRules` | `File` | `${project.basedir}/jmf-rules.txt` | Local rules file. Can be combined with `globalRules`. |
 | `jmf.inputDirectory` | `File` | `${project.build.outputDirectory}` | Input classes directory. |
+| `jmf.reportFile` | `File` | — | Write filtered-methods report to this file. If not set, output goes to console only. |
+| `jmf.reportFormat` | `String` | `"txt"` | Report format: `txt` (plain text), `json`, or `csv`. Only used when `reportFile` is set. |
 | `jmf.skip` | `boolean` | `false` | Skip execution. |
 
 **Example:**
 
 ```bash
 mvn compile jacoco-method-filter:verify
+```
+
+**Example with report file export:**
+
+```bash
+mvn compile jacoco-method-filter:verify -Djmf.reportFile=target/jmf-report.json -Djmf.reportFormat=json
 ```
 
 ### `jacoco-method-filter:report`

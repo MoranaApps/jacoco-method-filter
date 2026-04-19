@@ -45,6 +45,20 @@ private[jacocomethodfilter] object CoverageRewriterCli {
         .action((_, c) => c.copy(verify = true))
         .text("Read-only scan: list all methods that would be excluded by rules")
 
+      opt[String]("report-file")
+        .optional()
+        .action((v, c) => c.copy(reportFile = Some(Paths.get(v))))
+        .text("Write filtered-methods report to this file (works with --verify, --dry-run, and rewrite)")
+
+      opt[String]("report-format")
+        .optional()
+        .action((v, c) => c.copy(reportFormat = v.toLowerCase))
+        .validate(v =>
+          if (Set("txt", "json", "csv").contains(v.toLowerCase)) success
+          else failure("--report-format must be one of: txt, json, csv")
+        )
+        .text("Report format: txt (default), json, or csv")
+
       checkConfig { cfg =>
         if (!Files.isDirectory(cfg.in)) {
           failure("--in must exist and be a directory")
@@ -52,6 +66,10 @@ private[jacocomethodfilter] object CoverageRewriterCli {
           failure("--out is required when not in verify mode")
         } else if (cfg.globalRules.isEmpty && cfg.localRules.isEmpty) {
           failure("At least one of --global-rules or --local-rules must be specified")
+        } else if (cfg.reportFile.exists(Files.isDirectory(_))) {
+          failure("--report-file must be a file path, not an existing directory")
+        } else if (cfg.reportFile.isEmpty && cfg.reportFormat != "txt") {
+          failure("--report-format requires --report-file to be set")
         } else {
           success
         }

@@ -13,6 +13,8 @@ import java.nio.file.{Files, Path, Paths}
   * @param localRules Local rules file path (optional if globalRules provided)
   * @param dryRun If true, print matches without modifying classes
   * @param verify If true, run read-only scan mode
+  * @param reportFile Optional path to write the filtered-methods report (txt/json/csv)
+  * @param reportFormat Report format: txt (default), json, or csv
   */
 private[jacocomethodfilter] final case class CliConfig(
   in: Path = Paths.get("."),
@@ -20,7 +22,9 @@ private[jacocomethodfilter] final case class CliConfig(
   globalRules: Option[String] = None,
   localRules: Option[Path] = None,
   dryRun: Boolean = false,
-  verify: Boolean = false
+  verify: Boolean = false,
+  reportFile: Option[Path] = None,
+  reportFormat: String = "txt"
 )
 
 object CoverageRewriter {
@@ -57,6 +61,13 @@ object CoverageRewriter {
     }
 
     println(s"[info] Processed $files class file(s), marked $marked method(s). dry-run=${cfg.dryRun}")
+
+    cfg.reportFile.foreach { path =>
+      // TODO(perf): avoid second scan by collecting MatchedMethod data during the rewrite pass above
+      // (each rewriteClassFile call already invokes RuleResolver.resolve per method)
+      val result = VerifyScanner.scan(cfg.in, rules)
+      writeReportFile(path, result.formatReport(cfg.reportFormat))
+    }
   }
 
   private def verify(cfg: CliConfig): Unit = {
@@ -69,11 +80,21 @@ object CoverageRewriter {
     result.printReport(println)
 
     println(s"[info] Verification complete: scanned ${result.classesScanned} class file(s), found ${result.totalMatched} method(s) matched by rules.")
+
+    cfg.reportFile.foreach { path =>
+      writeReportFile(path, result.formatReport(cfg.reportFormat))
+    }
   }
 
   // ---------------------------------------------------------------------------
   // Private helpers
   // ---------------------------------------------------------------------------
+
+  private def writeReportFile(path: Path, content: String): Unit = {
+    Option(path.getParent).foreach(Files.createDirectories(_))
+    Files.write(path, content.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+    println(s"[info] Report written to: $path")
+  }
 
   /** Human-readable description of the configured rule sources. */
   private def rulesSummary(cfg: CliConfig): String =

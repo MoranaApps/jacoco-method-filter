@@ -170,4 +170,126 @@ class CoverageRewriterCliSpec extends AnyFunSuite {
     val result = CoverageRewriterCli.parse(Array.empty)
     assert(result.isEmpty)
   }
+
+  test("parse should accept --report-file in verify mode") {
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify",
+        "--report-file", "/tmp/report.txt")
+    )
+    assert(result.isDefined)
+    assert(result.get.reportFile.contains(Paths.get("/tmp/report.txt")))
+  }
+
+  test("parse should accept --report-format json") {
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify",
+        "--report-file", "/tmp/report.json", "--report-format", "json")
+    )
+    assert(result.isDefined)
+    assert(result.get.reportFormat == "json")
+  }
+
+  test("parse should accept --report-format JSON (case-insensitive)") {
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify",
+        "--report-file", "/tmp/report.json", "--report-format", "JSON")
+    )
+    assert(result.isDefined)
+    assert(result.get.reportFormat == "json", "format must be normalised to lowercase")
+  }
+
+  test("parse should accept --report-format csv") {
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify",
+        "--report-file", "/tmp/report.csv", "--report-format", "csv")
+    )
+    assert(result.isDefined)
+    assert(result.get.reportFormat == "csv")
+  }
+
+  test("parse should accept --report-format CSV (case-insensitive)") {
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify",
+        "--report-file", "/tmp/report.csv", "--report-format", "CSV")
+    )
+    assert(result.isDefined)
+    assert(result.get.reportFormat == "csv", "format must be normalised to lowercase")
+  }
+
+  test("parse should reject invalid --report-format value") {
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify",
+        "--report-file", "/tmp/report.xml", "--report-format", "xml")
+    )
+    assert(result.isEmpty)
+  }
+
+  test("parse should default reportFile to None and reportFormat to txt") {
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify")
+    )
+    assert(result.isDefined)
+    assert(result.get.reportFile.isEmpty)
+    assert(result.get.reportFormat == "txt")
+  }
+
+  test("parse should accept --report-file with --dry-run") {
+    val inDir  = newTempDir("jmf-in-")
+    val outDir = newTempDir("jmf-out-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--out", outDir.toString, "--global-rules", "rules.txt",
+        "--dry-run", "--report-file", "/tmp/dry-run-report.json", "--report-format", "json")
+    )
+    assert(result.isDefined)
+    assert(result.get.dryRun)
+    assert(result.get.reportFile.contains(Paths.get("/tmp/dry-run-report.json")))
+    assert(result.get.reportFormat == "json")
+  }
+
+  test("parse should reject --report-file pointing to an existing directory") {
+    val inDir = newTempDir("jmf-in-")
+    val dirAsReport = newTempDir("jmf-report-dir-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify",
+        "--report-file", dirAsReport.toString)
+    )
+    assert(result.isEmpty, "--report-file pointing to a directory must be rejected")
+  }
+
+  test("parse should reject --report-format without --report-file") {
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify",
+        "--report-format", "json")
+    )
+    assert(result.isEmpty, "--report-format without --report-file must be rejected")
+  }
+
+  test("parse should accept --report-format txt without --report-file (default no-op)") {
+    // txt is the default; specifying it explicitly without a file path is redundant but not an error
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify",
+        "--report-format", "txt")
+    )
+    assert(result.isDefined, "--report-format txt without --report-file is allowed (no-op)")
+  }
+
+  test("parse should accept --report-format TXT (uppercase) without --report-file (default no-op)") {
+    // uppercase TXT normalises to txt before checkConfig; must be treated same as lowercase txt
+    val inDir = newTempDir("jmf-in-")
+    val result = CoverageRewriterCli.parse(
+      Array("--in", inDir.toString, "--global-rules", "rules.txt", "--verify",
+        "--report-format", "TXT")
+    )
+    assert(result.isDefined, "--report-format TXT without --report-file is allowed (normalised to txt)")
+    assert(result.get.reportFormat == "txt", "TXT must be normalised to lowercase txt")
+  }
 }

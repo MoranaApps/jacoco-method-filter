@@ -46,5 +46,7 @@ object Keys {
     val jmfInitRules       = taskKey[File]("Create default jmf-rules.txt if it does not exist")
     val jmfInitRulesForce  = settingKey[Boolean]("Force overwrite existing jmf-rules.txt (default: false)")
     val jmfVerify          = taskKey[Unit]("On-demand scan: show which methods would be excluded from coverage by current rules")
+    val jmfReportFile      = settingKey[Option[File]]("Write filtered-methods report to this file (used with jmfVerify or jmfRewrite, including dry-run mode)")
+    val jmfReportFormat    = settingKey[String]("Report format for jmfReportFile: txt (default), json, or csv")
   }
 }
