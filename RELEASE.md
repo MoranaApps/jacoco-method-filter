@@ -32,7 +32,9 @@ addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.3.1")
 
 ## 2. Prepare the release
 
-- **Bump the version** in two places:
+- **Bump the version** in all locations listed below. Search for the old version string and replace it with the new one.
+
+  **Core build files** (the version being published):
   1. `build.sbt` (top-level) — sbt core library + sbt plugin:
 
      ```scala
@@ -47,6 +49,15 @@ addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.3.1")
      <artifactId>jacoco-method-filter-core_2.12</artifactId>
      <version>0.2.0</version>
      ```
+
+  **Example projects** (consumer-side references to the published artifacts):
+  3. `examples/sbt-basic/project/plugins.sbt` — sbt plugin version used in the sbt example
+  4. `examples/maven-basic/pom.xml` — Maven plugin version used in the Maven Java example
+  5. `examples/maven-scala/pom.xml` — Maven plugin version used in the Maven Scala example
+
+  **Integration-test fixtures** (must match the version being released so CI runs against the new artifacts):
+  6. `integration-tests/fixtures/sbt-basic/project/plugins.sbt`
+  7. `integration-tests/fixtures/sbt-scala211/project/plugins.sbt`
 
   - Use [semantic versioning](https://semver.org/).
   - Do **not** include `-SNAPSHOT`.
@@ -130,7 +141,9 @@ git push origin master
 
 ## 6. Quick checklist
 
-- [ ] Version updated in `build.sbt` **and** `maven-plugin/pom.xml`
+- [ ] Version updated in `build.sbt` and `maven-plugin/pom.xml` (core build)
+- [ ] Version updated in `examples/sbt-basic/project/plugins.sbt`, `examples/maven-basic/pom.xml`, `examples/maven-scala/pom.xml` (examples)
+- [ ] Version updated in `integration-tests/fixtures/sbt-basic/project/plugins.sbt`, `integration-tests/fixtures/sbt-scala211/project/plugins.sbt` (integration-test fixtures)
 - [ ] Commit pushed to `master`
 - [ ] Workflow triggered via GitHub Actions
 - [ ] Artifacts staged or released successfully (sbt + Maven plugin)
