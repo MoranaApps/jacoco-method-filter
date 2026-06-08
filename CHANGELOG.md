@@ -4,7 +4,7 @@ All notable user-facing changes to **jacoco-method-filter** are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project uses [Semantic Versioning](https://semver.org/).
 
-## [2.2.0] — Planned
+## [2.2.0] — 2026-06-08
 
 ### Changed
 
@@ -106,7 +106,7 @@ This project uses [Semantic Versioning](https://semver.org/).
 - Rule syntax: `<class>#<method>(<descriptor>)` with glob patterns.
 - `@CoverageGenerated` annotation injection.
 
-[2.2.0]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.1.1...HEAD
+[2.2.0]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.1.1...v2.2.0
 [2.1.1]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.0.0...v2.0.1
