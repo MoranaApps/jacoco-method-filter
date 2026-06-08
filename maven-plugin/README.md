@@ -19,7 +19,7 @@ Maven plugin for filtering JaCoCo coverage by annotating methods based on config
 - Java 8 or higher
 - Maven 3.6 or higher
 - `jacoco-method-filter-core_2.12:2.1.1` dependency (automatically included)
-- JaCoCo CLI 0.8.14 (automatically included)
+- JaCoCo CLI 0.8.15 (automatically included)
 
 ## Implementation Details
 
@@ -46,7 +46,7 @@ Add to your `pom.xml` (recommended: inside a coverage profile):
         <plugin>
           <groupId>org.jacoco</groupId>
           <artifactId>jacoco-maven-plugin</artifactId>
-          <version>0.8.14</version>
+          <version>0.8.15</version>
           <executions>
             <execution>
               <goals>
@@ -285,7 +285,7 @@ Generates JaCoCo coverage reports (HTML, XML, CSV) using filtered classes.
 <plugin>
     <groupId>org.jacoco</groupId>
     <artifactId>jacoco-maven-plugin</artifactId>
-    <version>0.8.14</version>
+    <version>0.8.15</version>
     <configuration>
         <includes>
             <include>com/example/core/**</include>

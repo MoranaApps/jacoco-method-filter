@@ -4,6 +4,20 @@ All notable user-facing changes to **jacoco-method-filter** are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project uses [Semantic Versioning](https://semver.org/).
 
+## [2.2.0] — Planned
+
+### Changed
+
+- Update JaCoCo compatibility to **0.8.15**.
+- Extend integration test suite coverage to include JaCoCo 0.8.15.
+
+## [2.1.1] — 2026-06-08
+
+### Fixed
+
+- Fixed issue in the JaCoCo version check workflow.
+- Updated bundled JaCoCo version references to the latest supported release.
+
 ## [2.1.0]
 
 ### Added
@@ -92,8 +106,10 @@ This project uses [Semantic Versioning](https://semver.org/).
 - Rule syntax: `<class>#<method>(<descriptor>)` with glob patterns.
 - `@CoverageGenerated` annotation injection.
 
-[2.1.0]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.0.0...HEAD
-[2.0.1]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.0.0...HEAD
+[2.2.0]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.1.1...HEAD
+[2.1.1]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.1.0...v2.1.1
+[2.1.0]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.0.1...v2.1.0
+[2.0.1]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/MoranaApps/jacoco-method-filter/compare/v1.1.0...v2.0.0
 [1.1.0]: https://github.com/MoranaApps/jacoco-method-filter/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/MoranaApps/jacoco-method-filter/compare/v0.1.7...v1.0.0

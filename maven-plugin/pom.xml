@@ -41,7 +41,7 @@
         <maven.compiler.target>8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <mavenVersion>3.6.0</mavenVersion>
-        <jacocoVersion>0.8.14</jacocoVersion>
+        <jacocoVersion>0.8.15</jacocoVersion>
         <central.publishing.autoPublish>false</central.publishing.autoPublish>
     </properties>
 

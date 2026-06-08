@@ -6,7 +6,7 @@ set -euo pipefail
 #
 # Usage:
 #   bash integration-tests/test-jacoco-compat.sh <jacoco-version>
-#   e.g., bash integration-tests/test-jacoco-compat.sh 0.8.14
+#   e.g., bash integration-tests/test-jacoco-compat.sh 0.8.15
 #
 # Prerequisite: rewriter-core published locally.
 # ---------------------------------------------------------------------------
@@ -26,7 +26,7 @@ if [[ $# -lt 1 ]]; then
 
   echo "ERROR: Missing JaCoCo version argument"
   echo "Usage: $0 <jacoco-version>"
-  echo "Example: $0 0.8.14"
+  echo "Example: $0 0.8.15"
   echo ""
   if [[ -n "$TESTED_VERSIONS" ]]; then
     echo "Tested versions: $TESTED_VERSIONS"
