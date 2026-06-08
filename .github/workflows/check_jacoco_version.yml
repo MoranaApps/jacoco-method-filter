@@ -9,6 +9,8 @@ on:
 jobs:
   check-jacoco-version:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     permissions:
       issues: write
       contents: read
@@ -37,24 +39,14 @@ jobs:
         id: current-version
         run: |
           set -euo pipefail
-          
-          # Extract the latest version from the jacoco-version matrix in ci.yml
-          CURRENT_VERSION=$(grep -oP "jacoco-version: \['[0-9.]+', '\K[0-9]+\.[0-9]+\.[0-9]+(?='\])" \
-            .github/workflows/ci.yml)
-          
+
+          CURRENT_VERSION=$(tail -1 integration-tests/jacoco-versions.txt | tr -d '[:space:]')
+
           if [[ -z "$CURRENT_VERSION" ]]; then
-            echo "ERROR: Failed to extract current JaCoCo version from ci.yml"
-            echo "Trying fallback extraction method..."
-            # Fallback: extract all versions and take the last one
-            CURRENT_VERSION=$(grep -oP "'[0-9]+\.[0-9]+\.[0-9]+'" .github/workflows/ci.yml | \
-              grep -oP "[0-9]+\.[0-9]+\.[0-9]+" | tail -1)
-          fi
-          
-          if [[ -z "$CURRENT_VERSION" ]]; then
-            echo "ERROR: Failed to extract current JaCoCo version from ci.yml"
+            echo "ERROR: Failed to extract current JaCoCo version from integration-tests/jacoco-versions.txt"
             exit 1
           fi
-          
+
           echo "Current pinned JaCoCo version: $CURRENT_VERSION"
           echo "current_version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
       
