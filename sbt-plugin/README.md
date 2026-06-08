@@ -35,7 +35,7 @@ The plugin executes the coverage flow by:
 Add to `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "2.1.1")
+addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "2.2.0")
 ```
 
 Enable the plugin in your `build.sbt`:
@@ -216,7 +216,7 @@ Only configure the settings below when you want to:
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `jacocoPluginEnabled` | `Boolean` | `false` | Enable/disable the plugin for this module |
-| `jacocoVersion` | `String` | `"0.8.14"` | JaCoCo version to use |
+| `jacocoVersion` | `String` | `"0.8.15"` | JaCoCo version to use |
 | `jacocoExecFile` | `File` | `target/jacoco/jacoco.exec` | JaCoCo execution data file location |
 | `jacocoReportDir` | `File` | `target/jacoco-report` | Output directory for JaCoCo reports |
 | `jacocoReportName` | `String` | Derived from module ID and Scala version | Title used for JaCoCo HTML report |

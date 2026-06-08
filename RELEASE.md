@@ -142,8 +142,10 @@ git push origin master
 ## 6. Quick checklist
 
 - [ ] Version updated in `build.sbt` and `maven-plugin/pom.xml` (core build)
-- [ ] Version updated in `examples/sbt-basic/project/plugins.sbt`, `examples/maven-basic/pom.xml`, `examples/maven-scala/pom.xml` (examples)
-- [ ] Version updated in `integration-tests/fixtures/sbt-basic/project/plugins.sbt`, `integration-tests/fixtures/sbt-scala211/project/plugins.sbt` (integration-test fixtures)
+- [ ] Version updated in `examples/sbt-basic/project/plugins.sbt`, `examples/maven-basic/pom.xml`,
+ `examples/maven-scala/pom.xml` (examples)
+- [ ] Version updated in `integration-tests/fixtures/sbt-basic/project/plugins.sbt`,
+ `integration-tests/fixtures/sbt-scala211/project/plugins.sbt` (integration-test fixtures)
 - [ ] Commit pushed to `master`
 - [ ] Workflow triggered via GitHub Actions
 - [ ] Artifacts staged or released successfully (sbt + Maven plugin)

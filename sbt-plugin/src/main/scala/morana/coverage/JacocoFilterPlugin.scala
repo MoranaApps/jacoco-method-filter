@@ -105,8 +105,8 @@ object JacocoFilterPlugin extends AutoPlugin {
     jacocoPluginEnabled := false,
 
     // ---- defaults + coordinates
-    jacocoVersion := "0.8.14",
-    jmfCoreVersion := "2.1.1",
+    jacocoVersion := "0.8.15",
+    jmfCoreVersion := "2.2.0",
     libraryDependencies ++= Seq(
       ("org.jacoco" % "org.jacoco.agent" % jacocoVersion.value % Test).classifier("runtime"),
       ("org.jacoco" % "org.jacoco.cli" % jacocoVersion.value % Test).classifier("nodeps"),

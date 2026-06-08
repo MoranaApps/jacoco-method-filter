@@ -114,7 +114,7 @@ for test_script in "$SCRIPT_DIR"/test-*.sh; do
   if [[ "$test_name" == "test-jacoco-compat" ]]; then
     # Undo the generic +1 above; each version iteration counts as its own test
     TOTAL=$((TOTAL - 1))
-    for version in 0.8.7 0.8.14; do
+    for version in 0.8.7 0.8.15; do
       TOTAL=$((TOTAL + 1))
       echo -e "${YELLOW}Testing with JaCoCo $version${NC}"
       if bash "$test_script" "$version"; then
