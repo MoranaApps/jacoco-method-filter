@@ -55,7 +55,7 @@ private[jacocomethodfilter] object CoverageRewriterCli {
 
       opt[Unit]("require-rules")
         .action((_, c) => c.copy(requireRules = true))
-        .text("Exit non-zero if no rules source is configured (restores 2.x strict behavior)")
+        .text("Exit non-zero if no rules source is configured")
 
       opt[String]("report-file")
         .optional()

@@ -704,7 +704,7 @@ globally and rescue lazy vals with real logic:
 | `--out <dir>` | Unless `--verify` | Output classes directory |
 | `--global-rules <path\|url>` | Optional | Global rules file path or URL |
 | `--local-rules <path>` | Optional | Local rules file path. A path that does not exist is treated as empty (a `[warn]` is printed) |
-| `--require-rules` | No | Exit non-zero if no rules source is configured. Restores the 2.x strict behavior (introduced in 2.0.0); off by default |
+| `--require-rules` | No | Exit non-zero if no rules source is configured; off by default |
 | `--dry-run` | No | Only print matches; do not modify classes |
 | `--verify` | No | Read-only scan: list all methods that would be excluded by rules |
 | `--error-on-unmatched` | No | Exit non-zero if any rules matched zero methods (requires `--verify`) |

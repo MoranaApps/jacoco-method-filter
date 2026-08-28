@@ -19,7 +19,7 @@ import java.nio.file.{Files, Path, Paths}
   * @param reportFormat Report format: txt (default), json, or csv
   * @param errorOnUnmatched If true, exit non-zero when any rules matched zero methods (requires verify mode)
   * @param strict If true, exit non-zero when any rules have no id: label
-  * @param requireRules If true, exit non-zero when no rules source is configured (restores 2.x strict behavior)
+  * @param requireRules If true, exit non-zero when no rules source is configured
   */
 private[jacocomethodfilter] final case class CliConfig(
   in: Path = Paths.get("."),
@@ -141,7 +141,7 @@ object CoverageRewriter {
       case other => other
     }
 
-  /** With `--require-rules`, abort when no rules source is available (restores 2.x strict behavior). */
+  /** With `--require-rules`, abort when no rules source is available. */
   private def abortIfRulesRequired(cfg: CliConfig, localRules: Option[Path]): Unit = {
     if (cfg.requireRules && cfg.globalRules.isEmpty && localRules.isEmpty) {
       println("[error] Aborting: --require-rules is set but no rules source is configured " +
