@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
@@ -29,7 +29,7 @@ jobs:
     outputs:
       versions: ${{ steps.versions.outputs.versions }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - id: versions
         name: Load JaCoCo versions
         run: |
@@ -51,8 +51,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
@@ -81,14 +81,14 @@ jobs:
       matrix:
         jacoco-version: ${{ fromJson(needs.jacoco-versions.outputs.versions) }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
       - uses: coursier/cache-action@v6
       - name: Cache JaCoCo JARs
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: target/jacoco-cache
           key: ${{ runner.os }}-jacoco-${{ hashFiles('integration-tests/jacoco-versions.txt') }}
