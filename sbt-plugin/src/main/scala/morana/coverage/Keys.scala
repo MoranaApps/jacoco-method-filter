@@ -39,6 +39,7 @@ object Keys {
     val jmfLocalRulesFile  = settingKey[File]("Local rules file path (fallback when jmfGlobalRules/jmfLocalRules are not set)")
     val jmfGlobalRules     = settingKey[Option[String]]("JMF global rules (path or URL)")
     val jmfLocalRules      = settingKey[Option[File]]("JMF local rules file")
+    val jmfRequireRules    = settingKey[Boolean]("Fail jmfRewrite/jmfVerify when no rules source is configured (default: false - pass through unfiltered)")
     val jmfCliMain         = settingKey[String]("Main class of the JMF CLI")
     val jmfDryRun          = settingKey[Boolean]("Dry-run rewriter")
     val jmfEnabled         = settingKey[Boolean]("Enable JMF rewriting")

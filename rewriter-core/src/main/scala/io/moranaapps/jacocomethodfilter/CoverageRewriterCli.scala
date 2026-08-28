@@ -53,6 +53,10 @@ private[jacocomethodfilter] object CoverageRewriterCli {
         .action((_, c) => c.copy(strict = true))
         .text("Exit non-zero if any rules have no id: label (unlabelled-rule enforcement)")
 
+      opt[Unit]("require-rules")
+        .action((_, c) => c.copy(requireRules = true))
+        .text("Exit non-zero if no rules source is configured")
+
       opt[String]("report-file")
         .optional()
         .action((v, c) => c.copy(reportFile = Some(Paths.get(v))))
@@ -72,8 +76,6 @@ private[jacocomethodfilter] object CoverageRewriterCli {
           failure("--in must exist and be a directory")
         } else if (!cfg.verify && cfg.out.isEmpty) {
           failure("--out is required when not in verify mode")
-        } else if (cfg.globalRules.isEmpty && cfg.localRules.isEmpty) {
-          failure("At least one of --global-rules or --local-rules must be specified")
         } else if (cfg.reportFile.exists(Files.isDirectory(_))) {
           failure("--report-file must be a file path, not an existing directory")
         } else if (cfg.reportFile.isEmpty && cfg.reportFormat != "txt") {

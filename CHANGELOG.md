@@ -4,6 +4,32 @@ All notable user-facing changes to **jacoco-method-filter** are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **`--require-rules` CLI flag / `jmf.requireRules` Maven property / `jmfRequireRules` sbt setting**
+  (all default `false`) — fail the build when no rules source is configured. Use in CI to enforce
+  that every project provides a rules file.
+
+### Changed
+
+- **`rewrite` and `verify` no longer fail when no rules file is present.** With neither a global
+  nor a local rules source, every class now passes through unchanged and a normal (unfiltered)
+  JaCoCo report is produced — restoring the v1.0.0 *"Quiet-exit mode for builds without a rules
+  file"*. This makes it safe to wire the Maven plugin into a shared parent POM before every child
+  project has authored its own `jmf-rules.txt`. Opt back into strict enforcement with
+  `--require-rules` / `-Djmf.requireRules=true` / `jmfRequireRules := true`.
+- A missing `--local-rules` file now emits `[warn] local rules file not found: … — proceeding with
+  0 local rules` and is treated as empty, instead of aborting. The Maven plugin passes
+  `--local-rules` to the CLI only when the file exists.
+
+### Fixed
+
+- Maven `rewrite` / `verify` goals aborted the build in projects without a `jmf-rules.txt`
+  (regression introduced in 2.0.0).
+  ([#69](https://github.com/MoranaApps/jacoco-method-filter/issues/69))
+
 ## [2.2.0] — 2026-06-08
 
 ### Changed
@@ -106,6 +132,7 @@ This project uses [Semantic Versioning](https://semver.org/).
 - Rule syntax: `<class>#<method>(<descriptor>)` with glob patterns.
 - `@CoverageGenerated` annotation injection.
 
+[Unreleased]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.2.0...HEAD
 [2.2.0]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.1.1...v2.2.0
 [2.1.1]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.0.1...v2.1.0
