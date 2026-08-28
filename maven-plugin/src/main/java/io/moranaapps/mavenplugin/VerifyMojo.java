@@ -91,8 +91,12 @@ public class VerifyMojo extends AbstractMojo {
 
     /** True when a global rules source or an existing local rules file is configured. */
     private boolean hasRulesConfig() {
-        return (globalRules != null && !globalRules.trim().isEmpty())
-                || (localRules != null && localRules.exists());
+        return hasGlobalRules() || (localRules != null && localRules.exists());
+    }
+
+    /** True when {@code globalRules} is set to a non-blank value. */
+    private boolean hasGlobalRules() {
+        return globalRules != null && !globalRules.trim().isEmpty();
     }
 
     private void runVerification() throws MojoExecutionException {
@@ -120,7 +124,7 @@ public class VerifyMojo extends AbstractMojo {
         cmd.add("--in");
         cmd.add(inputDirectory.getAbsolutePath());
         
-        if (globalRules != null) {
+        if (hasGlobalRules()) {
             cmd.add("--global-rules");
             cmd.add(globalRules);
         }
@@ -209,7 +213,7 @@ public class VerifyMojo extends AbstractMojo {
     }
 
     private void logRulesConfig() {
-        if (globalRules != null) {
+        if (hasGlobalRules()) {
             getLog().info("║ Global:     " + globalRules);
         }
         if (localRules != null && localRules.exists()) {

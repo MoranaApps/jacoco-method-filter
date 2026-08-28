@@ -99,8 +99,12 @@ public class RewriteMojo extends AbstractMojo {
 
     /** True when a global rules source or an existing local rules file is configured. */
     private boolean hasRulesConfig() {
-        return (globalRules != null && !globalRules.trim().isEmpty())
-                || (localRules != null && localRules.exists());
+        return hasGlobalRules() || (localRules != null && localRules.exists());
+    }
+
+    /** True when {@code globalRules} is set to a non-blank value. */
+    private boolean hasGlobalRules() {
+        return globalRules != null && !globalRules.trim().isEmpty();
     }
 
     private void runTransformation() throws MojoExecutionException {
@@ -131,7 +135,7 @@ public class RewriteMojo extends AbstractMojo {
         cmd.add("--out");
         cmd.add(outputDirectory.getAbsolutePath());
         
-        if (globalRules != null) {
+        if (hasGlobalRules()) {
             cmd.add("--global-rules");
             cmd.add(globalRules);
         }
@@ -221,7 +225,7 @@ public class RewriteMojo extends AbstractMojo {
     }
 
     private void logRulesConfig() {
-        if (globalRules != null) {
+        if (hasGlobalRules()) {
             getLog().info("║ Global:     " + globalRules);
         }
         if (localRules != null && localRules.exists()) {

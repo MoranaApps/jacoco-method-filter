@@ -9,8 +9,8 @@ This project uses [Semantic Versioning](https://semver.org/).
 ### Added
 
 - **`--require-rules` CLI flag / `jmf.requireRules` Maven property / `jmfRequireRules` sbt setting**
-  (all default `false`) — restore the pre-2.x behavior of failing the build when no rules source is
-  configured. Use in CI to enforce that every project provides a rules file.
+  (all default `false`) — restore the 2.x behavior (introduced in 2.0.0) of failing the build when no
+  rules source is configured. Use in CI to enforce that every project provides a rules file.
 
 ### Changed
 
