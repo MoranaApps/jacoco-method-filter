@@ -413,6 +413,12 @@ reviewed and confirmed to contain real logic.
 
 ## Global and Local Rules
 
+Method filtering is **opt-in**. With no rules configured at all, every class passes through
+unchanged and you get a normal, unfiltered JaCoCo report — so the plugin is safe to wire into a
+shared parent POM before every project has authored its own `jmf-rules.txt`. Enforce that a rules
+source is present with `--require-rules` (CLI) / `jmf.requireRules=true` (Maven) /
+`jmfRequireRules := true` (sbt).
+
 Most users can start with a **single local rules file**.
 
 - **Simple (single file):** use `--local-rules jmf-rules.txt` (CLI) or the plugin default `jmf-rules.txt`
@@ -696,8 +702,9 @@ globally and rescue lazy vals with real logic:
 |------|----------|-------------|
 | `--in <dir>` | Yes | Input classes directory (must exist, must contain `.class` files) |
 | `--out <dir>` | Unless `--verify` | Output classes directory |
-| `--global-rules <path\|url>` | At least one of the two | Global rules file path or URL |
-| `--local-rules <path>` | At least one of the two | Local rules file path |
+| `--global-rules <path\|url>` | Optional | Global rules file path or URL |
+| `--local-rules <path>` | Optional | Local rules file path. A path that does not exist is treated as empty (a `[warn]` is printed) |
+| `--require-rules` | No | Exit non-zero if no rules source is configured. Restores the pre-2.x behavior; off by default |
 | `--dry-run` | No | Only print matches; do not modify classes |
 | `--verify` | No | Read-only scan: list all methods that would be excluded by rules |
 | `--error-on-unmatched` | No | Exit non-zero if any rules matched zero methods (requires `--verify`) |
@@ -706,6 +713,11 @@ globally and rescue lazy vals with real logic:
 | `--report-format <fmt>` | No | Report format: `txt` (default), `json`, or `csv` (requires `--report-file`) |
 
 In rewrite mode, `--out` is required (omit only when using `--verify`).
+
+**No rules configured is not an error.** With neither `--global-rules` nor `--local-rules`, every
+class passes through unchanged (`Loaded 0 rule(s)`, `marked 0 method(s)`) and a later JaCoCo report
+step produces a normal, unfiltered report. Pass `--require-rules` to make the absence of a rules
+source a hard failure instead.
 
 ---
 

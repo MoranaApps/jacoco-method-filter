@@ -131,7 +131,8 @@ Rewrites compiled class files to add `@CoverageGenerated` annotations to methods
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `jmf.globalRules` | `String` | — | Global rules source (path or URL). Can be combined with `localRules`. |
-| `jmf.localRules` | `File` | `${project.basedir}/jmf-rules.txt` | Local rules file. Can be combined with `globalRules`. |
+| `jmf.localRules` | `File` | `${project.basedir}/jmf-rules.txt` | Local rules file. Can be combined with `globalRules`. Passed to the CLI only when the file exists. |
+| `jmf.requireRules` | `boolean` | `false` | Fail the build when no rules source is configured. Off by default (see *Pass-through* below). |
 | `jmf.inputDirectory` | `File` | `${project.build.outputDirectory}` | Input classes directory. |
 | `jmf.outputDirectory` | `File` | `${project.build.directory}/classes-filtered` | Output classes directory. |
 | `jmf.dryRun` | `boolean` | `false` | Dry run mode — no files modified. |
@@ -142,6 +143,12 @@ Rewrites compiled class files to add `@CoverageGenerated` annotations to methods
 > **Note:** `globalRules` and `localRules` can be used together; global rules are loaded first,
 > then local rules are appended. By default, `localRules` points to `jmf-rules.txt` in the
 > project root.
+
+> **Pass-through when no rules are configured:** if a project has neither `jmf.globalRules` nor a
+> `jmf-rules.txt`, `rewrite` does **not** fail — it copies every class through unchanged so a later
+> `report` still produces a normal, unfiltered JaCoCo report. This makes it safe to bind the plugin
+> in a shared parent POM before every child project has authored its own rules. Set
+> `-Djmf.requireRules=true` to restore the strict "rules required" behavior.
 
 **Example (simple — uses default `jmf-rules.txt`):**
 
@@ -190,7 +197,8 @@ Scans compiled classes and reports which methods would be matched by the configu
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `jmf.globalRules` | `String` | — | Global rules source (path or URL). Can be combined with `localRules`. |
-| `jmf.localRules` | `File` | `${project.basedir}/jmf-rules.txt` | Local rules file. Can be combined with `globalRules`. |
+| `jmf.localRules` | `File` | `${project.basedir}/jmf-rules.txt` | Local rules file. Can be combined with `globalRules`. Passed to the CLI only when the file exists. |
+| `jmf.requireRules` | `boolean` | `false` | Fail the build when no rules source is configured. Off by default — with no rules, the scan reports 0 matched methods. |
 | `jmf.inputDirectory` | `File` | `${project.build.outputDirectory}` | Input classes directory. |
 | `jmf.reportFile` | `File` | — | Write filtered-methods report to this file. If not set, output goes to console only. |
 | `jmf.reportFormat` | `String` | `"txt"` | Report format: `txt` (plain text), `json`, or `csv`. Only used when `reportFile` is set. |

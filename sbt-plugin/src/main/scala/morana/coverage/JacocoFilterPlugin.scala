@@ -136,6 +136,7 @@ object JacocoFilterPlugin extends AutoPlugin {
     jmfLocalRulesFile := (ThisBuild / baseDirectory).value / "jmf-rules.txt",
     jmfGlobalRules := None,
     jmfLocalRules := None,
+    jmfRequireRules := false,
     jmfCliMain := "io.moranaapps.jacocomethodfilter.CoverageRewriter",
     jmfDryRun := false,
     jmfEnabled := true,
@@ -171,6 +172,7 @@ object JacocoFilterPlugin extends AutoPlugin {
       val rulesFile    = jmfLocalRulesFile.value
       val globalRules  = jmfGlobalRules.value
       val localRules   = jmfLocalRules.value
+      val requireRules = jmfRequireRules.value
       val log          = streams.value.log
       val workDir      = baseDirectory.value
       val classesIn    = (Compile / classDirectory).value
@@ -194,8 +196,12 @@ object JacocoFilterPlugin extends AutoPlugin {
         } else {
           val hasRulesConfig = (globalRules.isDefined || localRules.exists(_.exists) || rulesFile.exists)
           if (!hasRulesConfig) {
-            log.warn(s"[jmf] rules file missing: ${rulesFile.getAbsolutePath}; skipping.")
-            log.info(s"[jmf] Run 'jmfInitRules' to create a rules file.")
+            if (requireRules) {
+              sys.error(s"[jmf] no rules configured (jmfRequireRules := true). Create ${rulesFile.getAbsolutePath} " +
+                s"via 'jmfInitRules', or set jmfGlobalRules / jmfLocalRules.")
+            }
+            log.warn(s"[jmf] no rules configured (no jmfGlobalRules, no jmfLocalRules, no ${rulesFile.getAbsolutePath}); " +
+              s"classes pass through unfiltered.")
           } else {
             val baseArgs = Seq(
               javaBin,
@@ -234,6 +240,7 @@ object JacocoFilterPlugin extends AutoPlugin {
       val rulesFile    = jmfLocalRulesFile.value
       val globalRules  = jmfGlobalRules.value
       val localRules   = jmfLocalRules.value
+      val requireRules = jmfRequireRules.value
       val log          = streams.value.log
       val workDir      = baseDirectory.value
       val classesIn    = (Compile / classDirectory).value
@@ -261,7 +268,12 @@ object JacocoFilterPlugin extends AutoPlugin {
         } else {
           val hasRulesConfig = (globalRules.isDefined || localRules.exists(_.exists) || rulesFile.exists)
           if (!hasRulesConfig) {
-            log.warn(s"[jmf] rules file missing: ${rulesFile.getAbsolutePath}; skipping.")
+            if (requireRules) {
+              sys.error(s"[jmf] no rules configured (jmfRequireRules := true). Create ${rulesFile.getAbsolutePath} " +
+                s"via 'jmfInitRules', or set jmfGlobalRules / jmfLocalRules.")
+            }
+            log.warn(s"[jmf] no rules configured (no jmfGlobalRules, no jmfLocalRules, no ${rulesFile.getAbsolutePath}); " +
+              s"classes pass through unfiltered.")
             classesIn
           } else {
             val outDir = jmfOutDir.value / "classes-filtered"

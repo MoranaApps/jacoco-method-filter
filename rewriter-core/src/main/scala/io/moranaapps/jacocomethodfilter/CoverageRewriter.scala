@@ -9,14 +9,17 @@ import java.nio.file.{Files, Path, Paths}
   *
   * @param in Input classes directory to scan
   * @param out Output classes directory (optional in verify mode)
-  * @param globalRules Global rules file path or URL (optional if localRules provided)
-  * @param localRules Local rules file path (optional if globalRules provided)
+  * @param globalRules Global rules file path or URL. Optional — with no rules source at all, every
+  *                    class passes through unfiltered (no-op).
+  * @param localRules Local rules file path. Optional; a path that does not exist is treated as
+  *                   empty (a warning is emitted).
   * @param dryRun If true, print matches without modifying classes
   * @param verify If true, run read-only scan mode
   * @param reportFile Optional path to write the filtered-methods report (txt/json/csv)
   * @param reportFormat Report format: txt (default), json, or csv
   * @param errorOnUnmatched If true, exit non-zero when any rules matched zero methods (requires verify mode)
   * @param strict If true, exit non-zero when any rules have no id: label
+  * @param requireRules If true, exit non-zero when no rules source is configured (restores pre-2.x behavior)
   */
 private[jacocomethodfilter] final case class CliConfig(
   in: Path = Paths.get("."),
@@ -28,7 +31,8 @@ private[jacocomethodfilter] final case class CliConfig(
   reportFile: Option[Path] = None,
   reportFormat: String = "txt",
   errorOnUnmatched: Boolean = false,
-  strict: Boolean = false
+  strict: Boolean = false,
+  requireRules: Boolean = false
 )
 
 object CoverageRewriter {
@@ -49,9 +53,12 @@ object CoverageRewriter {
     }
   }
 
-  private def run(cfg: CliConfig, outPath: Path): Unit = {
-    val rules = Rules.loadAll(cfg.globalRules, cfg.localRules)
-    println(s"[info] Loaded ${rules.size} rule(s) from ${rulesSummary(cfg)}")
+  private[jacocomethodfilter] def run(cfg: CliConfig, outPath: Path): Unit = {
+    val localRules = effectiveLocalRules(cfg.localRules)
+    abortIfRulesRequired(cfg, localRules)
+
+    val rules = Rules.loadAll(cfg.globalRules, localRules)
+    println(s"[info] Loaded ${rules.size} rule(s) from ${rulesSummary(cfg.globalRules, localRules)}")
 
     abortIfUnlabelled(rules, cfg)
 
@@ -76,12 +83,15 @@ object CoverageRewriter {
     }
   }
 
-  private def verify(cfg: CliConfig): Unit = {
-    val rules = Rules.loadAll(cfg.globalRules, cfg.localRules)
+  private[jacocomethodfilter] def verify(cfg: CliConfig): Unit = {
+    val localRules = effectiveLocalRules(cfg.localRules)
+    abortIfRulesRequired(cfg, localRules)
+
+    val rules = Rules.loadAll(cfg.globalRules, localRules)
 
     abortIfUnlabelled(rules, cfg)
 
-    println(s"[verify] Active rules from ${rulesSummary(cfg)}:")
+    println(s"[verify] Active rules from ${rulesSummary(cfg.globalRules, localRules)}:")
     printRulesListing(rules)
 
     val result = VerifyScanner.scan(cfg.in, rules)
@@ -117,6 +127,29 @@ object CoverageRewriter {
     }
   }
 
+  /** Resolve the local rules path for loading.
+    *
+    * A `--local-rules` path that does not exist is a soft condition: method filtering is opt-in,
+    * so we warn and proceed with zero local rules rather than aborting. (A missing `--global-rules`
+    * source stays a hard error — it is always explicitly configured.)
+    */
+  private[jacocomethodfilter] def effectiveLocalRules(localRules: Option[Path]): Option[Path] =
+    localRules match {
+      case Some(p) if !Files.exists(p) =>
+        println(s"[warn] local rules file not found: $p — proceeding with 0 local rules")
+        None
+      case other => other
+    }
+
+  /** With `--require-rules`, abort when no rules source is available (restores pre-2.x behavior). */
+  private def abortIfRulesRequired(cfg: CliConfig, localRules: Option[Path]): Unit = {
+    if (cfg.requireRules && cfg.globalRules.isEmpty && localRules.isEmpty) {
+      println("[error] Aborting: --require-rules is set but no rules source is configured " +
+        "(no --global-rules, no --local-rules file).")
+      sys.exit(1)
+    }
+  }
+
   private def writeReportFile(path: Path, content: String): Unit = {
     Option(path.getParent).foreach(Files.createDirectories(_))
     Files.write(path, content.getBytes(java.nio.charset.StandardCharsets.UTF_8))
@@ -124,8 +157,8 @@ object CoverageRewriter {
   }
 
   /** Human-readable description of the configured rule sources. */
-  private def rulesSummary(cfg: CliConfig): String =
-    (cfg.globalRules, cfg.localRules) match {
+  private def rulesSummary(globalRules: Option[String], localRules: Option[Path]): String =
+    (globalRules, localRules) match {
       case (Some(g), Some(l)) => s"global: $g, local: $l"
       case (Some(g), None)    => s"global: $g"
       case (None, Some(l))    => s"local: $l"

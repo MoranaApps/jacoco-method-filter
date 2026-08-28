@@ -230,6 +230,7 @@ Only configure the settings below when you want to:
 | `jmfGlobalRules` | `Option[String]` | `None` | Global rules source (URL or file path). Loaded when defined. Note: URLs require network access. |
 | `jmfLocalRules` | `Option[File]` | `None` | Local rules file. Loaded when defined. |
 | `jmfLocalRulesFile` | `File` | `jmf-rules.txt` | Fallback local rules file used only when both `jmfGlobalRules` and `jmfLocalRules` are `None` |
+| `jmfRequireRules` | `Boolean` | `false` | Fail `jmfRewrite` / `jmfVerify` when no rules source is configured. Off by default: with no rules the tasks warn and pass every class through unfiltered (`jmfRewrite` leaves the original classes in place) |
 | `jmfDryRun` | `Boolean` | `false` | Dry run mode - logs matches without modifying classes |
 | `jmfOutDir` | `File` | `target` | Base output directory; filtered classes are written under `jmfOutDir / "classes-filtered"` |
 | `jmfReportFile` | `Option[File]` | `None` | Write a filtered-methods report to this file. Works with `jmfVerify` and `jmfRewrite` (including `jmfDryRun = true`). If not set, output goes to console only. |

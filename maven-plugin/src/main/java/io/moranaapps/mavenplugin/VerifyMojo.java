@@ -40,6 +40,9 @@ public class VerifyMojo extends AbstractMojo {
     @Parameter(property = "jmf.skip", defaultValue = "false")
     private boolean skip;
 
+    @Parameter(property = "jmf.requireRules", defaultValue = "false")
+    private boolean requireRules;
+
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (skip) {
             getLog().info("Execution bypassed via skip parameter");
@@ -53,16 +56,18 @@ public class VerifyMojo extends AbstractMojo {
         }
 
         checkInputs();
+        if (!hasRulesConfig()) {
+            getLog().info("No JMF rules configured (no jmf.globalRules, no "
+                    + (localRules != null ? localRules.getAbsolutePath() : "jmf-rules.txt")
+                    + ") - scanning with 0 rules (0 methods will match).");
+        }
         runVerification();
     }
 
     private void checkInputs() throws MojoExecutionException {
         StringBuilder errors = new StringBuilder();
-        
-        boolean hasRulesConfig = (globalRules != null && !globalRules.trim().isEmpty()) || 
-                                 (localRules != null && localRules.exists());
-        
-        if (!hasRulesConfig) {
+
+        if (requireRules && !hasRulesConfig()) {
             errors.append("\n  - Rules configuration missing");
             if (localRules != null) errors.append(" at: ").append(localRules.getAbsolutePath());
             errors.append("\n    Solution: execute 'mvn ")
@@ -71,17 +76,23 @@ public class VerifyMojo extends AbstractMojo {
                   .append(pluginDescriptor.getArtifactId())
                   .append(":")
                   .append(pluginDescriptor.getVersion())
-                  .append(":init-rules'");
+                  .append(":init-rules', or set jmf.requireRules=false");
         }
-        
+
         if (inputDirectory == null || !inputDirectory.isDirectory()) {
             errors.append("\n  - Invalid input location");
             if (inputDirectory != null) errors.append(": ").append(inputDirectory.getAbsolutePath());
         }
-        
+
         if (errors.length() > 0) {
             throw new MojoExecutionException("Configuration problems detected:" + errors);
         }
+    }
+
+    /** True when a global rules source or an existing local rules file is configured. */
+    private boolean hasRulesConfig() {
+        return (globalRules != null && !globalRules.trim().isEmpty())
+                || (localRules != null && localRules.exists());
     }
 
     private void runVerification() throws MojoExecutionException {
@@ -113,10 +124,11 @@ public class VerifyMojo extends AbstractMojo {
             cmd.add("--global-rules");
             cmd.add(globalRules);
         }
-        if (localRules != null) {
+        if (localRules != null && localRules.exists()) {
             cmd.add("--local-rules");
             cmd.add(localRules.getAbsolutePath());
         }
+        if (requireRules) cmd.add("--require-rules");
         if (reportFile != null) {
             cmd.add("--report-file");
             cmd.add(reportFile.getAbsolutePath());
@@ -200,8 +212,11 @@ public class VerifyMojo extends AbstractMojo {
         if (globalRules != null) {
             getLog().info("║ Global:     " + globalRules);
         }
-        if (localRules != null) {
+        if (localRules != null && localRules.exists()) {
             getLog().info("║ Local:      " + localRules.getAbsolutePath());
+        }
+        if (!hasRulesConfig()) {
+            getLog().info("║ Rules:      none configured - scanning with 0 rules");
         }
     }
 
