@@ -58,6 +58,17 @@ addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.3.1")
   **Integration-test fixtures** (must match the version being released so CI runs against the new artifacts):
   6. `integration-tests/fixtures/sbt-basic/project/plugins.sbt`
   7. `integration-tests/fixtures/sbt-scala211/project/plugins.sbt`
+  8. `integration-tests/test-maven-report-custom.sh` — inline `<version>` in the generated `pom-custom.xml`
+
+  **Docs & defaults** (user-facing references to the current version):
+  9. `sbt-plugin/src/main/scala/morana/coverage/JacocoFilterPlugin.scala` — `jmfCoreVersion` default
+  10. `DEVELOPER.md` — install snippets
+  11. `sbt-plugin/README.md` — install snippet
+  12. `maven-plugin/README.md` — install snippets
+
+  **Changelog**:
+  13. `CHANGELOG.md` — rename `## [Unreleased]` to `## [<version>] — <date>`, add a fresh empty
+      `## [Unreleased]`, and update the link references at the bottom (`[Unreleased]`, new `[<version>]`).
 
   - Use [semantic versioning](https://semver.org/).
   - Do **not** include `-SNAPSHOT`.
@@ -65,7 +76,7 @@ addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.3.1")
 - Commit and push:
 
 ```bash
-git add build.sbt maven-plugin/pom.xml
+git add -A
 git commit -m "Release 0.2.0"
 git push origin master
 ```
@@ -145,7 +156,11 @@ git push origin master
 - [ ] Version updated in `examples/sbt-basic/project/plugins.sbt`, `examples/maven-basic/pom.xml`,
  `examples/maven-scala/pom.xml` (examples)
 - [ ] Version updated in `integration-tests/fixtures/sbt-basic/project/plugins.sbt`,
- `integration-tests/fixtures/sbt-scala211/project/plugins.sbt` (integration-test fixtures)
+ `integration-tests/fixtures/sbt-scala211/project/plugins.sbt`,
+ `integration-tests/test-maven-report-custom.sh` (integration-test fixtures)
+- [ ] Version updated in `sbt-plugin/src/main/scala/morana/coverage/JacocoFilterPlugin.scala`
+ (`jmfCoreVersion` default), `DEVELOPER.md`, `sbt-plugin/README.md`, `maven-plugin/README.md` (docs)
+- [ ] `CHANGELOG.md` updated: `[Unreleased]` → `[<version>] — <date>`, fresh `[Unreleased]`, link refs
 - [ ] Commit pushed to `master`
 - [ ] Workflow triggered via GitHub Actions
 - [ ] Artifacts staged or released successfully (sbt + Maven plugin)
