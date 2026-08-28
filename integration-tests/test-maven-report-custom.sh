@@ -87,7 +87,7 @@ cat > pom-custom.xml << 'EOF'
             <plugin>
                 <groupId>io.github.moranaapps</groupId>
                 <artifactId>jacoco-method-filter-maven-plugin</artifactId>
-                <version>2.2.0</version>
+                <version>2.3.0</version>
                 <executions>
                     <execution>
                         <id>filter-coverage</id>
