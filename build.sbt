@@ -4,7 +4,7 @@ import sbtassembly.AssemblyPlugin.autoImport._
 // ---- global ---------------------------------------------------------------
 ThisBuild / organization   := "io.github.moranaapps"
 ThisBuild / scalaVersion   := "2.12.21"             // default
-ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.21", "2.13.16")
+ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.21", "2.13.13")
 ThisBuild / version        := "2.3.0"
 ThisBuild / versionScheme  := Some("early-semver")
 
@@ -34,7 +34,7 @@ lazy val rewriterCore = (project in file("rewriter-core"))
     publish / skip := false,
     
     // Enable cross-compilation for Scala 2.11, 2.12, and 2.13
-    crossScalaVersions := Seq("2.11.12", "2.12.21", "2.13.16"),
+    crossScalaVersions := Seq("2.11.12", "2.12.21", "2.13.13"),
 
     // CLI entrypoint you already have
     Compile / mainClass := Some("io.moranaapps.jacocomethodfilter.CoverageRewriter"),

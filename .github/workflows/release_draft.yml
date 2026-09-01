@@ -29,10 +29,10 @@ jobs:
             branch: 'master'
             version-tag: ${{ github.event.inputs.tag-name }}
 
-      - name: Set up Python 3.14
+      - name: Set up Python 3.11
         uses: actions/setup-python@v6
         with:
-          python-version: '3.14'
+          python-version: '3.11'
 
       - name: Generate Release Notes
         id: generate_release_notes
