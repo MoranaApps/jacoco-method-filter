@@ -88,6 +88,11 @@ lazy val sbtPlugin = (project in file("sbt-plugin"))
     // sbt plugins are built with Scala 2.12 for sbt 1.x
     scalaVersion := "2.12.21",
     crossScalaVersions := Seq("2.12.21"),
+    // Compile against the oldest supported sbt so the plugin cannot accidentally
+    // depend on APIs newer than sbt 1.9 (e.g. the 3-arg Command.process added in
+    // sbt 1.10.0, which broke JMF on sbt 1.9.x with NoSuchMethodError). The dev
+    // build itself still runs on the sbt.version in project/build.properties.
+    pluginCrossBuild / sbtVersion := "1.9.0",
     // Prevent publishing the legacy (non-suffixed) Maven artifacts like
     // `jacoco-method-filter-sbt-<ver>.jar` which Sonatype Central cannot associate
     // with the sbt-plugin coordinates `jacoco-method-filter-sbt_2.12_1.0`.

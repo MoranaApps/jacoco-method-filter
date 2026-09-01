@@ -53,7 +53,10 @@ object JacocoFilterPlugin extends AutoPlugin {
       state
     } else {
       targets.foldLeft(state) { (st, ref) =>
-        Command.process(s"${ref.project}/jacocoClean", st, msg => sys.error(msg))
+        // 2-arg overload: works across all sbt 1.x. sbt already fails the build
+        // on a command/parse error, so the 3-arg onParseError callback (added in
+        // sbt 1.10.0) is not needed and would break sbt < 1.10 with NoSuchMethodError.
+        Command.process(s"${ref.project}/jacocoClean", st)
       }
     }
   }
@@ -71,7 +74,8 @@ object JacocoFilterPlugin extends AutoPlugin {
       state
     } else {
       targets.foldLeft(state) { (st, ref) =>
-        Command.process(s"${ref.project}/jacocoReport", st, msg => sys.error(msg))
+        // 2-arg overload: see note in jacocoCleanAllCmd.
+        Command.process(s"${ref.project}/jacocoReport", st)
       }
     }
   }

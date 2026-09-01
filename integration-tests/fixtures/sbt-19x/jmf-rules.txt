@@ -1,0 +1,9 @@
+# Test rules for the sbt 1.9.x integration test
+# Exclude synthetic / bridge methods
+*#* synthetic
+*#* bridge
+
+# Exclude compiler-generated methods
+*#$anonfun$*
+*#lambda$*
+*#$default$*
