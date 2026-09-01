@@ -6,6 +6,13 @@ This project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.4.0] — 2026-09-01
+
+### Changed
+
+- Lowered the Scala 2.13 cross-build target from `2.13.16` to `2.13.13`; published
+  artifacts are now compatible with Scala 2.13.13+.
+
 ## [2.3.0] — 2026-08-28
 
 ### Added
@@ -134,7 +141,8 @@ This project uses [Semantic Versioning](https://semver.org/).
 - Rule syntax: `<class>#<method>(<descriptor>)` with glob patterns.
 - `@CoverageGenerated` annotation injection.
 
-[Unreleased]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.3.0...HEAD
+[Unreleased]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.4.0...HEAD
+[2.4.0]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.1.1...v2.2.0
 [2.1.1]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.1.0...v2.1.1
