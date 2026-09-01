@@ -22,22 +22,22 @@ info "Running: $TEST_NAME"
 cp -R "$REPO_ROOT/integration-tests/fixtures/sbt-19x" "$WORK_DIR/project"
 cd "$WORK_DIR/project"
 
-# ── 1. Confirm the launcher really uses sbt 1.9.x ──────────────────────────
-SBT_VERSION_OUT="$(sbt -Dsbt.supershell=false --no-colors sbtVersion 2>&1 | tail -n 5)"
-echo "$SBT_VERSION_OUT"
-echo "$SBT_VERSION_OUT" | grep -Eq '1\.9\.[0-9]+' \
-  || fail "$TEST_NAME — expected sbt 1.9.x, got:\n$SBT_VERSION_OUT"
-
-pass "$TEST_NAME — running on sbt 1.9.x"
-
-# ── 2. Plain test (no filtering) ──────────────────────────────────────────
+# ── 1. Plain test (no filtering) — also loads the plugin on sbt 1.9.x ──────
 run_cmd "$TEST_NAME — sbt clean test (no filtering)" sbt clean test
 
-pass "$TEST_NAME — tests pass without filtering"
+# The sbt launcher honours project/build.properties; assert it really is 1.9.x
+# so this test cannot silently start passing on a newer sbt.
+assert_file_contains "$LAST_CMD_LOG" "welcome to sbt 1.9" \
+  "$TEST_NAME — launcher is sbt 1.9.x"
 
-# ── 3. Full jacoco flow (jacocoReportAll invokes Command.process) ─────────
+pass "$TEST_NAME — tests pass without filtering on sbt 1.9.x"
+
+# ── 2. Full jacoco flow (jacocoReportAll invokes Command.process) ─────────
 # The critical step: it must NOT fail with NoSuchMethodError on sbt 1.9.x.
 run_cmd "$TEST_NAME — sbt jacoco (with filtering on sbt 1.9.x)" sbt jacoco
+
+assert_file_contains "$LAST_CMD_LOG" "welcome to sbt 1.9" \
+  "$TEST_NAME — jacoco flow ran on sbt 1.9.x"
 
 REPORT_DIR="target/scala-2.12/jacoco-report"
 assert_dir_not_empty "$REPORT_DIR" \

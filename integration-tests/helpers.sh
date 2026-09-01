@@ -23,10 +23,14 @@ pass() { echo -e "${GREEN}PASS${NC}: $1"; }
 fail() { echo -e "${RED}FAIL${NC}: $1"; exit 1; }
 info() { echo -e "${YELLOW}INFO${NC}: $1"; }
 
+# Path of the log file written by the most recent run_cmd call.
+LAST_CMD_LOG=""
+
 # ---------------------------------------------------------------------------
 # run_cmd <label> <cmd> [args...]
 # Runs a command, captures stdout+stderr, and always prints the output so it
-# is visible before the temp directory is cleaned up.
+# is visible before the temp directory is cleaned up. The captured log path
+# is exposed as $LAST_CMD_LOG for follow-up assertions.
 # ---------------------------------------------------------------------------
 run_cmd() {
   local label="$1"; shift
@@ -34,6 +38,7 @@ run_cmd() {
   local safe_label
   safe_label="$(printf '%s' "$label" | LC_ALL=C tr -c 'A-Za-z0-9' '_')"
   local log="$WORK_DIR/${safe_label}.log"
+  LAST_CMD_LOG="$log"
   info "$label"
   local rc=0
   "$@" > "$log" 2>&1 || rc=$?
