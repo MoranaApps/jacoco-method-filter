@@ -6,6 +6,8 @@ This project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.5.0] — 2026-09-01
+
 ### Fixed
 
 - **sbt plugin restored to sbt 1.x compatibility.** v2.4.0 used the 3-arg
@@ -14,7 +16,8 @@ This project uses [Semantic Versioning](https://semver.org/).
   `java.lang.NoSuchMethodError: sbt.Command$.process(...)`. Switched back to the
   2-arg overload and pinned `pluginCrossBuild / sbtVersion` to `1.9.0` so the
   plugin can no longer compile against newer-than-1.9 sbt APIs.
-  ([#76](https://github.com/MoranaApps/jacoco-method-filter/issues/76))
+  ([#76](https://github.com/MoranaApps/jacoco-method-filter/issues/76),
+  [#77](https://github.com/MoranaApps/jacoco-method-filter/pull/77))
 
 ## [2.4.0] — 2026-09-01
 
@@ -151,7 +154,8 @@ This project uses [Semantic Versioning](https://semver.org/).
 - Rule syntax: `<class>#<method>(<descriptor>)` with glob patterns.
 - `@CoverageGenerated` annotation injection.
 
-[Unreleased]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.4.0...HEAD
+[Unreleased]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.5.0...HEAD
+[2.5.0]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/MoranaApps/jacoco-method-filter/compare/v2.1.1...v2.2.0
