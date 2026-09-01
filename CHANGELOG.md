@@ -6,6 +6,16 @@ This project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **sbt plugin restored to sbt 1.x compatibility.** v2.4.0 used the 3-arg
+  `Command.process` overload (added in sbt 1.10.0), so `jacocoCleanAll` /
+  `jacocoReportAll` failed on sbt 1.9.x with
+  `java.lang.NoSuchMethodError: sbt.Command$.process(...)`. Switched back to the
+  2-arg overload and pinned `pluginCrossBuild / sbtVersion` to `1.9.0` so the
+  plugin can no longer compile against newer-than-1.9 sbt APIs.
+  ([#76](https://github.com/MoranaApps/jacoco-method-filter/issues/76))
+
 ## [2.4.0] — 2026-09-01
 
 ### Changed
