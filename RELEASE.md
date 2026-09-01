@@ -58,16 +58,17 @@ addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.3.1")
   **Integration-test fixtures** (must match the version being released so CI runs against the new artifacts):
   6. `integration-tests/fixtures/sbt-basic/project/plugins.sbt`
   7. `integration-tests/fixtures/sbt-scala211/project/plugins.sbt`
-  8. `integration-tests/test-maven-report-custom.sh` — inline `<version>` in the generated `pom-custom.xml`
+  8. `integration-tests/fixtures/sbt-19x/project/plugins.sbt`
+  9. `integration-tests/test-maven-report-custom.sh` — inline `<version>` in the generated `pom-custom.xml`
 
   **Docs & defaults** (user-facing references to the current version):
-  9. `sbt-plugin/src/main/scala/morana/coverage/JacocoFilterPlugin.scala` — `jmfCoreVersion` default
-  10. `DEVELOPER.md` — install snippets
-  11. `sbt-plugin/README.md` — install snippet
-  12. `maven-plugin/README.md` — install snippets
+  10. `sbt-plugin/src/main/scala/morana/coverage/JacocoFilterPlugin.scala` — `jmfCoreVersion` default
+  11. `DEVELOPER.md` — install snippets
+  12. `sbt-plugin/README.md` — install snippet
+  13. `maven-plugin/README.md` — install snippets
 
   **Changelog**:
-  13. `CHANGELOG.md` — rename `## [Unreleased]` to `## [<version>] — <date>`, add a fresh empty
+  14. `CHANGELOG.md` — rename `## [Unreleased]` to `## [<version>] — <date>`, add a fresh empty
       `## [Unreleased]`, and update the link references at the bottom (`[Unreleased]`, new `[<version>]`).
 
   - Use [semantic versioning](https://semver.org/).
@@ -157,6 +158,7 @@ git push origin master
  `examples/maven-scala/pom.xml` (examples)
 - [ ] Version updated in `integration-tests/fixtures/sbt-basic/project/plugins.sbt`,
  `integration-tests/fixtures/sbt-scala211/project/plugins.sbt`,
+ `integration-tests/fixtures/sbt-19x/project/plugins.sbt`,
  `integration-tests/test-maven-report-custom.sh` (integration-test fixtures)
 - [ ] Version updated in `sbt-plugin/src/main/scala/morana/coverage/JacocoFilterPlugin.scala`
  (`jmfCoreVersion` default), `DEVELOPER.md`, `sbt-plugin/README.md`, `maven-plugin/README.md` (docs)

@@ -1,2 +1,2 @@
-addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "2.4.0")
+addSbtPlugin("io.github.moranaapps" % "jacoco-method-filter-sbt" % "2.5.0")
 
