@@ -40,6 +40,8 @@ bash integration-tests/test-sbt-init-rules.sh
 | `test-cli-verify.sh` | CLI `--verify` mode shows methods that would be filtered |
 | `test-cli-verify-unmatched.sh` | CLI `--verify` UNMATCHED RULES report and `--error-on-unmatched` flag |
 | `test-sbt-basic.sh` | `examples/sbt-basic` passes tests without filtering, then with filtering + report generation |
+| `test-sbt-scala211.sh` | Plugin works on a Scala 2.11 cross-build project (no `NoSuchMethodError`) |
+| `test-sbt-19x.sh` | Plugin loads and `jacocoReportAll` runs on sbt 1.9.x — regression guard for the 3-arg `Command.process` (issue #76) |
 | `test-sbt-report-custom.sh` | sbt plugin with custom report settings (formats, title, encoding) verifies only specified formats are generated |
 | `test-maven-basic.sh` | `examples/maven-basic` (Java) passes tests without and with `-Pcode-coverage` |
 | `test-maven-report-custom.sh` | Maven plugin with custom report settings (formats, title, encoding) verifies only specified formats are generated |
@@ -60,6 +62,9 @@ The sbt integration tests copy a dedicated CI fixture (`fixtures/sbt-basic/`)
 that has the plugin already enabled, then overlay the source and rules files
 from the example. This avoids fragile `sed` edits and ensures dependency
 resolution works cleanly in CI.
+
+`fixtures/sbt-scala211/` and `fixtures/sbt-19x/` are self-contained variants
+(own source + rules) that pin a specific Scala or sbt version.
 
 ## CI Integration
 
